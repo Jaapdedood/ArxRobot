@@ -1,0 +1,85 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	import com.smartfoxserver.v2.entities.data.SFSObject;
+	
+	import flash.utils.ByteArray;
+	
+	import interfaces.IPilotMessageSerialize;
+	
+	/**
+	 * Wrapper for Vector.&lt;WaypointCoordinates&gt;
+	 * to provide serialization/deserialization for messaging.
+	 */
+	public class WaypointsList implements IPilotMessageSerialize
+	{
+		// PUBLIC PROPERTIES
+		
+		public var waypointsVector:Vector.<WaypointCoordinates>;
+		
+		
+		// CONSTRUCTOR AND SERIALIZATION
+		
+		public function WaypointsList(waypoints:Vector.<WaypointCoordinates> = null)
+		{
+			if ( !waypoints )
+				waypointsVector = new <WaypointCoordinates> [];
+			else
+				waypointsVector = waypoints;
+		}
+		
+		/**
+		 * @return ByteArray (zlib compressed)
+		 */
+		public function toByteArray ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			try
+			{
+				// serialize
+				ba.writeObject ( waypointsVector );
+				// compress
+				ba.compress ( );
+			}
+			catch ( err:Error )
+			{
+			}
+			return ba;
+		}
+		
+		public function toSFSObject ( ) : ISFSObject
+		{
+			var sfso:ISFSObject = new SFSObject ( );
+			sfso.putByteArray ( 'b', toByteArray ( ) );
+			return sfso;
+		}
+		
+		
+		// PUBLIC STATIC DESERIALIZATION METHODS
+		
+		/**
+		 * @param ba ByteArray (zlib compressed)
+		 * @return Waypoints instance
+		 */
+		public static function NewFromByteArray ( ba:ByteArray ) : WaypointsList
+		{
+			var vWpts:Vector.<WaypointCoordinates>;
+			try
+			{
+				// decompress
+				ba.uncompress ( );
+				// deserialize
+				vWpts = ba.readObject ( );
+			}
+			catch ( err:Error )
+			{
+			}
+			return new WaypointsList ( vWpts );
+		}
+		
+		public static function NewFromSFSObject ( sfso:ISFSObject ) : WaypointsList
+		{
+			return NewFromByteArray ( sfso.getByteArray ( 'b' ) );
+		}
+	}
+}

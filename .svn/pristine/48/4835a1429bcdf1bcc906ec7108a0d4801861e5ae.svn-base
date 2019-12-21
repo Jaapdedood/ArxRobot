@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:comp="components.*"
+	creationComplete="_CreationCompleted()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.MotionManager;
+			import controllers.SessionManager;
+			
+			import icons.IconBluetooth;
+			import icons.IconRotLock;
+			
+			public function get trayTriggerButton ( ) : DisplayObject
+			{
+				return btnMenu;
+			}
+			
+			[Bindable]
+			private var _motMgr:MotionManager;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _CreationCompleted ( ) : void
+			{
+				_motMgr = MotionManager.instance;
+				_sessionMgr = SessionManager.instance;
+			}
+		]]>
+	</fx:Script>
+	<s:Rect
+		width="100%" height="100%"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{getStyle('chromeColor')}" alpha="0.8"
+				/>
+		</s:fill>
+	</s:Rect>
+	<s:HGroup
+		width="{width}"
+		gap="0"
+		horizontalAlign="left"
+		verticalAlign="middle"
+		>
+		<comp:ControlModesMenu
+			id="mnControlModes"
+			visible="{_motMgr.enabled}"
+			includeInLayout="{_motMgr.enabled}"
+			/>
+		<comp:HandPrefsMenu
+			id="mnHandPrefs"
+			visible="{_motMgr.enabled}"
+			includeInLayout="{_motMgr.enabled}"
+			/>
+		<s:Spacer width="100%" />
+		<s:Group
+			id="gpBtnBluetooth"
+			enabled="{_sessionMgr.appViewState!='bluetooth_config'}"
+			visible="{_sessionMgr.arduinoConnector.isBluetooth}"
+			includeInLayout="{_sessionMgr.arduinoConnector.isBluetooth}"
+			>
+			<s:Button
+				id="btnBluetooth"
+				styleName="action"
+				horizontalCenter="0"
+				verticalCenter="0"
+				icon="{IconBluetooth}"
+				color="{_sessionMgr.arduinoBluetooth.iconColor}"
+				click="_sessionMgr.bluetoothConfigOpen()"
+				/>
+			<s:BusyIndicator
+				id="biBt"
+				horizontalCenter="0"
+				verticalCenter="0"
+				visible="{_sessionMgr.arduinoBluetooth.isConnecting}"
+				enabled="{_sessionMgr.arduinoBluetooth.isConnecting}"
+				/>
+		</s:Group>
+		<s:Button
+			id="btnRotLock"
+			styleName="action"
+			emphasized="{_sessionMgr.rotationLocked}"
+			icon="{IconRotLock}"
+			click="_sessionMgr.stageOrientationLockToggle()"
+			/>
+		<s:Button
+			id="btnMenu"
+			styleName="{_sessionMgr.actionMenuBtnStyleName}"
+			emphasized="{_sessionMgr.actionMenuOn}"
+			click="_sessionMgr.actionMenuToggle()"
+			/>
+	</s:HGroup>
+</s:Group>

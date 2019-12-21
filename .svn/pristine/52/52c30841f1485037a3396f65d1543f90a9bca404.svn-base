@@ -1,0 +1,80 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	import flash.utils.ByteArray;
+	
+	/**
+	 * Used with MotorLimits message to transmit suggested minimum and top motor duty cycles.
+	 */		
+	public class MotorLimits extends ArduinoCommand
+	{
+		// CONSTANTS
+		
+		private static const __ARDUINO_COMMAND:uint = 5;
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		//   These should be validated elsewhere before assignment,
+		//   so there should be no need to validate them again here.
+		
+		/**
+		 * Minimum duty cycle to prevent stall
+		 */
+		public function get dcMin ( ) : uint
+		{
+			return _commandBytes [ 1 ];
+		}
+		public function set dcMin ( value:uint ) : void
+		{
+			_commandStringClear ( );
+			_commandBytes [ 1 ] = value;
+		}
+		
+		/**
+		 * Maximum duty cycle for continuous operation
+		 */
+		public function get dcTop ( ) : uint
+		{
+			return _commandBytes [ 2 ];
+		}
+		public function set dcTop ( value:uint ) : void
+		{
+			_commandStringClear ( );
+			_commandBytes [ 2 ] = value;
+		}
+		
+		// CONSTRUCTOR
+		
+		/**
+		 * Call static method <strong>newFromParameters</strong> or <strong>newFromSFSObject</strong>, as appropriate
+		 * @param commandBytes
+		 */		
+		public function MotorLimits ( commandBytes:ByteArray = null )
+		{
+			super ( commandBytes );
+		}
+		
+		// PUBLIC STATIC METHODS
+		
+		/**
+		 * @param dcMin Minimum duty cycle to prevent stall
+		 * @param dcTop Maximum duty cycle for continuous operation
+		 */
+		public static function newFromParameters (
+			dcMin:uint = 0,
+			dcTop:uint = 0
+			) : MotorLimits
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( MotorLimits.__ARDUINO_COMMAND );
+			ba.writeByte ( dcMin );
+			ba.writeByte ( dcTop );
+			return new MotorLimits ( ba );
+		}
+		
+		public static function newFromSFSObject ( sfso:ISFSObject ) : MotorLimits
+		{
+			return new MotorLimits ( sfso.getByteArray ( 'b' ) );
+		}
+	}
+}

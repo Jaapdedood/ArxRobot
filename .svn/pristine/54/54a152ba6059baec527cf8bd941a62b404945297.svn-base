@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	addedToStage="_AddedToStage()"
+	creationComplete="_CreationComplete()"
+	removedFromStage="_RemovedFromStage()"
+	currentStateChange="_StateChanged(event)"
+	>
+	
+	<fx:Script>
+		<![CDATA[
+			import icons.IconBluetooth;
+			import events.UtilityEvent;
+			import com.distriqt.extension.bluetooth.BluetoothClass;
+			import com.distriqt.extension.bluetooth.BluetoothDevice;
+			import mx.events.StateChangeEvent;
+			
+			import icons.IconBluetoothCallout;
+			
+			import utils.ArduinoConnectorBluetooth;
+			
+			[Bindable]
+			public var arduinoBluetooth:ArduinoConnectorBluetooth
+			
+			[Bindable]
+			public var calloutHeight:Number;
+			
+			[Bindable]
+			public var calloutWidth:Number;
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			private function _AddedToStage ( ) : void
+			{
+				if ( currentState == 'enabled' )
+					_Init ( );
+			}
+			
+			private function _Connect ( ) : void
+			{
+				var dev:BluetoothDevice = lstDevs.selectedItem as BluetoothDevice;
+				if ( dev != null )
+					arduinoBluetooth.connect ( dev );
+			}
+			
+			private function _CreationComplete ( ) : void
+			{
+				if ( currentState == 'enabled' )
+					_Init ( );
+			}
+			
+			private function _DeviceListItemLabel ( item:Object ) : String
+			{
+				var dev:BluetoothDevice = item as BluetoothDevice;
+				var cls:BluetoothClass = dev.bluetoothClass;
+				var sCls:String;
+				if ( cls != null )
+				{
+					sCls = ' [' + cls.majorDeviceClass + '::' + cls.deviceClass + '] ';
+				}
+				else
+				{
+					sCls = ' [0::0] ';
+				}
+				return dev.address + sCls + dev.deviceName + ' (' + dev.state + ')';
+			}
+			
+			private function _Disconnect ( ) : void
+			{
+				arduinoBluetooth.disconnectAll ( );
+			}
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( !_bInited )
+					return; // return
+				
+				_bInited = false;
+				
+				_EventListenersRemove ( );
+				
+				_cfDropDown = null;
+			}
+			
+			private function _Done ( ) : void
+			{
+				cbBluetooth.closeDropDown ( );
+			}
+			
+			private function _EventBluetoothInfo ( event:UtilityEvent ) : void
+			{
+				// for now only using this event type for requesting opening of callout,
+				// so no need to check params
+				if ( cbBluetooth )
+					cbBluetooth.openDropDown ( );
+			}
+			
+			private function _EventListenersAdd ( ) : void
+			{
+				if ( !arduinoBluetooth )
+				{
+					callLater ( _EventListenersAdd );
+					return; // return
+				}
+				
+				arduinoBluetooth.addEventListener ( UtilityEvent.BLUETOOTH_INFO, _EventBluetoothInfo );
+			}
+			
+			private function _EventListenersRemove ( ) : void
+			{
+				if ( !arduinoBluetooth )
+					return; // return
+				
+				arduinoBluetooth.removeEventListener ( UtilityEvent.BLUETOOTH_INFO, _EventBluetoothInfo );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+					return; // return
+				
+				_bInited = true;
+				
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+				
+				_EventListenersAdd ( );
+			}
+			
+			private function _RemovedFromStage ( ) : void
+			{
+				_Dismiss ( );
+			}
+			
+			private function _StateChanged ( event:StateChangeEvent ) : void
+			{
+				if ( event.newState == 'normal' )
+				{
+					_Init ( );
+				}
+				else
+				{
+					_Dismiss ( );
+				}
+			}
+			
+			private function _SystemOpen ( ) : void
+			{
+				arduinoBluetooth.systemSettingsOpen ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:CalloutButton
+		id="cbBluetooth"
+		icon="{IconBluetoothCallout}"
+		dropDown="{_cfDropDown}"
+		horizontalPosition="middle"
+		verticalPosition="middle"
+		includeIn="normal"
+		>
+		<s:Group
+			width="{calloutWidth}"
+			height="{calloutHeight}"
+			>
+			<s:layout>
+				<s:ConstraintLayout>
+					<s:constraintColumns>
+						<s:ConstraintColumn id="col0" />
+						<s:ConstraintColumn id="col0gap" width="6" />
+						<s:ConstraintColumn id="col1" />
+						<s:ConstraintColumn id="col1gap" width="6" />
+						<s:ConstraintColumn id="col2" />
+					</s:constraintColumns>
+					<s:constraintRows>
+						<s:ConstraintRow id="row0" />
+						<s:ConstraintRow id="row1" />
+						<s:ConstraintRow id="row2" />
+						<s:ConstraintRow id="row3" />
+						<s:ConstraintRow id="row4" />
+					</s:constraintRows>
+				</s:ConstraintLayout>
+			</s:layout>
+			<!-- Title and Done button-->
+			<s:Label
+				id="lbTitle"
+				top="row0:0" bottom="row0:0"
+				left="col0:0" right="col1:0"
+				styleName="textConfigItem"
+				text="{resourceManager.getString('default','bt_info_title')}"
+				/>
+			<s:Button
+				id="btnDone"
+				top="row0:0" bottom="row0:0"
+				right="col2:0"
+				styleName="done"
+				label="{resourceManager.getString('default','done_btn_label')}"
+				click="_Done()"
+				/>
+			<!-- Scanning toggle -->
+			<s:Label
+				id="lbTogScan"
+				top="row1:0" bottom="row1:0"
+				left="col0:0" right="col0:0"
+				styleName="textHead"
+				text="{resourceManager.getString('default','bt_scanning_label')}"
+				/>
+			<s:ToggleSwitch
+				id="btnTogScan"
+				top="row1:0" bottom="row1:0"
+				left="col2:0"
+				selected="{arduinoBluetooth.isScanning}"
+				click="arduinoBluetooth.toggleScan()"
+				/>
+			<!-- Device list -->
+			<s:Label
+				id="lbDevs"
+				top="row2:0" bottom="row2:0"
+				left="col0:0" right="col0:0"
+				styleName="textConfigItem"
+				text="{resourceManager.getString('default','bt_devices_label')}"
+				/>
+			<s:List
+				id="lstDevs"
+				top="row2:0" bottom="row2:0"
+				left="col1:0" right="col2:0"
+				dataProvider="{arduinoBluetooth.deviceList}"
+				labelFunction="_DeviceListItemLabel"
+				>
+				<s:layout>
+					<s:VerticalLayout
+						gap="0"
+						horizontalAlign="left"
+						/>
+				</s:layout>
+			</s:List>
+			<!-- Connect / Disconnect -->
+			<s:Button
+				id="btnConnect"
+				top="row3:0" bottom="row3:0"
+				left="col1:0"
+				label="{resourceManager.getString('default','bt_connect_btn_label')}"
+				enabled="{lstDevs.selectedItem != null}"
+				click="_Connect()"
+				/>
+			<s:Button
+				id="btnDisconnect"
+				top="row3:0" bottom="row3:0"
+				left="col2:0"
+				label="{resourceManager.getString('default','bt_disconnect_btn_label')}"
+				enabled="{arduinoBluetooth.isConnected}"
+				click="_Disconnect()"
+				/>
+			<!-- System Config -->
+			<s:Button
+				id="btnSysConfig"
+				top="row4:0" bottom="row4:0"
+				right="col2:0"
+				icon="{IconBluetooth}"
+				label="{resourceManager.getString('default','bt_system_btn_label')}"
+				click="_SystemOpen()"
+				/>
+		</s:Group>	
+	</s:CalloutButton>
+	
+</s:Group>

@@ -1,0 +1,102 @@
+package utils
+{
+	import flash.utils.ByteArray;
+	
+	import events.DebugEventEx;
+	import events.RoverEvent;
+	
+	[Bindable]
+	public class ArduinoConnectorPrimavera extends ArduinoConnector
+	{
+		// STATIC CONSTANTS AND PROPERTIES
+		
+		private static var __instance:ArduinoConnectorPrimavera;
+		
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		/**
+		 * singleton instance of ArduinoConnectorPrimavera
+		 */
+		public static function get instance ( ) : ArduinoConnectorPrimavera
+		{
+			if ( !__instance )
+			{
+				__instance = new ArduinoConnectorPrimavera ( new SingletonEnforcer() );
+			}
+			return __instance;
+		}
+		
+		/**
+		 * Singleton: use static property <em>instance</em> to access singleton instance.
+		 */	
+		public function ArduinoConnectorPrimavera ( enforcer:SingletonEnforcer )
+		{
+			super ( );
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			if ( _pvi != null )
+			{
+				_pvi.removeEventListener ( RoverEvent.ROVER_DATA, _DataReceived );
+				_pvi.removeEventListener ( DebugEventEx.DEBUG_OUT, debugEventRelay );
+				_pvi.dispose ( );
+				_pvi = null;
+			}
+			super.dismiss ( );
+		}
+		
+		override public function init ( ) : void
+		{
+			super.init ( );
+			_pvi = PrimaveraInterface.instance;
+			_pvi.addEventListener ( RoverEvent.ROVER_DATA, _DataReceived );
+			_pvi.addEventListener ( DebugEventEx.DEBUG_OUT, debugEventRelay );
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		override public function send ( bytes:ByteArray ) : Boolean
+		{
+			if ( _pvi != null )
+			{
+				try
+				{
+					_pvi.sendCommand ( bytes );
+				}
+				catch ( err:Error )
+				{
+					debugOut ( 'error_pv_send', true, [ err.message ] );
+				}
+				return true;
+			}
+			return false;
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _pvi:PrimaveraInterface;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _DataReceived ( event:RoverEvent ) : void
+		{
+			var ba:ByteArray = new ByteArray ( );
+			try
+			{
+				event.roverData.position = 0;
+				ba.writeBytes ( event.roverData );
+				dataQueuePush ( ba );
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_pv_receive', true, [ err.message ] );
+			}
+		}
+		
+	}
+}
+class SingletonEnforcer {}

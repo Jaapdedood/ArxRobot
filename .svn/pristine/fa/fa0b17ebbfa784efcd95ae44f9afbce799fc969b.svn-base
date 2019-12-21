@@ -1,0 +1,23 @@
+package vo
+{
+	public class UserState
+	{
+		public var arduinoModeId:uint = 1;
+		public var arduinoTypeAdb:Boolean = true; // deprecated
+		public var assetsDir:String = '';
+		public var cameraAdjustForMotion:Boolean = false;
+		public var cameraConfigDefault:CameraConfig;
+		public var cameraConfigMotion:CameraConfig;
+		public var cameraIndex:int;
+		public var capabilitiesStorePhone:Boolean = true;
+		public var deviceFacesBack:Boolean = true;
+		public var phoneBatteryMin:int = 10;
+		public var pilotNames:String = '';
+		public var robotName:String = '';
+		
+		public function UserState()
+		{
+			
+		}
+	}
+}

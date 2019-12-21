@@ -1,0 +1,40 @@
+package com.arxterra.utils
+{
+	public class FlagsUtil
+	{
+		public function FlagsUtil()
+		{
+		}
+		
+		
+		// PUBLIC STATIC METHODS
+		
+		public static function ToVector ( flagGroup:uint, flagsPossible:Vector.<uint> ) : Vector.<uint>
+		{
+			var vOut:Vector.<uint> = new <uint> [];
+			var uLen:uint = 0;
+			var i_uFlag:uint;
+			for each ( i_uFlag in flagsPossible )
+			{
+				if ( ( flagGroup & i_uFlag ) == i_uFlag )
+					vOut [ uLen++ ] = i_uFlag;
+			}
+			return vOut;
+		}
+		
+		public static function IsSet ( flagGroup:uint, flags:uint ) : Boolean
+		{
+			return ( flagGroup & flags ) == flags;
+		}
+		
+		public static function Clear ( flagGroup:uint, flags:uint ) : uint
+		{
+			return ( flagGroup & ~flags );
+		}
+		
+		public static function Set ( flagGroup:uint, flags:uint ) : uint
+		{
+			return flagGroup | flags;
+		}
+	}
+}

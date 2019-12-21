@@ -1,0 +1,10 @@
+package interfaces
+{
+	import flash.utils.ByteArray;
+
+	public interface IArduinoCommand
+	{
+		function get commandBytes():ByteArray;
+		function get commandString():String;
+	}
+}

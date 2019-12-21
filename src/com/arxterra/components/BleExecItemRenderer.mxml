@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	xmlns:icons="com.arxterra.icons.*"
+	autoDrawBackground="false"
+	initialize="_Initialized()"
+	dataChange="_DataChanged()"
+	width="100%"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.utils.BlePeripheralAgent;
+			import com.arxterra.vo.BleProtocolExec;
+			
+			private var _bpa:BlePeripheralAgent;
+			[Bindable]
+			private var _bpe:BleProtocolExec
+			[Bindable]
+			private var _nGap:Number;
+			private var _sessionMgr:SessionManager;
+			
+			private function _DataChanged ( ) : void
+			{
+				if ( data == null )
+				{
+					_bpe = null;
+					_bpa = null;
+				}
+				else
+				{
+					_bpe = data as BleProtocolExec;
+					_bpa = _bpe.peripheralAgent;
+				}
+			}
+			
+			private function _Initialized ( ) : void
+			{
+				_sessionMgr = SessionManager.instance;
+				_nGap = _sessionMgr.guiGap;
+			}
+			
+			private function _ToggleSelection ( ) : void
+			{
+				if ( _bpe.isSelected )
+				{
+					_bpe.protocolSpec.selectedAgent = null;
+				}
+				else
+				{
+					_bpe.protocolSpec.selectedAgent = _bpa;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup
+		gap="{_nGap}"
+		width="100%"
+		verticalAlign="middle"
+		>
+		<s:Label
+			width="100%"
+			styleName="textConfigItem"
+			text="{_bpe.label}"
+			/>
+		<s:ToggleSwitch
+			id="tsValue"
+			selected="{_bpe.isSelected}"
+			change="_ToggleSelection()"
+			/>
+	</s:HGroup>
+	
+</s:ItemRenderer>

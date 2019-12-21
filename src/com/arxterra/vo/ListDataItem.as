@@ -1,0 +1,19 @@
+package com.arxterra.vo
+{
+	[Bindable]
+	public class ListDataItem
+	{
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		public var id:uint;
+		public var label:String;
+		
+		// CONSTRUCTOR
+		
+		public function ListDataItem ( id:uint = 0, label:String = '' )
+		{
+			this.id = id;
+			this.label = label;
+		}
+	}
+}

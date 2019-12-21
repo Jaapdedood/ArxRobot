@@ -1,0 +1,75 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	
+	import flash.utils.ByteArray;
+	
+	/**
+	 * Used with Camera Move message to transmit Camera Pan and/or Tilt requests.
+	 * Note: Superclass implements IExternalizable.
+	 */
+	public class CameraMove extends McuMessage
+	{
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		/**
+		 * Pan degrees
+		 */
+		public function get panDegrees ( ) : uint
+		{
+			_messageBytes.position = 1;
+			return _messageBytes.readUnsignedShort ( );
+		}
+		public function set panDegrees ( value:uint ) : void
+		{
+			_messageStringClear ( );
+			_messageBytes.position = 1;
+			_messageBytes.writeShort ( value );
+		}
+		
+		/**
+		 * Tilt degrees
+		 */
+		public function get tiltDegrees ( ) : uint
+		{
+			_messageBytes.position = 3;
+			return _messageBytes.readUnsignedShort ( );
+		}
+		public function set tiltDegrees ( value:uint ) : void
+		{
+			_messageStringClear ( );
+			_messageBytes.position = 3;
+			_messageBytes.writeShort ( value );
+		}
+		
+		// CONSTRUCTOR
+		
+		/**
+		 * Call static method <strong>newFromParameters</strong> or <strong>newFromSFSObject</strong>, as appropriate
+		 * @param bytes
+		 */		
+		public function CameraMove ( bytes:ByteArray = null )
+		{
+			super ( bytes );
+		}
+		
+		// PUBLIC STATIC METHODS
+		
+		public static function NewFromParameters (
+			panDegrees:uint = 0,
+			tiltDegrees:uint = 0
+		) : CameraMove
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( CAMERA_MOVE );
+			ba.writeShort ( panDegrees );
+			ba.writeShort ( tiltDegrees );
+			return new CameraMove ( ba );
+		}
+		
+		public static function NewFromSFSObject ( sfso:ISFSObject ) : CameraMove
+		{
+			return new CameraMove ( sfso.getByteArray ( 'b' ) );
+		}
+	}
+}

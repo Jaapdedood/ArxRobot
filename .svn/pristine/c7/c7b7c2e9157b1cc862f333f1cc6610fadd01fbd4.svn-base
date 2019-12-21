@@ -1,0 +1,1436 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	creationComplete="_CreationCompleted()"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="done", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayList;
+			import spark.collections.Sort;
+			import spark.collections.SortField;
+			
+			import components.ThinCallout;
+			import components.TileItemRenderer;
+			
+			import controllers.CustomCommandManager;
+			
+			import events.UtilityEvent;
+			
+			import icons.*;
+			
+			import org.apache.flex.collections.VectorCollection;
+			
+			import vo.CustomCommandConfig;
+			import vo.CustomSelectOption;
+			
+			// PRIVATE PROPERTIES AND GET/SET METHOD GROUPS
+			
+			[Bindable]
+			private var _alIntegerWidgets:ArrayList;
+			[Bindable]
+			private var _alOptVals:ArrayList;
+			[Bindable]
+			private var _alSelectWidgets:ArrayList;
+			[Bindable]
+			private var _alTypesList:ArrayList;
+			private var _aOptLabels:Array;
+			private var _aTypeIds:Array;
+			private var _aTypeLabels:Array;
+			private var _aTypeNewLabels:Array;
+			private var _aTypePropsLabels:Array;
+			private var _aUByteToHexDecLabels:Array;
+			
+			[Bindable]
+			private var _bCmdDemoteEnabled:Boolean = false;
+			[Bindable]
+			private var _bCmdListFull:Boolean = false;
+			[Bindable]
+			private var _bCmdPromoteEnabled:Boolean = false;
+			[Bindable]
+			private var _bCmdPropsEdit:Boolean = false;
+			[Bindable]
+			private var _bHaveCmdSelected:Boolean = false;
+			[Bindable]
+			private var _bHaveOptSelected:Boolean = false;
+			[Bindable]
+			private var _bOptDemoteEnabled:Boolean = false;
+			[Bindable]
+			private var _bOptListFull:Boolean = false;
+			[Bindable]
+			private var _bOptPromoteEnabled:Boolean = false;
+			[Bindable]
+			private var _bOptPropsEdit:Boolean = false;
+			
+			private var _ccSel:CustomCommandConfig;
+			[Bindable]
+			private function get _cmdSelected ( ) : CustomCommandConfig
+			{
+				return _ccSel;
+			}
+			private function set _cmdSelected ( val:CustomCommandConfig ) : void
+			{
+				_ccSel = val;
+				// update view parameters
+				_optSelected = null;
+				if ( _ccSel != null )
+				{
+					_bHaveCmdSelected = true;
+					_bCmdDemoteEnabled = ( _ccSel.sortIndex < _vCmds.length - 1 );
+					_bCmdPromoteEnabled = ( _ccSel.sortIndex > 0 );
+					_vcOptsList.source = _ccSel.options;
+					_vcOptsList.refresh ( ); // update list and sort
+					_OptValuesUpdate ( );
+				}
+				else
+				{
+					_bHaveCmdSelected = false;
+					_bCmdDemoteEnabled = false;
+					_bCmdPromoteEnabled = false;
+					_vcOptsList.source = new <CustomSelectOption> [];
+					_vcOptsList.refresh ( );
+					_OptValuesUpdate ( );
+				}
+			}
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			[Bindable]
+			private var _custCmdMgr:CustomCommandManager = CustomCommandManager.instance;
+			
+			[Bindable]
+			private var _iCmdAddSelIdx:int = -1;
+			
+			private var _csoSel:CustomSelectOption;
+			[Bindable]
+			private function get _optSelected ( ) : CustomSelectOption
+			{
+				return _csoSel;
+			}
+			private function set _optSelected ( val:CustomSelectOption ) : void
+			{
+				_csoSel = val;
+				if ( _csoSel != null )
+				{
+					_bHaveOptSelected = true;
+					_bOptDemoteEnabled = ( _csoSel.sortIndex < _vcOptsList.length - 1 );
+					_bOptPromoteEnabled = ( _csoSel.sortIndex > 0 );
+				}
+				else
+				{
+					_bHaveOptSelected = false;
+					_bOptDemoteEnabled = false;
+					_bOptPromoteEnabled = false;
+				}
+			}
+			
+			private var _srtOpts:Sort;
+			
+			private var _uIdCount:uint = CustomCommandManager.ID_COUNT;
+			[Bindable]
+			private var _uIdMax:uint = CustomCommandManager.ID_MAX;
+			[Bindable]
+			private var _uIdMin:uint = CustomCommandManager.ID_MIN;
+			
+			[Bindable]
+			private var _vcCmdsList:VectorCollection;
+			
+			private var _vCmds:Vector.<CustomCommandConfig>;
+			
+			[Bindable]
+			private var _vcOptsList:VectorCollection;
+			
+			
+			// OTHER PRIVATE METHODS
+			
+			private function _CmdAdd ( ) : void
+			{
+				
+				if ( _iCmdAddSelIdx < 0 )
+					return;
+				
+				var iIdx:int = _iCmdAddSelIdx;
+				_iCmdAddSelIdx = -1; // clear selection for next time
+				
+				if ( _vCmds.length >= _uIdCount )
+					return;
+				
+				if ( iIdx >= _aTypeIds.length )
+					return;
+				
+				_cmdSelected = null; // clear any selection
+				
+				var uTypeId:uint = _aTypeIds [ iIdx ];
+				var uId:uint;
+				
+				if ( uTypeId == CustomCommandConfig.HEADING )
+				{
+					uId = 0;
+				}
+				else
+				{
+					uId = _CmdIdNextAvail ( );
+				}
+				
+				var ccc:CustomCommandConfig = new CustomCommandConfig (
+					uId,
+					0,
+					uTypeId,
+					_aTypeNewLabels [ uTypeId ],
+					_vcCmdsList.length
+				);
+				
+				if ( uTypeId == CustomCommandConfig.SELECT )
+				{
+					// SELECT, so add a couple placeholder options
+					ccc.options = new <CustomSelectOption> [
+						new CustomSelectOption ( 0, resourceManager.getString ( 'default', 'custom_opt_new_label', [ 0 ] ), '', 0 ),
+						new CustomSelectOption ( 1, resourceManager.getString ( 'default', 'custom_opt_new_label', [ 1 ] ), '', 1 )
+					];
+				}
+				
+				_vcCmdsList.addItem ( ccc );
+				_vcCmdsList.refresh ( );
+				
+				_bCmdListFull = ( _vcCmdsList.length >= _uIdCount );
+				callLater ( _CmdAddFinish );
+			}
+			
+			private function _CmdAddFinish ( ) : void
+			{
+				var uLen:uint = _vCmds.length;
+				if ( uLen < 1 )
+					return;
+				var ccc:CustomCommandConfig = _vCmds [ uLen - 1 ];
+				_cmdSelected = ccc;
+			}
+			
+			private function _CmdDelete ( ) : void
+			{
+				if ( !_ccSel )
+					return; // should not happen
+				
+				// disable collection updates
+				// _vcCmdsList.disableAutoUpdate ( );
+				
+				var ccc:CustomCommandConfig = _ccSel;
+				var uSortIdx:uint = ccc.sortIndex;
+				// deselect the command
+				_cmdSelected = null;
+				// remove command from list
+				_vcCmdsList.removeItem ( ccc );
+				// adjust sort indices
+				var i_uIdx:uint;
+				for each ( var i_ccc:CustomCommandConfig in _vCmds )
+				{
+					i_uIdx = i_ccc.sortIndex;
+					if ( i_uIdx > uSortIdx )
+					{
+						i_ccc.sortIndex = i_uIdx - 1;
+					}
+				}
+				_vcCmdsList.refresh ( );
+				// enable collection updates
+				// _vcCmdsList.enableAutoUpdate ( );
+				_bCmdListFull = ( _vcCmdsList.length >= _uIdCount );
+			}
+			
+			// Returns the next available ID (or 0 if all are in use) but does not reserve it.
+			private function _CmdIdNextAvail ( ) : uint
+			{
+				// build array of IDs in use
+				var vIds:Vector.<uint> = new <uint> [];
+				for each ( var i_ccc:CustomCommandConfig in _vCmds )
+				{
+					vIds.push ( i_ccc.id );
+				}
+				// start with lowest ID and find first one not in vIds
+				for ( var i:uint=_uIdMin; i<=_uIdMax; i++ )
+				{
+					if ( vIds.indexOf ( i ) < 0 )
+					{
+						// not in use
+						return i;
+					}
+				}
+				
+				return 0;
+			}
+			
+			private function _CmdIdValid ( val:uint ) : Boolean
+			{
+				if ( val < _uIdMin || val > _uIdMax )
+					return false;
+				return true;
+			}
+			
+			private function _CmdItemLabel ( item:Object ) : String
+			{
+				var ccc:CustomCommandConfig = item as CustomCommandConfig;
+				return _UByteToHexDecLabel ( ccc.id ) + ' ' + ccc.label;
+			}
+			
+			private function _CmdPropsEdit ( val:Boolean ) : void
+			{
+				_bCmdPropsEdit = val;
+			}
+			
+			/*
+			private function _CmdsExport ( ) : void
+			{
+				if ( cbCmdMenu != null )
+					cbCmdMenu.closeDropDown ( );
+				_custCmdMgr.exportJson ( );
+			}
+			
+			private function _CmdsImport ( ) : void
+			{
+				if ( cbCmdMenu != null )
+					cbCmdMenu.closeDropDown ( );
+				_custCmdMgr.importJson ( );
+			}
+			*/
+			
+			private function _CmdSortDemote ( ) : void
+			{
+				// increment sortIndex of selected command and
+				// decrement sortIndex of command that was after it
+				if ( !_ccSel )
+					return; // should not happen
+				
+				var ccc:CustomCommandConfig = _ccSel;
+				var uOldIdx:uint = ccc.sortIndex;
+				var iDemLim:int = _vCmds.length - 1;
+				if ( uOldIdx >= iDemLim )
+					return; // should not happen
+				var uNewIdx:uint = uOldIdx + 1;
+				// temporarily deselect
+				_cmdSelected = null;
+				// disable collection updates
+				// _vcCmdsList.disableAutoUpdate ( );
+				for each ( var i_ccc:CustomCommandConfig in _vCmds )
+				{
+					if ( i_ccc.sortIndex == uNewIdx )
+					{
+						i_ccc.sortIndex = uOldIdx;
+						break;
+					}
+				}
+				ccc.sortIndex = uNewIdx;
+				// enable collection updates
+				// _vcCmdsList.enableAutoUpdate ( );
+				// refresh collection to reapply sort
+				_vcCmdsList.refresh ( );
+				_cmdSelected = ccc;
+			}
+			
+			private function _CmdSortPromote ( ) : void
+			{
+				// decrement sortIndex of selected command and
+				// increment sortIndex of command that was before it
+				if ( !_ccSel )
+					return; // should not happen
+				
+				var ccc:CustomCommandConfig = _ccSel;
+				var uOldIdx:uint = ccc.sortIndex;
+				if ( uOldIdx < 1 )
+					return; // should not happen
+				var uNewIdx:uint = uOldIdx - 1;
+				// temporarily deselect
+				_cmdSelected = null;
+				// disable collection updates
+				// _vcCmdsList.disableAutoUpdate ( );
+				for each ( var i_ccc:CustomCommandConfig in _vCmds )
+				{
+					if ( i_ccc.sortIndex == uNewIdx )
+					{
+						i_ccc.sortIndex = uOldIdx;
+						break;
+					}
+				}
+				ccc.sortIndex = uNewIdx;
+				// enable collection updates
+				// _vcCmdsList.enableAutoUpdate ( );
+				// refresh collection to reapply sort
+				_vcCmdsList.refresh ( );
+				_cmdSelected = ccc;
+			}
+			
+			private function _CreationCompleted ( ) : void
+			{
+				// use our ThinCallout skin for the callout button components
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+				// ASSEMBLE DATA FOR CONFIGURATION OPTIONS
+				// Command ID labels
+				_aUByteToHexDecLabels = [];
+				var i_uId:uint;
+				for ( i_uId=0; i_uId<16; i_uId++ )
+				{
+					_aUByteToHexDecLabels [ i_uId ] = '0x0' + i_uId.toString ( 16 ).toUpperCase() + ' (' + i_uId + ')';
+				}
+				for ( i_uId=16; i_uId<=255; i_uId++ )
+				{
+					_aUByteToHexDecLabels [ i_uId ] = '0x' + i_uId.toString ( 16 ).toUpperCase() + ' (' + i_uId + ')';
+				}
+				// Sort by sortIndex
+				var srt:Sort = new Sort ( );
+				srt.fields = [ new SortField ( 'sortIndex', false, true ) ];
+				// Command select options list
+				_vcOptsList = new VectorCollection ( new <CustomSelectOption> [] );
+				_vcOptsList.sort = srt;
+				// Commands list
+				_vCmds = _custCmdMgr.commandConfigs;
+				_bCmdListFull = ( _vCmds.length >= _uIdCount );
+				_vcCmdsList = new VectorCollection ( _vCmds );
+				_vcCmdsList.sort = srt;
+				_vcCmdsList.refresh ( );
+				
+				// Type flags list
+				_aTypeIds = [
+					CustomCommandConfig.BOOLEAN,
+					CustomCommandConfig.SELECT,
+					CustomCommandConfig.BYTE,
+					CustomCommandConfig.UNSIGNED_BYTE,
+					CustomCommandConfig.SHORT,
+					CustomCommandConfig.UNSIGNED_SHORT,
+					CustomCommandConfig.HEADING
+				];
+				_aTypeLabels = [];
+				_aTypeNewLabels = [];
+				_aTypePropsLabels = [];
+				var i:uint
+				var iLim:uint = _aTypeIds.length;
+				for ( i=0; i<iLim; i++ )
+				{
+					i_uId = _aTypeIds [ i ] as uint;
+					_aTypeLabels [ i_uId ] = resourceManager.getString ( 'default', 'custom_cmd_type_' + i_uId );
+					_aTypeNewLabels [ i_uId ] = resourceManager.getString ( 'default', 'custom_cmd_new_' + i_uId );
+					_aTypePropsLabels [ i_uId ] = resourceManager.getString ( 'default', 'custom_cmd_props_' + i_uId );
+				}
+				_alTypesList = new ArrayList ( _aTypeIds );
+				
+				// Integer Widgets list
+				_alIntegerWidgets = new ArrayList ( [
+					resourceManager.getString ( 'default', 'custom_cmd_widget_int_0' ),
+					resourceManager.getString ( 'default', 'custom_cmd_widget_int_2' ) 
+				] );
+				
+				// Select Widgets list
+				_alSelectWidgets = new ArrayList ( [
+					resourceManager.getString ( 'default', 'custom_cmd_widget_sel_0' ),
+					resourceManager.getString ( 'default', 'custom_cmd_widget_sel_2' )
+				] );
+				
+				_alOptVals = new ArrayList ( [] );
+				_aOptLabels = [];
+			}
+			
+			private function _Done ( ) : void
+			{
+				// ##### TODO #####
+				// validate commands before closing
+				// ################
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.DONE ) );
+			}
+			
+			private function _OptAdd ( ) : void
+			{
+				if ( _bOptListFull )
+					return;
+				
+				// get smallest unused ID between 0 and 255
+				// to use as initial ID for the new option
+				var aVals:Array = _alOptVals.source;
+				var uId:uint = 0;
+				for ( var i:uint=0; i<=255; i++ )
+				{
+					if ( aVals.indexOf ( i ) < 0 )
+					{
+						// not in use, so grab it
+						uId = i;
+						break;
+					}
+				}
+				
+				var cso:CustomSelectOption = new CustomSelectOption (
+					uId,
+					resourceManager.getString ( 'default', 'custom_opt_new_label', [ uId ] ),
+					'',
+					_vcOptsList.length
+				);
+				
+				_vcOptsList.addItem ( cso );
+				_vcOptsList.refresh ( );
+				_OptValuesUpdate ( );
+				_optSelected = cso;
+			}
+			
+			private function _OptDelete ( ) : void
+			{
+				if ( !_ccSel )
+					return; // should not happen
+				if ( !_csoSel )
+					return; // should not happen
+				
+				var cso:CustomSelectOption = _csoSel;
+				var uSortIdx:uint = cso.sortIndex;
+				var uId:uint = cso.id;
+				// deselect the option
+				_optSelected = null;
+				// remove option from list
+				_vcOptsList.removeItem ( cso );
+				// adjust sort indices
+				var i_uIdx:uint;
+				var vOpts:Vector.<CustomSelectOption> = _ccSel.options;
+				for each ( var i_cso:CustomSelectOption in vOpts )
+				{
+					i_uIdx = i_cso.sortIndex;
+					if ( i_uIdx > uSortIdx )
+					{
+						i_cso.sortIndex = i_uIdx - 1;
+					}
+				}
+				_vcOptsList.refresh ( );
+				_OptValuesUpdate ( );
+				// attempt to validate defaultValue
+				if ( _ccSel.defaultValue == uId )
+				{
+					if ( vOpts.length > 0 )
+					{
+						_ccSel.defaultValue = vOpts [ 0 ].id;
+					}
+					else
+					{
+						_ccSel.defaultValue = 0;
+					}
+				}
+			}
+			
+			private function _OptItemLabel ( item:Object ) : String
+			{
+				var cso:CustomSelectOption = item as CustomSelectOption;
+				return _UByteToHexDecLabel ( cso.id ) + ' ' + cso.label;
+			}
+
+			private function _OptPropsEdit ( val:Boolean ) : void
+			{
+				_bOptPropsEdit = val;
+			}
+			
+			private function _OptSortDemote ( ) : void
+			{
+				// increment sortIndex of selected option and
+				// decrement sortIndex of option that was after it
+				if ( !_ccSel )
+					return; // should not happen
+				if ( !_csoSel )
+					return; // should not happen
+				
+				var cso:CustomSelectOption = _csoSel;
+				var uOldIdx:uint = cso.sortIndex;
+				var vOpts:Vector.<CustomSelectOption> = _ccSel.options;
+				var iLim:int = vOpts.length - 1;
+				if ( uOldIdx > iLim )
+					return; // should not happen
+				var uNewIdx:uint = uOldIdx + 1;
+				// temporarily deselect
+				_optSelected = null;
+				
+				// disable collection updates
+				// _vcOptsList.disableAutoUpdate ( );
+				
+				for each ( var i_cso:CustomSelectOption in vOpts )
+				{
+					if ( i_cso.sortIndex == uNewIdx )
+					{
+						i_cso.sortIndex = uOldIdx;
+						break;
+					}
+				}
+				cso.sortIndex = uNewIdx;
+				// enable collection updates
+				// _vcOptsList.enableAutoUpdate ( );
+				// refresh collection to reapply sort
+				_vcOptsList.refresh ( );
+				_OptValuesUpdate ( );
+				_optSelected = cso;
+			}
+			
+			private function _OptSortPromote ( ) : void
+			{
+				// decrement sortIndex of selected option and
+				// increment sortIndex of option that was before it
+				if ( !_ccSel )
+					return; // should not happen
+				if ( !_csoSel )
+					return; // should not happen
+				
+				var cso:CustomSelectOption = _csoSel;
+				var uOldIdx:uint = cso.sortIndex;
+				if ( uOldIdx < 1 )
+					return; // should not happen
+				var uNewIdx:uint = uOldIdx - 1;
+				// temporarily deselect
+				_optSelected = null;
+				
+				var vOpts:Vector.<CustomSelectOption> = _ccSel.options;
+				// disable collection updates
+				// _vcOptsList.disableAutoUpdate ( );
+				
+				for each ( var i_cso:CustomSelectOption in vOpts )
+				{
+					if ( i_cso.sortIndex == uNewIdx )
+					{
+						i_cso.sortIndex = uOldIdx;
+						break;
+					}
+				}
+				cso.sortIndex = uNewIdx;
+				
+				// enable collection updates
+				// _vcOptsList.enableAutoUpdate ( );
+				// refresh collection to reapply sort
+				_vcOptsList.refresh ( );
+				_OptValuesUpdate ( );
+				_optSelected = cso;
+			}
+			
+			private function _OptValueItemLabel ( item:Object, lst:ArrayList = null ) : String
+			{
+				// lst is just to force binding-related refresh
+				var uId:uint = item as uint;
+				if ( uId >= _aOptLabels.length )
+					return '';
+				
+				return _aOptLabels [ uId ] as String;
+			}
+			
+			private function _OptValuesUpdate ( ) : void
+			{
+				var i_cso:CustomSelectOption;
+				var aVals:Array = [];
+				_aOptLabels = [];
+				var uId:uint;
+				var iLim:int = _vcOptsList.length;
+				_bOptListFull = ( iLim >= 255 );
+				for ( var i:int=0; i<iLim; i++ )
+				{
+					i_cso = _vcOptsList.getItemAt ( i ) as CustomSelectOption;
+					uId = i_cso.id;
+					aVals.push ( uId );
+					_aOptLabels [ uId ] = i_cso.label;
+				}
+				_alOptVals = new ArrayList ( aVals );
+			}
+			
+			private function _TypeItemLabel ( item:Object ) : String
+			{
+				var uTypeId:uint = item as uint;
+				if ( uTypeId > CustomCommandConfig.TYPE_ID_MAX )
+					return '';
+				return _aTypeLabels [ item as uint ];
+			}
+			
+			private function _TypePropsLabel ( typeId:uint ) : String
+			{
+				if ( typeId > CustomCommandConfig.TYPE_ID_MAX )
+					return '';
+				return _aTypePropsLabels [ typeId ];
+			}
+			
+			private function _UByteToHexDecLabel ( item:Object ) : String
+			{
+				return _aUByteToHexDecLabels [ item as uint ];
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<!-- main lists layer -->
+	<s:VGroup
+		id="gpLayer0"
+		height="100%"
+		width="100%"
+		gap="6"
+		horizontalAlign="center"
+		>
+		<s:Label
+			id="lbTitle"
+			styleName="textHead"
+			text="{resourceManager.getString('default','custom_cmd_config_title')}"
+			/>
+		<s:HGroup
+			id="gpM"
+			height="100%"
+			width="100%"
+			gap="6"
+			>
+			<!-- left side contains command list and the buttons to manipulate it -->
+			<s:VGroup
+				id="gpCmdsStack"
+				height="100%"
+				width="100%"
+				gap="6"
+				>
+				<s:Group
+					id="gpLblCmds"
+					width="100%"
+					>
+					<s:Rect
+						id="rLblCmds"
+						left="0" right="0"
+						top="0" bottom="0"
+						>
+						<s:fill>
+							<s:SolidColor color="0x999999" />
+						</s:fill>
+					</s:Rect>
+					<s:Label
+						id="lblCmds"
+						width="100%"
+						styleName="textConfigGroup"
+						text="{resourceManager.getString('default','custom_cmd_cmds_label')}"
+						/>
+				</s:Group>
+				<s:HGroup
+					id="gpCmdBtns"
+					width="100%"
+					paddingLeft="4"
+					gap="6"
+					>
+					<s:CalloutButton
+						id="cbCmdAdd"
+						icon="{IconPlus}"
+						enabled="{!_bCmdListFull}"
+						dropDown="{_cfDropDown}"
+						horizontalPosition="after"
+						verticalPosition="start"
+						>
+						<s:List
+							id="liCmdAdd"
+							width="384" height="192"
+							dataProvider="{_alTypesList}"
+							labelFunction="_TypeItemLabel"
+							itemRenderer="components.TileItemRenderer"
+							requireSelection="false"
+							selectedIndex="@{_iCmdAddSelIdx}"
+							change="callLater(_CmdAdd)"
+							click="cbCmdAdd.closeDropDown()"
+							>
+							<s:layout>
+								<s:TileLayout
+									horizontalAlign="center"
+									horizontalGap="0"
+									verticalAlign="middle"
+									verticalGap="0"
+									orientation="columns"
+									requestedColumnCount="4"
+									useVirtualLayout="false"
+									/>
+							</s:layout>
+						</s:List>
+					</s:CalloutButton>
+					<s:Button
+						id="btnCmdDel"
+						icon="{IconMinus}"
+						enabled="{_bHaveCmdSelected}"
+						click="_CmdDelete()"
+						/>
+					<s:Button
+						id="btnCmdProm"
+						icon="{IconArrowUp}"
+						enabled="{_bCmdPromoteEnabled}"
+						click="_CmdSortPromote()"
+						/>
+					<s:Button
+						id="btnCmdDem"
+						icon="{IconArrowDown}"
+						enabled="{_bCmdDemoteEnabled}"
+						click="_CmdSortDemote()"
+						/>
+					<s:Button
+						id="btnCmdEdit"
+						icon="{IconPencil}"
+						enabled="{_bHaveCmdSelected}"
+						click="_CmdPropsEdit(true)"
+						/>
+				</s:HGroup>
+				<s:Group
+					id="gpCmdsList"
+					height="100%"
+					width="100%"
+					>
+					<s:Rect
+						left="1" right="1"
+						top="1" bottom="1"
+						>
+						<s:stroke>
+							<s:SolidColorStroke
+								color="0x666666" weight="1"
+								/>
+						</s:stroke>
+					</s:Rect>
+					<s:List
+						id="lsCmds"
+						left="2" right="2"
+						top="2" bottom="2"
+						width="100%"
+						dataProvider="{_vcCmdsList}"
+						labelFunction="_CmdItemLabel"
+						selectedItem="@{_cmdSelected}"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								paddingLeft="4" paddingRight="4"
+								paddingTop="4" paddingBottom="4"
+								horizontalAlign="contentJustify"
+								useVirtualLayout="false"
+								variableRowHeight="false"
+								/>
+						</s:layout>
+					</s:List>
+				</s:Group>
+			</s:VGroup>
+			<!-- right side contains optons list for when command type is SELECT -->
+			<s:Group
+				id="gpOpts"
+				height="100%"
+				width="100%"
+				visible="{_bHaveCmdSelected&amp;&amp;_cmdSelected.isSelect}"
+				includeInLayout="{_bHaveCmdSelected&amp;&amp;_cmdSelected.isSelect}"
+				>
+				<s:Rect
+					left="0" right="0"
+					top="0" bottom="0"
+					>
+					<s:fill>
+						<s:SolidColor color="0x333333" />
+					</s:fill>
+				</s:Rect>
+				<s:VGroup
+					id="gpOptsStack"
+					height="100%"
+					width="100%"
+					gap="6"
+					>
+					<s:Group
+						id="gpLblOpts"
+						width="100%"
+						>
+						<s:Rect
+							id="rLblOpts"
+							left="0" right="0"
+							top="0" bottom="0"
+							>
+							<s:fill>
+								<s:SolidColor color="0x999999" />
+							</s:fill>
+						</s:Rect>
+						<s:Label
+							id="lblOpts"
+							width="100%"
+							styleName="textConfigGroup"
+							text="{resourceManager.getString('default','custom_cmd_opts_label')}"
+							/>
+					</s:Group>
+					<s:HGroup
+						id="gpOptBtns"
+						width="100%"
+						paddingLeft="6"
+						gap="6"
+						>
+						<s:Button
+							id="btnOptAdd"
+							icon="{IconPlus}"
+							enabled="{!_bOptListFull}"
+							click="_OptAdd()"
+							/>
+						<s:Button
+							id="btnOptDel"
+							icon="{IconMinus}"
+							enabled="{_bHaveOptSelected}"
+							click="_OptDelete()"
+							/>
+						<s:Button
+							id="btnOptProm"
+							icon="{IconArrowUp}"
+							enabled="{_bOptPromoteEnabled}"
+							click="_OptSortPromote()"
+							/>
+						<s:Button
+							id="btnOptDem"
+							icon="{IconArrowDown}"
+							enabled="{_bOptDemoteEnabled}"
+							click="_OptSortDemote()"
+							/>
+						<s:Button
+							id="btnOptEdit"
+							icon="{IconPencil}"
+							enabled="{_bHaveOptSelected}"
+							click="_OptPropsEdit(true)"
+							/>
+					</s:HGroup>
+					<s:Group
+						id="gpOptsList"
+						height="100%"
+						width="100%"
+						>
+						<s:Rect
+							left="1" right="1"
+							top="1" bottom="1"
+							>
+							<s:stroke>
+								<s:SolidColorStroke
+									color="0x666666" weight="1"
+									/>
+							</s:stroke>
+						</s:Rect>
+						<s:List
+							id="lsOpts"
+							left="2" right="2"
+							top="2" bottom="2"
+							width="100%"
+							dataProvider="{_vcOptsList}"
+							labelFunction="_OptItemLabel"
+							selectedItem="@{_optSelected}"
+							>
+							<s:layout>
+								<s:VerticalLayout
+									gap="0"
+									paddingLeft="4" paddingRight="4"
+									paddingTop="4" paddingBottom="4"
+									horizontalAlign="contentJustify"
+									useVirtualLayout="false"
+									variableRowHeight="false"
+									/>
+							</s:layout>
+						</s:List>
+					</s:Group>
+				</s:VGroup>
+			</s:Group>
+		</s:HGroup>
+		<s:HGroup
+			id="gpB"
+			gap="6"
+			>
+			<s:Button
+				id="btnDone"
+				label="{resourceManager.getString('default','done_btn_label')}"
+				click="_Done()"
+				/>
+			<!--
+			<s:CalloutButton
+				id="cbCmdMenu"
+				icon="{IconMenu}"
+				enabled="{_custCmdMgr.publicStorageAccessible}"
+				dropDown="{_cfDropDown}"
+				horizontalPosition="middle"
+				verticalPosition="before"
+				>
+				<s:VGroup
+					gap="4"
+					>
+					<s:Button
+						id="btnImport"
+						width="100%"
+						label="{resourceManager.getString('default','custom_cmd_import_label')}"
+						click="_CmdsImport()"
+						/>
+					<s:Button
+						id="btnExport"
+						width="100%"
+						label="{resourceManager.getString('default','custom_cmd_export_label')}"
+						click="_CmdsExport()"
+						/>
+				</s:VGroup>
+			</s:CalloutButton>
+			-->
+		</s:HGroup>
+	</s:VGroup>
+	<!-- command props layer -->
+	<s:SkinnableContainer
+		id="scCmdProps"
+		styleName="sLogin"
+		left="0" right="0"
+		top="20" bottom="0"
+		visible="{_bCmdPropsEdit}"
+		includeInLayout="{_bCmdPropsEdit}"
+		>
+		<s:VGroup
+			id="gpCmdPropsStack"
+			width="100%"
+			height="100%"
+			>
+			<!-- Heading -->
+			<s:Label
+				id="lblCmdProps"
+				styleName="textConfigGroup"
+				text="{_TypePropsLabel(_cmdSelected.typeConfig)}"
+				/>
+			<!-- Body -->
+			<s:Scroller
+				width="100%"
+				height="100%"
+				>
+				<s:Group
+					id="gpCmdProps"
+					>
+					<s:layout>
+						<s:ConstraintLayout>
+							<s:constraintColumns>
+								<s:ConstraintColumn id="col0" />
+								<s:ConstraintColumn id="col1" width="6" />
+								<s:ConstraintColumn id="col2" />
+							</s:constraintColumns>
+							<s:constraintRows>
+								<s:ConstraintRow id="row0" />
+								<s:ConstraintRow id="row1" />
+								<s:ConstraintRow id="row2" />
+								<s:ConstraintRow id="row3" />
+								<s:ConstraintRow id="row4" />
+								<s:ConstraintRow id="row5" />
+								<s:ConstraintRow id="row6" />
+								<s:ConstraintRow id="row7" />
+							</s:constraintRows>
+						</s:ConstraintLayout>
+					</s:layout>
+					<!-- ID -->
+					<s:Label
+						id="lblCmdId"
+						top="row0:0" bottom="row0:0"
+						left="col0:4" right="col0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_id_label')}"
+						visible="{_cmdSelected.isCommand}"
+						includeInLayout="{_cmdSelected.isCommand}"
+						/>
+					<s:CalloutButton
+						id="cbCmdId"
+						top="row0:2" bottom="row0:2"
+						left="col2:0"
+						icon="{IconArrowUp}"
+						label="{_UByteToHexDecLabel(_cmdSelected.id)}"
+						dropDown="{_cfDropDown}"
+						horizontalPosition="start"
+						verticalPosition="start"
+						enabled="{_cmdSelected.isCommand}"
+						visible="{_cmdSelected.isCommand}"
+						includeInLayout="{_cmdSelected.isCommand}"
+						close="_vcCmdsList.refresh()"
+						>
+						<s:HGroup
+							gap="6"
+							verticalAlign="top"
+							>
+							<s:SpinnerListContainer>
+								<s:SpinnerList
+									id="spCmdId"
+									typicalItem="255"
+									labelFunction="_UByteToHexDecLabel"
+									selectedItem="@{_cmdSelected.id}"
+									>
+									<s:dataProvider>
+										<s:NumericDataProvider
+											maximum="{_uIdMax}" minimum="{_uIdMin}" stepSize="1"
+											/>
+									</s:dataProvider>
+								</s:SpinnerList>
+							</s:SpinnerListContainer>
+							<s:Button
+								id="btnCmdIdClose"
+								label="{resourceManager.getString('default','done_btn_label')}"
+								click="cbCmdId.closeDropDown()"
+								/>
+						</s:HGroup>
+					</s:CalloutButton>
+					<!-- Label -->
+					<s:Label
+						id="lblCmdLbl"
+						top="row1:0" bottom="row1:0"
+						left="col0:4" right="col0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_label_label')}"
+						/>
+					<s:TextInput
+						id="tiCmdLbl"
+						top="row1:2" bottom="row1:2"
+						left="col2:0" right="col2:0"
+						text="@{_cmdSelected.label}"
+						returnKeyLabel="done"
+						enter="stage.focus=null"
+						/>
+					<!-- Tip -->
+					<s:Label
+						id="lblCmdTip"
+						top="row2:0" bottom="row2:0"
+						left="col0:4" right="col0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_tip_label')}"
+						/>
+					<s:TextInput
+						id="tiCmdTip"
+						top="row2:2" bottom="row2:2"
+						left="col2:0" right="col2:0"
+						text="@{_cmdSelected.tip}"
+						returnKeyLabel="done"
+						enter="stage.focus=null"
+						/>
+					<!-- Default Value -->
+					<s:Label
+						id="lblCmdVal"
+						top="row3:0" bottom="row3:0"
+						left="col0:4" right="col0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_val_label')}"
+						visible="{_cmdSelected.isCommand}"
+						includeInLayout="{_cmdSelected.isCommand}"
+						/>
+					<s:ToggleSwitch
+						id="tsCmdValBool"
+						top="row3:2" bottom="row3:2"
+						left="col2:0"
+						selected="@{_cmdSelected.defaultValue}"
+						enabled="{_cmdSelected.isBoolean}"
+						visible="{_cmdSelected.isBoolean}"
+						includeInLayout="{_cmdSelected.isBoolean}"
+						/>
+					<s:NumericStepper
+						id="nsCmdValInt"
+						top="row3:2" bottom="row3:2"
+						left="col2:0"
+						value="@{_cmdSelected.defaultValue}"
+						maximum="{_cmdSelected.max}" minimum="{_cmdSelected.min}" snapInterval="{_cmdSelected.step}" stepSize="{_cmdSelected.step}"
+						enabled="{_cmdSelected.isInteger}"
+						visible="{_cmdSelected.isInteger}"
+						includeInLayout="{_cmdSelected.isInteger}"
+						/>
+					<s:CalloutButton
+						id="cbCmdValSel"
+						top="row3:2" bottom="row3:2"
+						left="col2:0"
+						icon="{IconArrowUp}"
+						label="{_OptValueItemLabel(_cmdSelected.defaultValue,_alOptVals)}"
+						dropDown="{_cfDropDown}"
+						horizontalPosition="start"
+						verticalPosition="end"
+						enabled="{_cmdSelected.isSelect}"
+						visible="{_cmdSelected.isSelect}"
+						includeInLayout="{_cmdSelected.isSelect}"
+						>
+						<s:List
+							id="liCmdValSel"
+							dataProvider="{_alOptVals}"
+							requireSelection="true"
+							labelFunction="_OptValueItemLabel"
+							selectedItem="@{_cmdSelected.defaultValue}"
+							click="cbCmdValSel.closeDropDown()"
+							>
+							<s:layout>
+								<s:VerticalLayout
+									gap="0"
+									horizontalAlign="contentJustify"
+									/>
+							</s:layout>
+						</s:List>
+					</s:CalloutButton>
+					<!-- Widget -->
+					<s:Label
+						id="lblCmdWdgt"
+						top="row4:0" bottom="row4:0"
+						left="col0:4" right="col0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_widget_label')}"
+						visible="{_cmdSelected.hasWidgetChoice}"
+						includeInLayout="{_cmdSelected.hasWidgetChoice}"
+						/>
+					<s:CalloutButton
+						id="cbWdgtInt"
+						top="row4:2" bottom="row4:2"
+						left="col2:0"
+						icon="{IconArrowUp}"
+						label="{_alIntegerWidgets.getItemAt(_cmdSelected.widgetIndex)}"
+						dropDown="{_cfDropDown}"
+						horizontalPosition="start"
+						verticalPosition="end"
+						visible="{_cmdSelected.isInteger}"
+						includeInLayout="{_cmdSelected.isInteger}"
+						>
+						<s:List
+							id="liWdgtInt"
+							dataProvider="{_alIntegerWidgets}"
+							requireSelection="true"
+							selectedIndex="@{_cmdSelected.widgetIndex}"
+							click="cbWdgtInt.closeDropDown()"
+							>
+							<s:layout>
+								<s:VerticalLayout
+									gap="0"
+									horizontalAlign="contentJustify"
+									/>
+							</s:layout>
+						</s:List>
+					</s:CalloutButton>
+					<s:CalloutButton
+						id="cbWdgtSel"
+						top="row4:2" bottom="row4:2"
+						left="col2:0"
+						icon="{IconArrowUp}"
+						label="{_alSelectWidgets.getItemAt(_cmdSelected.widgetIndex)}"
+						dropDown="{_cfDropDown}"
+						horizontalPosition="start"
+						verticalPosition="end"
+						visible="{_cmdSelected.isSelect}"
+						includeInLayout="{_cmdSelected.isSelect}"
+						>
+						<s:List
+							id="liWdgtSel"
+							dataProvider="{_alSelectWidgets}"
+							requireSelection="true"
+							selectedIndex="@{_cmdSelected.widgetIndex}"
+							click="cbWdgtSel.closeDropDown()"
+							>
+							<s:layout>
+								<s:VerticalLayout
+									gap="0"
+									horizontalAlign="contentJustify"
+									/>
+							</s:layout>
+						</s:List>
+					</s:CalloutButton>
+					<!-- Max -->
+					<s:Label
+						id="lblCmdMax"
+						top="row5:0" bottom="row5:0"
+						left="col0:4" right="col0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_max_label')}"
+						visible="{_cmdSelected.isInteger}"
+						includeInLayout="{_cmdSelected.isInteger}"
+						/>
+					<s:NumericStepper
+						id="nsCmdMax"
+						top="row5:2" bottom="row5:2"
+						left="col2:0"
+						value="@{_cmdSelected.max}"
+						maximum="{_cmdSelected.maxLimit}" minimum="{_cmdSelected.min}" snapInterval="1" stepSize="1"
+						visible="{_cmdSelected.isInteger}"
+						includeInLayout="{_cmdSelected.isInteger}"
+						/>
+					<!-- Min -->
+					<s:Label
+						id="lblCmdMin"
+						top="row6:0" bottom="row6:0"
+						left="col0:4" right="col0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_min_label')}"
+						visible="{_cmdSelected.isInteger}"
+						includeInLayout="{_cmdSelected.isInteger}"
+						/>
+					<s:NumericStepper
+						id="nsCmdMin"
+						top="row6:2" bottom="row6:2"
+						left="col2:0"
+						value="@{_cmdSelected.min}"
+						maximum="{_cmdSelected.max}" minimum="{_cmdSelected.minLimit}" snapInterval="1" stepSize="1"
+						visible="{_cmdSelected.isInteger}"
+						includeInLayout="{_cmdSelected.isInteger}"
+						/>
+					<!-- Step -->
+					<s:Label
+						id="lblCmdStp"
+						top="row7:0" bottom="row7:0"
+						left="col0:4" right="col0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_step_label')}"
+						visible="{_cmdSelected.isInteger}"
+						includeInLayout="{_cmdSelected.isInteger}"
+						/>
+					<s:NumericStepper
+						id="nsCmdStp"
+						top="row7:2" bottom="row7:2"
+						left="col2:0"
+						value="@{_cmdSelected.step}"
+						maximum="{_cmdSelected.stepLimit}" minimum="1" snapInterval="1" stepSize="1"
+						visible="{_cmdSelected.isInteger}"
+						includeInLayout="{_cmdSelected.isInteger}"
+						/>
+				</s:Group>
+			</s:Scroller>
+		</s:VGroup>
+		<!-- Close button -->
+		<s:Button
+			id="btnCmdClose"
+			top="2" right="2"
+			label="{resourceManager.getString('default','done_btn_label')}"
+			click="_CmdPropsEdit(false)"
+			/>
+	</s:SkinnableContainer>
+	<!-- option props layer -->
+	<s:SkinnableContainer
+		id="scOptProps"
+		styleName="sLogin"
+		left="0" right="0"
+		top="20" bottom="0"
+		visible="{_bOptPropsEdit}"
+		includeInLayout="{_bOptPropsEdit}"
+		>
+		<!-- bgcolor to show relation to options -->
+		<s:Rect
+			left="0" right="0"
+			top="0" bottom="0"
+			>
+			<s:fill>
+				<s:SolidColor color="0x333333" />
+			</s:fill>
+		</s:Rect>
+		<s:VGroup
+			id="gpOptPropsStack"
+			left="2" right="2"
+			top="2" bottom="2"
+			>
+			<!-- Heading -->
+			<s:Label
+				id="lblOptProps"
+				styleName="textConfigGroup"
+				text="{resourceManager.getString('default','custom_opt_props_label')}"
+				/>
+			<!-- Body -->
+			<s:Scroller
+				width="100%"
+				height="100%"
+				>
+				<s:Group
+					id="gpOptProps"
+					>
+					<s:layout>
+						<s:ConstraintLayout>
+							<s:constraintColumns>
+								<s:ConstraintColumn id="ocol0" />
+								<s:ConstraintColumn id="ocol1" width="6" />
+								<s:ConstraintColumn id="ocol2" />
+							</s:constraintColumns>
+							<s:constraintRows>
+								<s:ConstraintRow id="orow0" />
+								<s:ConstraintRow id="orow1" />
+								<s:ConstraintRow id="orow2" />
+							</s:constraintRows>
+						</s:ConstraintLayout>
+					</s:layout>
+					<!-- Opt ID -->
+					<s:Label
+						id="lblOptId"
+						top="orow0:0" bottom="orow0:0"
+						left="ocol0:4" right="ocol0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_opt_id_label')}"
+						/>
+					<s:CalloutButton
+						id="cbOptId"
+						top="orow0:2" bottom="orow0:2"
+						left="ocol2:0"
+						icon="{IconArrowUp}"
+						label="{_UByteToHexDecLabel(_optSelected.id)}"
+						dropDown="{_cfDropDown}"
+						horizontalPosition="start"
+						verticalPosition="start"
+						>
+						<s:HGroup
+							gap="6"
+							verticalAlign="top"
+							>
+							<s:SpinnerListContainer>
+								<s:SpinnerList
+									id="spOptId"
+									typicalItem="255"
+									labelFunction="_UByteToHexDecLabel"
+									selectedItem="@{_optSelected.id}"
+									>
+									<s:dataProvider>
+										<s:NumericDataProvider
+											maximum="255" minimum="0" stepSize="1"
+											/>
+									</s:dataProvider>
+								</s:SpinnerList>
+							</s:SpinnerListContainer>
+							<s:Button
+								id="btnOptIdClose"
+								label="{resourceManager.getString('default','done_btn_label')}"
+								click="cbOptId.closeDropDown()"
+								/>
+						</s:HGroup>
+					</s:CalloutButton>
+					<!--
+					<s:NumericStepper
+						id="nsOptId"
+						top="orow0:2" bottom="orow0:2"
+						left="ocol2:0"
+						value="@{_optSelected.id}"
+						maximum="255" minimum="0" snapInterval="1" stepSize="1"
+						/>
+					-->
+					<!-- Opt Label -->
+					<s:Label
+						id="lblOptLbl"
+						top="orow1:0" bottom="orow1:0"
+						left="ocol0:4" right="ocol0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_opt_label_label')}"
+						/>
+					<s:TextInput
+						id="tiOptLbl"
+						top="orow1:2" bottom="orow1:2"
+						left="ocol2:0" right="ocol2:0"
+						text="@{_optSelected.label}"
+						focusOut="_OptValuesUpdate()"
+						returnKeyLabel="done"
+						enter="stage.focus=null"
+						/>
+					<!-- Opt Tip -->
+					<s:Label
+						id="lblOptTip"
+						top="orow2:0" bottom="orow2:0"
+						left="ocol0:4" right="ocol0:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','custom_cmd_tip_label')}"
+						/>
+					<s:TextInput
+						id="tiOptTip"
+						top="orow2:2" bottom="orow2:2"
+						left="ocol2:0" right="ocol2:0"
+						text="@{_optSelected.tip}"
+						returnKeyLabel="done"
+						enter="stage.focus=null"
+						/>
+				</s:Group>
+			</s:Scroller>
+		</s:VGroup>
+		<!-- Close button -->
+		<s:Button
+			id="btnOptClose"
+			top="2" right="2"
+			label="{resourceManager.getString('default','done_btn_label')}"
+			click="_OptPropsEdit(false)"
+			/>
+	</s:SkinnableContainer>
+</s:SkinnableContainer>

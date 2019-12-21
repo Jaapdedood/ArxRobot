@@ -1,0 +1,12 @@
+package interfaces
+{
+	import flash.utils.ByteArray;
+	import flash.events.IEventDispatcher;
+
+	public interface IArduinoConnector extends IEventDispatcher
+	{
+		function dismiss():void;
+		function init():void;
+		function send(bytes:ByteArray):Boolean;
+	}
+}

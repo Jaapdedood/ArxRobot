@@ -1,0 +1,115 @@
+package utils
+{
+	import com.distriqt.extension.gyroscope.Gyroscope;
+	
+	public class GyroUtil extends NonUIComponentBase
+	{
+		// static constants and properties
+		
+		private static const DISTRIQT_ANE_DEV_KEY:String = '1e89e8495fb41930f708d5bb2a0da10c1ea466e6eL6aPB6BwQNi6DcovNC3t/qvq8TDoDKzMEZBQYtH3OIXtHAqpuDY7epxHUVQoB96hYCMzrCaD76HISnpXvMuxA==';
+		private static var __instance:GyroUtil;
+		
+		
+		// constructor and instance
+		
+		/**
+		 * @return singleton instance of GyroUtil
+		 */
+		public static function get instance ( ) : GyroUtil
+		{
+			if ( !__instance )
+			{
+				__instance = new GyroUtil ( new SingletonEnforcer() );
+			}
+			return __instance;
+		}
+		
+		/**
+		 * Singleton: use static property <em>instance</em> to access singleton instance, then add listeners to Compass service via instance.service.
+		 */	
+		public function GyroUtil ( enforcer:SingletonEnforcer )
+		{
+			super();
+			try
+			{
+				Gyroscope.init ( DISTRIQT_ANE_DEV_KEY );
+				if ( !Gyroscope.isSupported )
+				{
+					debugOut ( 'error_gyro_support', true );
+				}
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_gyro_init', true, [ err.message ] );
+			}
+			
+		}
+		
+		
+		// public properties and get/set methods
+		
+		public function get isAdvancedDataSupported ( ) : Boolean
+		{
+			return Gyroscope.isAdvancedDataSupported;
+		}
+		
+		public function get isRegistered ( ) : Boolean
+		{
+			return _bRegistered;
+		}
+		
+		public function get isSupported ( ) : Boolean
+		{
+			return Gyroscope.isSupported;
+		}
+		
+		public function get service ( ) : Gyroscope
+		{
+			return Gyroscope.service;
+		}
+		
+		// other public methods
+		
+		public function register ( ) : void
+		{
+			_Register ( true );
+		}
+		
+		public function unregister ( ) : void
+		{
+			_Register ( false );
+		}
+		
+		// private properties
+		
+		private var _bRegistered:Boolean = false;
+		
+		
+		// private methods
+		
+		private function _Register ( on:Boolean ) : void
+		{
+			if ( !Gyroscope.isSupported || on == _bRegistered )
+				return;
+			
+			try
+			{
+				if ( on )
+				{
+					Gyroscope.service.register ( Gyroscope.SENSOR_DELAY_NORMAL );
+				}
+				else
+				{
+					Gyroscope.service.unregister ( );
+				}
+				_bRegistered = on;
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_gyro_reg', true, [ err.message ] );
+			}
+		}
+		
+	}
+}
+class SingletonEnforcer {}

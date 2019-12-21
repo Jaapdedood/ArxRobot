@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	removedFromStage="_Dismiss()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.MotionManager;
+			
+			import icons.IconMotion0;
+			import icons.IconMotion1;
+			import icons.IconMotion2;
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _motMgr:MotionManager;
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( !_bInited )
+					return;
+				
+				_bInited = false;
+				_motMgr = null;
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+					return;
+				
+				_bInited = true;
+				_motMgr = MotionManager.instance;
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				cb.dropDown = cf;
+			}
+			
+			private function _Select ( mode:uint ) : void
+			{
+				_motMgr.controlMode = mode;
+				cb.closeDropDown ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:CalloutButton
+		id="cb"
+		styleName="nav"
+		icon="{_motMgr.controlIcon}"
+		>
+		<s:VGroup
+			width="100%"
+			gap="8"
+			horizontalAlign="contentJustify"
+			>
+			<s:Label
+				 styleName="textSubhead"
+				 width="100%" textAlign="center"
+				 text="{resourceManager.getString('default','control_mode_label')}"
+				 />
+			<s:Button
+				styleName="list"
+				icon="{IconMotion0}"
+				click="_Select(0)"
+				label="{resourceManager.getString('default','control_mode_0_btn_label')}"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconMotion1}"
+				click="_Select(1)"
+				label="{resourceManager.getString('default','control_mode_1_btn_label')}"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconMotion2}"
+				click="_Select(2)"
+				label="{resourceManager.getString('default','control_mode_2_btn_label')}"
+				enabled="false"
+				/>
+		</s:VGroup>
+	</s:CalloutButton>
+</s:Group>

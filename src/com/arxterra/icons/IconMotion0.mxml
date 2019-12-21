@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	width="48" height="48"
+	>
+	<!-- Tank Drive Sliders -->
+	<s:Path
+		winding="nonZero"
+		data="M8 0C3.58154 0 0 3.58154 0 8L0 40C0 44.418 3.58154 48 8 48 12.4185 48 16 44.418 16 40L16 8C16 3.58154 12.4185 0 8 0ZM8 31C4.13379 31 1 27.8662 1 24 1 20.1338 4.13379 17 8 17 11.8662 17 15 20.1338 15 24 15 27.8662 11.8662 31 8 31Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="32" winding="nonZero"
+		data="M8 0C3.58203 0 0 3.58154 0 8L0 40C0 44.418 3.58203 48 8 48 12.418 48 16 44.418 16 40L16 8C16 3.58154 12.418 0 8 0ZM8 31C4.13379 31 1 27.8662 1 24 1 20.1338 4.13379 17 8 17 11.8662 17 15 20.1338 15 24 15 27.8662 11.8662 31 8 31Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+</icons:ColorizedIconBase>

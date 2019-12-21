@@ -1,0 +1,67 @@
+package vo
+{
+	import flash.utils.ByteArray;
+	
+	/**
+	 * Used to send current latitude/longitude to Arduino.
+	 * Note: Superclass implements IExternalizable.
+	 */
+	public class CurrentCoordinates extends ArduinoCommand
+	{
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		/**
+		 * Latitude
+		 */
+		public function get latitude ( ) : Number
+		{
+			return getFloatAt ( 1 );
+		}
+		public function set latitude ( value:Number ) : void
+		{
+			setFloatAt ( value, 1 );
+		}
+		
+		/**
+		 * Longitude
+		 */
+		public function get longitude ( ) : Number
+		{
+			return getFloatAt ( 5 );
+		}
+		public function set longitude ( value:Number ) : void
+		{
+			setFloatAt ( value, 5 );
+		}
+		
+		// CONSTRUCTOR
+		
+		/**
+		 * Call static method <strong>newFromParameters</strong> or <strong>newFromSFSObject</strong>, as appropriate
+		 * @param commandBytes
+		 */		
+		public function CurrentCoordinates ( commandBytes:ByteArray = null )
+		{
+			super ( commandBytes );
+		}
+		
+		// PUBLIC STATIC METHODS
+		
+		/**
+		 * @param latitude
+		 * @param longitude
+		 */
+		public static function NewFromParameters (
+			latitude:Number = 0,
+			longitude:Number = 0
+		) : CurrentCoordinates
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( CURRENT_COORD );
+			ba.writeFloat ( latitude );
+			ba.writeFloat ( longitude );
+			return new CurrentCoordinates ( ba );
+		}
+		
+	}
+}

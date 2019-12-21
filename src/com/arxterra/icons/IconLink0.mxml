@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	width="40" height="40"
+	>
+	<s:Path
+		y="17.5772" winding="nonZero"
+		data="M18.2556 8.56143C18.1902 9.52628 17.8074 10.474 17.0715 11.2099L11.2136 17.0678C9.59839 18.6825 6.97046 18.6825 5.35571 17.0678 3.74097 15.453 3.74097 12.8251 5.35571 11.2099L11.2136 5.35196C11.9495 4.61612 12.8972 4.23331 13.8621 4.16788L17.3743
+		0.656158C14.3586 -0.620697 10.7424 -0.0347595 8.28491 2.42325L2.42651 8.28116C-0.808838 11.5165 -0.808838 16.7611 2.42651 19.997 5.66235 23.2323 10.907 23.2323 14.1423 19.997L20.0002 14.1386C22.4583 11.6811 23.0442 8.06485 21.7673 5.04922L18.2556
+		8.56143Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="17.5772" winding="nonZero"
+		data="M8.56143 18.2556C9.52628 18.1902 10.474 17.8074 11.2099 17.071L17.0678 11.2136C18.6825 9.59839 18.6825 6.97046 17.0678 5.35571 15.453 3.74097 12.8251 3.74097 11.2099 5.35571L5.35196 11.2136C4.61612 11.9495 4.23331 12.8972 4.16788 13.8621L0.656158
+		17.3743C-0.620697 14.3586 -0.0347595 10.7424 2.42325 8.28491L8.28116 2.42651C11.5165 -0.808838 16.7611 -0.808838 19.997 2.42651 23.2323 5.66235 23.2323 10.907 19.997 14.1423L14.1386 20.0002C11.6811 22.4583 8.06485 23.0442 5.04922 21.7673L8.56143
+		18.2556Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Rect
+		rotation="315" x="25.4542" y="26.1815" width="1.02821" height="12.3409"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		rotation="315" x="5.09314" y="5.82043" width="1.0289" height="12.3409"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		rotation="345" x="22.1653" y="30.0668" width="1.0282" height="10.2841"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		rotation="345" x="14.1816" y="0.26634" width="1.02914" height="10.2839"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		rotation="285" x="29.8008" y="23.1589" width="1.0282" height="10.2839"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		rotation="285" y="15.1753" width="1.02914" height="10.2839"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+</icons:ColorizedIconBase>

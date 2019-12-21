@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:comp="components.*"
+	creationComplete="_CreationCompleted()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.SessionManager;
+			
+			import events.StatusDataEvent;
+			
+			import vo.StatusData;
+			
+			private var _tmr:Timer;
+			
+			private function _CreationCompleted ( ) : void
+			{
+				_tmr = new Timer ( 10000, 1 );
+				_tmr.addEventListener ( TimerEvent.TIMER, _TimeExpired );
+				SessionManager.instance.addEventListener ( StatusDataEvent.STATUS_BG_MESSAGE, _StatusBg );
+				SessionManager.instance.addEventListener ( StatusDataEvent.STATUS_DATA_MESSAGE, _StatusUpdate );
+			}
+			
+			// event with statusData loads background label, and
+			// keeps status bar visible regardless of timer
+			// until canceled by another event with statusData null 
+			private function _StatusBg ( event:StatusDataEvent ) : void
+			{
+				var statusData:StatusData = event.statusData;
+				var bData:Boolean = ( statusData != null );
+				if ( bData )
+				{
+					lblBg.text = statusData.label;
+				}
+				lblBg.visible = bData;
+				lblBg.includeInLayout = bData;
+			}
+			
+			private function _StatusUpdate ( event:StatusDataEvent ) : void
+			{
+				var statusData:StatusData = event.statusData;
+				gpIcon.removeAllElements ( );
+				var bData:Boolean = ( statusData != null );
+				if ( bData )
+				{
+					var clas:Class = statusData.icon;
+					var bIcon:Boolean = ( clas != null );
+					if ( bIcon )
+					{
+						var gp:Group = new clas ( );
+						gpIcon.addElement ( gp );
+					}
+					gpIcon.visible = bIcon;
+					gpIcon.includeInLayout = bIcon;
+					lbl.text = statusData.label;
+					_TimerStart ( );
+				}
+				else
+				{
+					_TimerStop ( );
+				}
+				gpTimed.visible = bData;
+				gpTimed.includeInLayout = bData;
+			}
+			
+			private function _TimeExpired ( event:TimerEvent ) : void
+			{
+				gpTimed.visible = false;
+				gpTimed.includeInLayout = false;
+			}
+			
+			private function _TimerStart ( ) : void
+			{
+				_tmr.reset ( );
+				_tmr.start ( );
+			}
+			
+			private function _TimerStop ( ) : void
+			{
+				_tmr.stop ( );
+			}
+		]]>
+	</fx:Script>
+	<s:Rect
+		width="100%" height="100%"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{getStyle('chromeColor')}" alpha="0.8"
+				/>
+		</s:fill>
+	</s:Rect>
+	<s:Label
+		id="lblBg"
+		left="4" right="4"
+		top="4" height="100%"
+		textAlign="right"
+		styleName="colorNegative"
+		maxDisplayedLines="-1"
+		visible="false"
+		includeInLayout="false"
+		/>
+	<s:HGroup
+		id="gpTimed"
+		width="{width}" height="100%"
+		gap="4" verticalAlign="top"
+		paddingLeft="4" paddingRight="4"
+		paddingTop="4" paddingBottom="4"
+		visible="false"
+		includeInLayout="false"
+		>
+		<s:Group
+			id="gpIcon"
+			>
+		</s:Group>
+		<s:Label
+			id="lbl"
+			width="100%" height="100%"
+			maxDisplayedLines="-1"
+			/>
+	</s:HGroup>
+</s:Group>

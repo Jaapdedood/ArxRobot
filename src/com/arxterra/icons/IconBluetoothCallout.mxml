@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	>
+	<s:Path
+		y="4" winding="nonZero"
+		data="M9.54492 16 0 2 0 0 21 0 21 2 11.4541 16 9.54492 16Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="25" winding="nonZero"
+		data="M9.28564 24 9.28564 13.6113 0.866211 18.2627 0 16.5264 8.19092 12 0 7.47363 0.866211 5.73682 9.28564 10.3896 9.28564 0 21 7.13721 12.1982 12 21 16.8613 9.28564 24ZM11.1494 13.6348 11.1494 20.5977 17.1406 16.9463 11.1494 13.6348ZM11.1494 3.40234
+		11.1494 10.3652 17.1406 7.05371 11.1494 3.40234Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+</icons:ColorizedIconBase>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:CalloutButton
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	styleName="nav"
+	icon="{IconCog}"
+	includeInLayout="{_sessionMgr.opMode==OpModes.CS}"
+	visible="{_sessionMgr.opMode==OpModes.CS}"
+	close="_Closed()"
+	horizontalPosition="middle"
+	verticalPosition="after"
+	addedToStage="_AddedToStage()"
+	creationComplete="_CreationComplete()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.icons.IconCog;
+			import com.arxterra.vo.OpModes;
+			
+			private var _bInited:Boolean = false;
+			private var _fCall:Function;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _AddedToStage ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _Closed ( ) : void
+			{
+				if ( _fCall != null )
+				{
+					callLater ( _fCall );
+					_fCall = null;
+				}
+			}
+			
+			private function _CreationComplete ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					_sessionMgr = SessionManager.instance;
+					var cf:ClassFactory = new ClassFactory ( com.arxterra.components.ThinCallout );
+					cf.properties = { styleName: 'thinCallout' };
+					dropDown = cf;
+				}
+			}
+			
+			private function _LoginConfig ( ) : void
+			{
+				_sessionMgr.viewStatePush ( 'login_config_cs' );
+			}
+			
+			private function _MenuCall ( funct:Function ) : void
+			{
+				_fCall = funct;
+				closeDropDown ( );
+			}
+			
+			private function _ServerConfig ( ) : void
+			{
+				_sessionMgr.viewStatePush ( 'connect_config_cs' );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:Scroller
+		width="100%"
+		height="100%"
+		>
+		<s:VGroup
+			width="100%"
+			gap="8"
+			horizontalAlign="contentJustify"
+			>
+			<s:Button
+				styleName="list"
+				label="{resourceManager.getString('default','sfs_connect_config_btn_label')}"
+				click="_MenuCall(_ServerConfig)"
+				/>
+			<s:Button
+				styleName="list"
+				label="{resourceManager.getString('default','login_config_btn_label')}"
+				click="_MenuCall(_LoginConfig)"
+				/>
+		</s:VGroup>
+	</s:Scroller>
+	
+</s:CalloutButton>

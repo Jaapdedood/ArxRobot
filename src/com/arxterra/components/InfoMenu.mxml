@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:CalloutButton
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	styleName="nav"
+	icon="{IconInfo}"
+	close="_Closed()"
+	horizontalPosition="middle"
+	verticalPosition="after"
+	addedToStage="_AddedToStage()"
+	creationComplete="_CreationComplete()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.utils.Web;
+			import com.arxterra.icons.IconInfo;
+			import com.arxterra.controllers.SessionManager;
+			
+			private var _bInited:Boolean = false;
+			private var _fCall:Function;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _AddedToStage ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _BugReport ( ) : void
+			{
+				Web.getURL( 'mailto:jeff@aosaimage.com?subject=ArxRobot Test Report' );
+			}
+			
+			private function _Closed ( ) : void
+			{
+				if ( _fCall != null )
+				{
+					callLater ( _fCall );
+					_fCall = null;
+				}
+			}
+			
+			private function _CreationComplete ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					_sessionMgr = SessionManager.instance;
+					var cf:ClassFactory = new ClassFactory ( com.arxterra.components.ThinCallout );
+					cf.properties = { styleName: 'thinCallout' };
+					dropDown = cf;
+				}
+			}
+			
+			private function _PrivacyPolicy ( ) : void
+			{
+				Web.getURL ( 'https://www.arxterra.com/about-us/privacy-policy/' );
+			}
+			
+			private function _DataPolicy ( ) : void
+			{
+				Web.getURL ( 'https://www.arxterra.com/about-us/user-data-policy/' );
+			}
+			
+			private function _MenuCall ( funct:Function ) : void
+			{
+				_fCall = funct;
+				closeDropDown ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:Scroller
+		width="100%"
+		height="100%"
+		>
+		<s:VGroup
+			width="100%"
+			gap="8"
+			horizontalAlign="contentJustify"
+			>
+			<s:Button
+				styleName="list"
+				label="{resourceManager.getString('default','info_bug_rep_label')}"
+				click="_MenuCall(_BugReport)"
+				/>
+			<s:Button
+				styleName="list"
+				label="{resourceManager.getString('default','info_priv_pol_label')}"
+				click="_MenuCall(_PrivacyPolicy)"
+				/>
+			<s:Button
+				styleName="list"
+				label="{resourceManager.getString('default','info_data_pol_label')}"
+				click="_MenuCall(_DataPolicy)"
+				/>
+		</s:VGroup>
+	</s:Scroller>
+	
+</s:CalloutButton>

@@ -1,0 +1,318 @@
+package vo
+{
+	import controllers.MotionManager;
+
+	/**
+	 * Used by MotionManager to abstract an individual Robot
+	 * motor's run state and speed settings.
+	 */	
+	public class Motor
+	{
+		// CONSTANTS
+		
+		public static const LEVEL_LIMIT_DEFAULT:int = MotionManager.SMALL_STEPS_PER_FULL_STEP * MotionManager.FULL_STEPS_DEFAULT;
+		public static const LEVEL_LIMIT_MAX:int = MotionManager.SMALL_STEPS_PER_FULL_STEP * MotionManager.FULL_STEPS_MAX;
+		public static const LEVEL_LIMIT_MIN:int = MotionManager.SMALL_STEPS_PER_FULL_STEP * MotionManager.FULL_STEPS_MIN;
+		
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		/**
+		 * Speed as approximate fraction of maximum,
+		 * for use by graphical display components
+		 */
+		public function get fractionSpeed ( ) : Number
+		{
+			return ( 1 + _iLevelIdx ) / _nFractDiv;
+		}
+		
+		/**
+		 * State and speed as approximate fraction of maximum,
+		 * for use by graphical display components. Range -1.0 to 1.0.
+		 * <ul><li>RELEASE or BRAKE = 0</li>
+		 * <li>FORWARD &gt; 0</li>
+		 * <li>BACKWARD &lt; 0</li></ul>
+		 */
+		public function get fractionSpeedSigned ( ) : Number
+		{
+			if ( _uState == MotorStates.FORWARD )
+				return ( 1 + _iLevelIdx ) / _nFractDiv;
+			
+			if ( _uState == MotorStates.BACKWARD )
+				return -( 1 + _iLevelIdx ) / _nFractDiv;
+			
+			return 0;
+		}
+		
+		// levelIndex
+		private var _iLevelIdx:int = 0;
+		/**
+		 * Motor speed index on scale from 0 to levelLimit
+		 */
+		public function get levelIndex():int
+		{
+			return _iLevelIdx;
+		}
+		/**
+		 * @private
+		 */
+		public function set levelIndex(value:int):void
+		{
+			var iIdx:int;
+			if ( value < 0 )
+			{
+				iIdx = 0;
+			}
+			else if ( value > _iLevelLim )
+			{
+				iIdx = _iLevelLim;
+			}
+			else
+			{
+				iIdx = value;
+			}
+			
+			if ( iIdx != _iLevelIdx )
+			{
+				_iLevelIdx = iIdx;
+				_uSpeed = Math.round ( _nLevelDCs * _iLevelIdx );
+			}
+		}
+		
+		// levelLimit
+		private var _iLevelLim:int = LEVEL_LIMIT_DEFAULT;
+		/**
+		 * Number of motor speed steps, indirectly set by pilot
+		 * adjusting MotionManager fullSteps
+		 */
+		public function get levelLimit():int
+		{
+			return _iLevelLim;
+		}
+		/**
+		 * @private
+		 */
+		public function set levelLimit(value:int):void
+		{
+			var iVal:int;
+			if ( value > LEVEL_LIMIT_MAX )
+			{
+				iVal = LEVEL_LIMIT_MAX;
+			}
+			else if ( value < LEVEL_LIMIT_MIN )
+			{
+				iVal = LEVEL_LIMIT_MIN;
+			}
+			else
+			{
+				iVal = value;
+			}
+			
+			if ( iVal != _iLevelLim )
+			{
+				var iSpeedSaved:int = Math.round ( _nLevelDCs * _iLevelIdxCruise ); // temp convert to dc
+				_iLevelLim = iVal;
+				_nFractDiv = 1 + _iLevelLim;
+				_nLevelDCs = ( 255 / _iLevelLim );
+				// adjust level indices and speed to closest values on new scale
+				_iLevelIdx = Math.round ( _uSpeed / _nLevelDCs );
+				_iLevelIdxCruise = Math.round ( iSpeedSaved / _nLevelDCs );
+				_uSpeed = Math.round ( _nLevelDCs * _iLevelIdx );
+			}
+			
+		}
+		
+		/**
+		 * Speed as approximate percentage of maximum,
+		 * for use by graphical display components
+		 */
+		public function get percentSpeed ( ) : Number
+		{
+			return 100 * fractionSpeed;
+		}
+		
+		/**
+		 * State and speed as approximate percentage of maximum,
+		 * for use by graphical display components. Range -100 to 100.
+		 * <ul><li>RELEASE or BRAKE = 0</li>
+		 * <li>FORWARD &gt; 0</li>
+		 * <li>BACKWARD &lt; 0</li></ul>
+		 */
+		public function get percentSpeedSigned ( ) : Number
+		{
+			return 100 * fractionSpeedSigned;
+		}
+		
+		// speed
+		private var _uSpeed:uint = 0;
+		/**
+		 * Duty cycle in range from 0 to 255
+		 */
+		public function get speed():uint
+		{
+			return _uSpeed;
+		}
+		private function set speed(value:uint):void
+		{
+			_uSpeed = value;
+		}
+		
+		// state
+		private var _uState:uint = MotorStates.RELEASE;
+		/**
+		 * Use MotorStates constants to supply value in range from 1 to 4
+		 */
+		public function get state():uint
+		{
+			return _uState;
+		}
+		/**
+		 * @private
+		 */
+		public function set state(value:uint):void
+		{
+			// should be validated elsewhere
+			_uState = value;
+		}
+		
+		// PUBLIC METHODS
+		
+		// constructor
+		
+		public function Motor()
+		{
+		}
+		
+		// other public methods
+		
+		/**
+		 * @param levels Level indices by which to increase speed
+		 * @param levelIndexMax Maximum level index
+		 * @return Resulting level index
+		 */
+		public function accelerate ( levels:int, levelIndexMax:int ) : int
+		{
+			var iIdx:int = _iLevelIdx + levels;
+			if ( iIdx > levelIndexMax )
+			{
+				iIdx = levelIndexMax;
+			}
+			if ( iIdx != _iLevelIdx )
+			{
+				_iLevelIdx = iIdx;
+				_uSpeed = Math.round ( _nLevelDCs * _iLevelIdx );
+			}
+			return _iLevelIdx;
+		}
+		
+		public function backward ( index:int = -1 ) : void
+		{
+			state = MotorStates.BACKWARD;
+			if ( index >= 0 )
+				levelIndex = index;
+		}
+		
+		public function brake ( ) : void
+		{
+			state = MotorStates.BRAKE;
+			levelIndex = 0;
+		}
+		
+		/**
+		 * Resumes the previously stored speed
+		 */
+		public function cruiseResume ( ) : void
+		{
+			levelIndex = _iLevelIdxCruise;
+		}
+		
+		/**
+		 * Stores the current speed to be resumed later
+		 */
+		public function cruiseStore ( ) : void
+		{
+			_iLevelIdxCruise = _iLevelIdx;
+		}
+		
+		/**
+		 * @param levels Level indices by which to decrease speed
+		 * @param levelIndexMin Minimum level index
+		 * @return Resulting level index
+		 */
+		public function decelerate ( levels:int, levelIndexMin:int ) : int
+		{
+			var iIdx:int = _iLevelIdx - levels;
+			if ( iIdx < levelIndexMin )
+			{
+				iIdx = levelIndexMin;
+			}
+			
+			if ( iIdx != _iLevelIdx )
+			{
+				_iLevelIdx = iIdx;
+				_uSpeed = Math.round ( _nLevelDCs * _iLevelIdx );
+			}
+			return _iLevelIdx;
+		}
+		
+		public function forward ( index:int = -1 ) : void
+		{
+			state = MotorStates.FORWARD;
+			if ( index >= 0 )
+				levelIndex = index;
+		}
+		
+		/**
+		 * Sets state and levelIndex nearest value. Returns true if either changed.
+		 * @param value Number in range from -1.0 to 1.0
+		 */
+		public function fractionSpeedSignedSet ( value:Number ) : Boolean
+		{
+			var bChng:Boolean = false;
+			var uStat:uint = MotorStates.RELEASE;
+			var iIdx:int = 0;
+			if ( value > 0 )
+			{
+				if ( value > 1 )
+				{
+					value = 1;
+				}
+				uStat = MotorStates.FORWARD;
+				iIdx = value * _nFractDiv - 1;
+			}
+			else if ( value < 0 )
+			{
+				if ( value < -1 )
+				{
+					value = -1;
+				}
+				uStat = MotorStates.BACKWARD;
+				iIdx = -value * _nFractDiv - 1;
+			}
+			if ( uStat != _uState )
+			{
+				bChng = true;
+				_uState = uStat;
+			}
+			if ( iIdx != _iLevelIdx )
+			{
+				bChng = true;
+				_iLevelIdx = iIdx;
+				_uSpeed = Math.round ( _nLevelDCs * _iLevelIdx );
+			}
+			return bChng;
+		}
+		
+		public function release ( ) : void
+		{
+			state = MotorStates.RELEASE;
+			levelIndex = 0;
+		}
+		
+		// PRIVATE PROPERTIES
+		
+		private var _iLevelIdxCruise:int;
+		private var _nFractDiv:Number = 1 + LEVEL_LIMIT_DEFAULT;
+		private var _nLevelDCs:Number = 255 / LEVEL_LIMIT_DEFAULT;
+	}
+}

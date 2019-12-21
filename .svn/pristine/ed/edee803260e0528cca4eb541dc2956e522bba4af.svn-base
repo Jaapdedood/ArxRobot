@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Button
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	label="{resourceManager.getString('default','help_symbol')}"
+	click="_Clicked()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import mx.core.FlexGlobals;
+			
+			import org.osmf.layout.HorizontalAlign;
+			import org.osmf.layout.VerticalAlign;
+			
+			import spark.events.PopUpEvent;
+			
+			public var resourceNameOrText:String = '';
+			public var resourceParams:Array = [];
+			
+			[Inspectable (defaultValue="right", enumeration="center,left,right")]
+			public var buttonPinHorizontal:String = HorizontalAlign.RIGHT;
+			[Inspectable (defaultValue="bottom", enumeration="bottom,middle,top")]
+			public var buttonPinVertical:String = VerticalAlign.BOTTOM;
+			
+			[Inspectable (defaultValue="right", enumeration="center,left,right")]
+			public var popupPinHorizontal:String = HorizontalAlign.RIGHT;
+			[Inspectable (defaultValue="top", enumeration="bottom,middle,top")]
+			public var popupPinVertical:String = VerticalAlign.TOP;
+			
+			private var _Tip:Tip;
+			
+			private function _Clicked ( ) : void
+			{
+				if ( !_TipDismiss ( ) )
+				{
+					_TipShow ( );
+				}
+			}
+			
+			private function _TipClosed ( event:PopUpEvent ) : void
+			{
+				_TipDismiss ( );
+			}
+			
+			private function _TipDismiss ( ) : Boolean
+			{
+				if ( _Tip == null )
+					return false;
+				
+				_Tip.removeEventListener ( PopUpEvent.CLOSE, _TipClosed );
+				_Tip.close ( );
+				_Tip = null;
+				return true;
+			}
+			/*
+			private function _TipPositioner ( tipWidth:Number, tipHeight:Number ) : Point
+			{
+				var pt:Point = localToGlobal ( new Point ( ) );
+				var nX:Number = pt.x / scaleX;
+				var nY:Number = pt.y / scaleY;
+				return new Point ( nX + unscaledWidth - tipWidth, nY + unscaledHeight );
+			}
+			*/
+			private function _TipShow ( ) : void
+			{
+				_Tip = new Tip ( );
+				_Tip.addEventListener ( PopUpEvent.CLOSE, _TipClosed );
+				_Tip.mInitialize (
+					resourceNameOrText,
+					resourceParams,
+					new <String> [ popupPinHorizontal, popupPinVertical ],
+					new <String> [ buttonPinHorizontal, buttonPinVertical ]
+				);
+				_Tip.open ( this );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</s:Button>

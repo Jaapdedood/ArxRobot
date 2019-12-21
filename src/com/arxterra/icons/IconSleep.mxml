@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	width="16" height="16"
+	scaleX="3.5" scaleY="3.5"
+	>
+	<s:Ellipse
+		width="16" height="16"
+		>
+		<s:fill>
+			<s:RadialGradient>
+				<s:GradientEntry color="{symbolColor}" />
+				<s:GradientEntry color="{symbolColor}" alpha="0.2" />
+			</s:RadialGradient>
+		</s:fill>
+	</s:Ellipse>
+	<s:Path
+		x="7.25" y="1.5" winding="nonZero"
+		data="M0.75 4C0.335938 4 0 3.66406 0 3.25L0 0.75C0 0.335938 0.335938 0 0.75 0 1.16406 0 1.5 0.335938 1.5 0.75L1.5 3.25C1.5 3.66406 1.16406 4 0.75 4Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="2" y="2.94178" winding="nonZero"
+		data="M6 11.0582C2.69141 11.0582 0 8.36682 0 5.05822 0 3.09875 0.960938 1.25793 2.57031 0.134394 2.91064 -0.100957 3.37695 -0.0194144 3.61475 0.320429 3.85156 0.659785 3.76855 1.12756 3.42871 1.36486 2.22119 2.20764 1.5 3.5885 1.5 5.05822 1.5 7.53967
+		3.51855 9.55822 6 9.55822 8.48145 9.55822 10.5 7.53967 10.5 5.05822 10.5 3.58801 9.7793 2.20764 8.57227 1.36584 8.23242 1.12902 8.14844 0.66125 8.38574 0.321406 8.62207 -0.0174613 9.08789 -0.102911 9.42969 0.135371 11.0391 1.25793 12 3.09826
+		12 5.05822 12 8.36682 9.30859 11.0582 6 11.0582Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+</icons:ColorizedIconBase>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	addedToStage="_AddedToStage()"
+	creationComplete="_CreationComplete()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.SessionManager;
+			
+			import icons.IconCog;
+			
+			import vo.OpModes;
+			
+			private var _bInited:Boolean = false;
+			private var _fCall:Function;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _AddedToStage ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _Closed ( ) : void
+			{
+				if ( _fCall != null )
+				{
+					callLater ( _fCall );
+					_fCall = null;
+				}
+			}
+			
+			private function _CreationComplete ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _CustomConfig ( ) : void
+			{
+				_sessionMgr.customConfigOpen ( );
+			}
+			
+			private function _EepromConfig ( ) : void
+			{
+				_sessionMgr.eepromConfigOpen ( );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					_sessionMgr = SessionManager.instance;
+					var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+					cf.properties = { styleName: 'thinCallout' };
+					cb.dropDown = cf;
+				}
+			}
+			
+			private function _MenuCall ( funct:Function ) : void
+			{
+				_fCall = funct;
+				cb.closeDropDown ( );
+			}
+			
+			/*
+			private function _Opened ( ) : void
+			{
+			}
+			*/
+			
+			private function _PhoneConfig ( ) : void
+			{
+				_sessionMgr.phoneConfigOpen ( );
+			}
+			
+			private function _ServerConfig ( ) : void
+			{
+				_sessionMgr.viewStatePush ( 'connect_prompt_cs' );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:CalloutButton
+		id="cb"
+		styleName="nav"
+		icon="{IconCog}"
+		close="_Closed()"
+		>
+		<s:VGroup
+			width="100%"
+			gap="8"
+			horizontalAlign="contentJustify"
+			>
+			<s:Button
+				label="{resourceManager.getString('default','phone_cfg_btn_label')}"
+				click="_MenuCall(_PhoneConfig)"
+				/>
+			<s:Button
+				label="{resourceManager.getString('default','sfs_connect_config_btn_label')}"
+				click="_MenuCall(_ServerConfig)"
+				enabled="{_sessionMgr.opMode==OpModes.CS}"
+				/>
+			<s:Button
+				label="{resourceManager.getString('default','caps_cfg_btn_label')}"
+				click="_MenuCall(_EepromConfig)"
+				enabled="{_sessionMgr.expertModeOn}"
+				/>
+			<s:Button
+				label="{resourceManager.getString('default','custom_cmd_cfg_btn_label')}"
+				click="_MenuCall(_CustomConfig)"
+				enabled="{_sessionMgr.expertModeOn}"
+				/>
+		</s:VGroup>
+	</s:CalloutButton>
+	
+</s:Group>

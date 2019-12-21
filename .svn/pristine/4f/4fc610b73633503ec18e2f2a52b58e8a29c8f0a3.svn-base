@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	autoDrawBackground="false"
+	width="100%"
+	>
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="down" />
+	</s:states>
+	<s:Rect
+		left="1" right="1"
+		top="1" bottom="1"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="0xcccccc"
+				alpha="0"
+				alpha.down="1"
+				/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="0x999999"
+				/>
+		</s:stroke>
+	</s:Rect>
+	<s:Label
+		id="labelDisplay"
+		styleName="tileItemLabel"
+		width="100%"
+		maxDisplayedLines="1"
+		color="0xffffff"
+		color.down="0x000000"
+		/>
+</s:ItemRenderer>

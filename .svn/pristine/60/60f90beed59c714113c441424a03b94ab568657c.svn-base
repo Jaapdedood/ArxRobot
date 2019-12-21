@@ -1,0 +1,240 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace comp "components.*";
+
+/*
+//------------------------------
+//  Global and Global Classes
+//------------------------------
+*/
+
+global
+{
+	chromeColor: #364c61;
+	color: #eeeeee;
+	focusAlpha: 0.3;
+	focusThickness: 1;
+	fontFamily: _sans;
+	fontSize: 14;
+	symbolColor: #000000;
+	accentColor: #cc6600;
+	downColor: #2b3c4d;
+	rollOverColor: #663300;
+	selectionColor: #cc6600;
+	focusedTextSelectionColor: #cc6600;
+}
+
+.colorAccent
+{
+	color: #cc6600;
+}
+
+.colorHead
+{
+	color: #999999;
+}
+
+.colorLight
+{
+	color: #cccccc;
+}
+
+.colorNegative
+{
+	color: #000000;
+}
+
+.colorPositive
+{
+	color: #ffffff;
+}
+
+.textBold
+{
+	fontWeight: bold;
+}
+
+.textHead
+{
+	fontSize: 18;
+	fontWeight: bold;
+}
+
+.textLarge
+{
+	fontSize: 18;
+}
+
+.textPlain
+{
+	fontWeight: normal;
+}
+
+.textSmall
+{
+	fontSize: 12;
+}
+
+.textSubhead
+{
+	fontSize: 16;
+	fontWeight: bold;
+}
+
+.textSubheadPlain
+{
+	fontSize: 16;
+}
+
+.thinCallout
+{
+	skinClass: ClassReference("skins.ThinCalloutSkin");
+	backgroundColor: #000000;
+	backgroundAlpha: 1;
+	borderColor: #666666;
+	contentBackgroundAppearance: none;
+}
+
+.tip
+{
+	skinClass: ClassReference("skins.TipSkin");
+	backgroundColor: #000000;
+	backgroundAlpha: 0.6;
+	borderColor: #666666;
+}
+
+/*
+//------------------------------
+//  Components
+//------------------------------
+*/
+
+
+comp|HelpLabel
+{
+	backgroundColor: #999999;
+	backgroundAlpha: 1;
+	color: #000000;
+	fontSize: 18;
+	fontWeight: bold;
+	paddingBottom: 8;
+	paddingLeft: 8;
+	paddingRight: 8;
+	paddingTop: 8;
+}
+
+comp|ThinCallout
+{
+	skinClass: ClassReference("skins.ThinCalloutSkin");
+	backgroundColor: #000000;
+	borderColor: #666666;
+	contentBackgroundAppearance: none;
+}
+
+comp|Tip
+{
+	skinClass: ClassReference("skins.TipSkin");
+	backgroundColor: #000000;
+	backgroundAlpha: 0.6;
+	borderColor: #666666;
+}
+
+
+/*
+//------------------------------
+//  Spark
+//------------------------------
+*/
+
+
+s|BusyIndicator
+{
+	symbolColor: #ffffff;
+}
+
+s|Button
+{
+}
+
+s|Button.light
+{
+	chromeColor: #660000;
+}
+
+s|Button.lightfront
+{
+	color: #666666;
+	chromeColor: #cccccc;
+}
+
+s|Label.textConfigGroup
+{
+	color: #000000;
+	fontSize: 24;
+	fontWeight: bold;
+	paddingLeft: 4;
+	paddingRight: 4;
+	paddingTop: 4;
+	paddingBottom: 4;
+	textAlign: left;
+	verticalAlign: middle;
+}
+
+s|Label.textConfigItem
+{
+	color: #ffffff;
+	fontSize: 18;
+	paddingTop: 4;
+	paddingBottom: 4;
+	verticalAlign: middle;
+}
+
+s|LabelItemRenderer
+{
+	alternatingItemColors: null;
+}
+
+s|List
+{
+	contentBackgroundAlpha: 0;
+	contentBackgroundColor: #000000;
+}
+
+s|NumericStepper
+{
+	skinClass: ClassReference("skins.NumericStepperSkin");
+	fontSize: 24;
+}
+
+s|SkinnableContainer.sBox1
+{
+	skinClass: ClassReference('skins.Box1Skin');
+}
+
+s|SkinnableContainer.sLogin
+{
+	skinClass: ClassReference('skins.LoginSkin');
+}
+
+s|TextArea
+{
+	contentBackgroundAlpha: 0.6;
+	contentBackgroundColor: #000000;
+}
+
+s|TextInput
+{
+	contentBackgroundAlpha: 0.6;
+	contentBackgroundColor: #000000;
+}
+
+s|TitleWindow
+{
+	backgroundColor: #333333;
+}
+
+s|ToggleSwitch
+{
+	fontSize: 18;
+	accentColor: #cc6600;
+}

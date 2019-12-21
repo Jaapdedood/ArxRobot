@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	xmlns:layouts="com.arxterra.layouts.*"
+	styleName="sView"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	removedFromStage="_Dismiss()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.vo.UserState;
+			import spark.events.IndexChangeEvent;
+			import com.arxterra.components.ThinCallout;
+			import com.arxterra.controllers.BleManager;
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.icons.IconArrowDown;
+			
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _bleMgr:BleManager;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			private var _iFiltIdxNew:int = -1;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private var _tmrReady:Timer;
+			
+			[Bindable]
+			private var _userState:UserState; // added 2019-10-08
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( !_bInited )
+					return;
+				
+				_ReadyTimerCancel ( );
+				_bInited = false;
+			}
+			
+			private function _Done ( ) : void
+			{
+				_sessionMgr.bleConfigDone ( );
+			}
+			
+			private function _FilterChange ( event:IndexChangeEvent ) : void
+			{
+				_iFiltIdxNew = event.newIndex;
+				cbFilt.closeDropDown ( );
+			}
+			
+			private function _FilterCommit ( ) : void
+			{
+				if ( _iFiltIdxNew > -1 )
+				{
+					_bleMgr.peripheralAgentsFilterSelectedIndex = _iFiltIdxNew;
+					_iFiltIdxNew = -1;
+				}
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+					return;
+				
+				_bInited = true;
+				_iFiltIdxNew = -1;
+				_bleMgr = BleManager.instance;
+				_sessionMgr = SessionManager.instance;
+				_userState = _sessionMgr.userState; // added 2019-10-08 
+				
+				var cf:ClassFactory = new ClassFactory ( ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+				
+				if ( !_tmrReady )
+				{
+					_tmrReady = new Timer ( 1000, 1 );
+					_tmrReady.addEventListener ( TimerEvent.TIMER, _ReadyReport, false, 0, true );
+					_tmrReady.start ( );
+				}
+			}
+			
+			private function _ReadyReport ( event:TimerEvent ) : void
+			{
+				_ReadyTimerCancel ( );
+				_bleMgr.configViewReady ( );
+			}
+			
+			private function _ReadyTimerCancel ( ) : void
+			{
+				if ( _tmrReady )
+				{
+					_tmrReady.removeEventListener ( TimerEvent.TIMER, _ReadyReport, false );
+					_tmrReady.stop ( );
+					_tmrReady = null;
+				}
+			}
+			
+			private function _AutoSelectToggle ( ) : void
+			{
+				_userState.bleAutoSelect = !_userState.bleAutoSelect;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:VGroup
+		gap="{_sessionMgr.guiGap}"
+		horizontalAlign="center"
+		height="100%" width="100%"
+		>
+		<s:Label
+			styleName="textHead"
+			text="{resourceManager.getString('default','ble_config_title')}"
+			width="100%"
+			textAlign="center"
+			/>
+		<s:Label
+			styleName="textSubhead"
+			text="{_bleMgr.statusCaption}"
+			color="{_bleMgr.iconColor}"
+			includeInLayout="{_bleMgr.statusCaptionOn}"
+			visible="{_bleMgr.statusCaptionOn}"
+			maxDisplayedLines="-1"
+			width="100%"
+			textAlign="left"
+			/>
+		<s:Group
+			height="100%" width="100%"
+			>
+			<s:Rect
+				left="1" right="1"
+				top="1" bottom="1"
+				>
+				<s:stroke>
+					<s:SolidColorStroke
+						color="0x666666" weight="1"
+						/>
+				</s:stroke>
+			</s:Rect>
+			<s:Scroller
+				left="2" right="2"
+				top="2" bottom="2"
+				>
+				<s:Group
+					width="100%"
+					>
+					<s:layout>
+						<s:ConstraintLayout>
+							<s:constraintColumns>
+								<s:ConstraintColumn id="marginL" width="{_sessionMgr.guiGap}" />
+								<s:ConstraintColumn id="colL" />
+								<s:ConstraintColumn id="colGap" width="{_sessionMgr.guiGap}" />
+								<s:ConstraintColumn id="colR" width="100%" />
+								<s:ConstraintColumn id="marginR" width="{_sessionMgr.guiGap}" />
+							</s:constraintColumns>
+							<s:constraintRows>
+								<s:ConstraintRow id="rowScan" baseline="{_sessionMgr.guiGap3}" />
+								<s:ConstraintRow id="rowGreed" baseline="{_sessionMgr.guiGap3}" />
+								<s:ConstraintRow id="rowAuto" baseline="{_sessionMgr.guiGap3}" /> <!-- added 2019-10-08  -->
+								<s:ConstraintRow id="rowFilt" baseline="{_sessionMgr.guiGap3}" />
+								<s:ConstraintRow id="rowGap" height="{_sessionMgr.guiGap}" />
+								<s:ConstraintRow id="rowDevs" baseline="{_sessionMgr.guiGap3}" />
+								<s:ConstraintRow id="rowEndGap" height="{_sessionMgr.guiGap}" />
+							</s:constraintRows>
+						</s:ConstraintLayout>
+					</s:layout>
+					<!-- Scanning toggle -->
+					<s:Label
+						id="lbTogScan"
+						baseline="rowScan:0"
+						left="colL:0" right="colL:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','ble_scanning_label')}"
+						/>
+					<s:ToggleSwitch
+						id="btnTogScan"
+						top="rowScan:0" bottom="rowScan:0"
+						left="colR:0"
+						selected="{_bleMgr.isScanning}"
+						change="_bleMgr.scanToggle()"
+						enabled="{_bleMgr.isEnabled}"
+						/>
+					<!-- Greedy toggle -->
+					<s:Label
+						id="lbTogGreed"
+						baseline="rowGreed:0"
+						left="colL:0" right="colL:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','ble_greedy_label')}"
+						/>
+					<s:ToggleSwitch
+						id="btnTogGreed"
+						top="rowGreed:0" bottom="rowGreed:0"
+						left="colR:0"
+						selected="{_bleMgr.isGreedy}"
+						change="_bleMgr.greedyToggle()"
+						enabled="{_bleMgr.isEnabled}"
+						/>
+					<!-- Autoselect toggle added 2019-10-08 -->
+					<s:Label
+						id="lbTogAuto"
+						baseline="rowAuto:0"
+						left="colL:0" right="colL:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','ble_auto_select_label')}"
+						/>
+					<s:ToggleSwitch
+						id="btnTogAuto"
+						top="rowAuto:0" bottom="rowAuto:0"
+						left="colR:0"
+						selected="{_userState.bleAutoSelect}"
+						change="_AutoSelectToggle()"
+						/>
+					<!-- Filter selector -->
+					<s:Label
+						id="lbFilt"
+						baseline="rowFilt:0"
+						left="colL:0" right="colL:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','ble_filter_label')}"
+						/>
+					<s:CalloutButton
+						id="cbFilt"
+						top="rowFilt:0" bottom="rowFilt:0"
+						left="colR:0"
+						icon="{IconArrowDown}"
+						label="{_bleMgr.peripheralAgentsFilterSelectedLabel}"
+						dropDown="{_cfDropDown}"
+						close="_FilterCommit()"
+						>
+						<s:List
+							id="liFilt"
+							requireSelection="true"
+							selectedIndex="{_bleMgr.peripheralAgentsFilterSelectedIndex}"
+							typicalItem="{_bleMgr.peripheralAgentsFilterTypicalLabel}"
+							dataProvider="{_bleMgr.peripheralAgentsFilterLabels}"
+							change="_FilterChange(event)"
+							click="cbFilt.closeDropDown()"
+							>
+							<s:layout>
+								<s:VerticalLayout
+									gap="0"
+									horizontalAlign="contentJustify"
+									/>
+							</s:layout>
+						</s:List>
+					</s:CalloutButton>
+					<!-- Device list -->
+					<s:Label
+						id="lbDevs"
+						baseline="rowDevs:0"
+						left="colL:0" right="colL:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','ble_devices_label')}"
+						/>
+					<s:Group
+						top="rowDevs:0" bottom="rowDevs:0"
+						left="colR:0" right="colR:0"
+						>
+						<s:Rect
+							left="0" right="0"
+							top="0" bottom="0"
+							>
+							<s:stroke>
+								<s:SolidColorStroke
+									color="0x666666" weight="1"
+									/>
+							</s:stroke>
+						</s:Rect>
+						<s:DataGroup
+							id="dgBpe"
+							left="2" right="2"
+							top="2" bottom="2"
+							dataProvider="{_bleMgr.peripheralAgentsCollection}"
+							itemRenderer="com.arxterra.components.BleAgentItemRenderer"
+							>
+							<s:layout>
+								<s:VerticalLayout
+									gap="{_sessionMgr.guiGap}"
+									horizontalAlign="contentJustify"
+									variableRowHeight="true"
+									/>
+							</s:layout>
+						</s:DataGroup>
+					</s:Group>
+					<!-- bottom and right spacer -->
+					<s:Spacer
+						top="rowEndGap:0" bottom="rowEndGap:0"
+						left="marginR:0" right="marginR:0"
+						width="{_sessionMgr.guiGap}"
+						height="{_sessionMgr.guiGap}"
+						/>
+				</s:Group>
+			</s:Scroller>
+		</s:Group>
+		<s:Button
+			id="btnDone"
+			styleName="done"
+			label="{resourceManager.getString('default','done_btn_label')}"
+			click="_Done()"
+			/>
+	</s:VGroup>
+</s:SkinnableContainer>

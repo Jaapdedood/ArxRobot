@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="icons.*"
+	width="15" height="12"
+	scaleX="2" scaleY="2"
+	>
+	<s:Rect
+		width="15" height="2"
+		>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="{symbolColor}" weight="1" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		y="5" width="15" height="2"
+		>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="{symbolColor}" weight="1" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		y="10" width="15" height="2"
+		>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="{symbolColor}" weight="1" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+</icons:ColorizedIconBase>

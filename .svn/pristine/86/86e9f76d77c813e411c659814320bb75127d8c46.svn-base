@@ -1,0 +1,584 @@
+package vo
+{
+	import flash.events.Event;
+	import flash.events.EventDispatcher;
+	import flash.utils.ByteArray;
+	
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	
+	/**
+	 * Custom command configuration class.  Uses ArduinoCommand
+	 * via composition to store and transmit command byteArray data.
+	 */
+	public class CustomCommandConfig extends EventDispatcher
+	{
+		// STATIC CONSTANTS AND PROPERTIES
+		
+		public static const UNSIGNED:uint = 1;
+		public static const ALT_WIDGET:uint = 2; // List for SELECT, Stepper for INTEGER
+		// public static const ALT_WIDGET_2:uint = 4;
+		public static const HEADING:uint = 0;
+		public static const BOOLEAN:uint = 8;
+		public static const SELECT:uint = 16;
+		public static const BYTE:uint = 32;
+		public static const UNSIGNED_BYTE:uint = UNSIGNED | BYTE;
+		public static const SHORT:uint = 64;
+		public static const UNSIGNED_SHORT:uint = UNSIGNED | SHORT;
+		public static const INTEGER:uint = UNSIGNED | BYTE | SHORT;
+		public static const TYPES:uint = UNSIGNED | BOOLEAN | SELECT | BYTE | SHORT;
+		public static const TYPE_ID_MAX:uint = UNSIGNED_SHORT;
+		
+		public static const COMMAND_UPDATED:String = 'commandUpdated';
+		public static const CONFIG_LABEL_UPDATED:String = 'configLabelUpdated';
+		public static const FLAGS_UPDATED:String = 'flagsUpdated';
+		
+		private static const __ALL_FLAGS:uint = UNSIGNED | ALT_WIDGET | BOOLEAN | SELECT | BYTE | SHORT;
+		private static const __HAS_WIDGET_CHOICE:uint = INTEGER | SELECT;
+		
+		private static var __aIntDefLimits:Array;
+		public static function get IntegerDefaultLimits ( ) : Array
+		{
+			if ( !__aIntDefLimits )
+			{
+				// initialize on first call
+				__aIntDefLimits = [];
+				// [ max, min, step, step max ]
+				__aIntDefLimits [ BYTE ] = [ 127, -128, 1, 127 ];
+				__aIntDefLimits [ UNSIGNED_BYTE ] = [ 255, 0, 1, 127 ];
+				__aIntDefLimits [ SHORT ] = [ 32767, -32768, 1, 32767 ];
+				__aIntDefLimits [ UNSIGNED_SHORT ] = [ 65535, 0, 1, 32767 ];
+			}
+			return __aIntDefLimits;
+		}
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		[Transient]
+		[Bindable (event="commandUpdated")]
+		public function get commandBytes ( ) : ByteArray
+		{
+			return _ac.commandBytes;
+		}
+		public function set commandBytes ( val:ByteArray ) : void
+		{
+			_ac.commandBytes = val;
+			_CommandUpdateEventDispatch ( );
+			_ConfigLabelUpdateEventDispatch ( );
+		}
+		
+		[Bindable (event="configLabelUpdated")]
+		public function get configLabel ( ) : String
+		{
+			return _ac.commandIdHexDec + ' ' + _sLabel;
+		}
+		
+		/**
+		 * also sets value if has not already been set by public setter
+		 */		
+		[Bindable]
+		public function get defaultValue ( ) : *
+		{
+			return _iDefault;
+		}
+		public function set defaultValue ( val:* ) : void
+		{
+			_iDefault = int ( val );
+			if ( !_bValueSet )
+			{
+				value = val;
+			}
+		}
+		
+		[Transient]
+		[Bindable (event="flagsUpdated")]
+		public function get flags ( ) : uint
+		{
+			return _uFlags;
+		}
+		public function set flags ( val:uint ) : void
+		{
+			// validate against all possible flags
+			_uFlags = val & __ALL_FLAGS;
+			_TypeConfigDefaultsUpdate ( );
+			_FlagsUpdateEventDispatch ( );
+		}
+		
+		[Bindable (event="flagsUpdated")]
+		public function get hasWidgetChoice ( ) : Boolean
+		{
+			return ( _uFlags & __HAS_WIDGET_CHOICE ) > 0;
+		}
+		
+		/**
+		 * Unsigned byte Command ID expressed as uint
+		 * (stored at the 0 position of commandBytes)
+		 */
+		[Bindable (event="commandUpdated")]
+		public function get id ( ) : uint
+		{
+			return _ac.commandId
+		}
+		public function set id ( val:uint ) : void
+		{
+			// should be validated before this, so not wasting time here
+			_ac.commandId = val;
+			_CommandUpdateEventDispatch ( );
+			_ConfigLabelUpdateEventDispatch ( );
+		}
+		
+		[Bindable (event="flagsUpdated")]
+		public function get isBoolean ( ) : Boolean
+		{
+			return ( _uFlags & BOOLEAN ) > 0;
+		}
+		
+		/**
+		 * indicates an actual command, as opposed to a heading
+		 */
+		[Bindable (event="flagsUpdated")]
+		public function get isCommand ( ) : Boolean
+		{
+			return ( _uFlags > 0 );
+		}
+		
+		[Bindable (event="flagsUpdated")]
+		public function get isHeading ( ) : Boolean
+		{
+			return ( _uFlags == 0 );
+		}
+		
+		[Bindable (event="flagsUpdated")]
+		public function get isInteger ( ) : Boolean
+		{
+			return ( _uFlags & INTEGER ) > 0;
+		}
+		
+		[Bindable (event="flagsUpdated")]
+		public function get isSelect ( ) : Boolean
+		{
+			return ( _uFlags & SELECT ) > 0;
+		}
+		
+		[Bindable (event="flagsUpdated")]
+		public function get isShort ( ) : Boolean
+		{
+			return ( _uFlags & SHORT ) > 0;
+		}
+		
+		[Bindable]
+		public function get label ( ) : String
+		{
+			return _sLabel;
+		}
+		public function set label ( val:String ) : void
+		{
+			_sLabel = val;
+			_ConfigLabelUpdateEventDispatch ( );
+		}
+		
+		/**
+		 * Maximum value for integer control
+		 */
+		[Bindable]
+		public function get max ( ) : int
+		{
+			return _iMax;
+		}
+		public function set max ( val:int ) : void
+		{
+			_iMax = val;
+		}
+		
+		/**
+		 * Maximum maximum
+		 */
+		[Transient]
+		[Bindable]
+		public function get maxLimit ( ) : int
+		{
+			return _iMaxLim;
+		}
+		public function set maxLimit ( val:int ) : void
+		{
+			_iMaxLim = val;
+		}
+		
+		/**
+		 * Minimum value for integer control
+		 */
+		[Bindable]
+		public function get min ( ) : int
+		{
+			return _iMin;
+		}
+		public function set min ( val:int ) : void
+		{
+			_iMin = val;
+		}
+		
+		/**
+		 * Minimum minimum
+		 */
+		[Transient]
+		[Bindable]
+		public function get minLimit ( ) : int
+		{
+			return _iMinLim;
+		}
+		public function set minLimit ( val:int ) : void
+		{
+			_iMinLim = val;
+		}
+		
+		[Bindable]
+		public function get options ( ) : Vector.<CustomSelectOption>
+		{
+			if ( !_vOpts )
+			{
+				_vOpts = new <CustomSelectOption> [];
+			}
+			return _vOpts;
+		}
+		public function set options ( val:Vector.<CustomSelectOption> ) : void
+		{
+			_vOpts = val;
+		}
+		
+		[Bindable]
+		/**
+		 * Affects display order on Control Panel
+		 */
+		public function get sortIndex():uint
+		{
+			return _uSortIdx;
+		}
+		/**
+		 * @private
+		 */
+		public function set sortIndex ( val:uint ) : void
+		{
+			_uSortIdx = val;
+		}
+		
+		/**
+		 * Step value for integer control
+		 */
+		[Bindable]
+		public function get step ( ) : int
+		{
+			return _iStep;
+		}
+		public function set step ( val:int ) : void
+		{
+			_iStep = val;
+		}
+		
+		/**
+		 * Maximum step
+		 */
+		[Transient]
+		[Bindable]
+		public function get stepLimit ( ) : int
+		{
+			return _iStepLim;
+		}
+		public function set stepLimit ( val:int ) : void
+		{
+			_iStepLim = val;
+		}
+		
+		[Bindable]
+		public var tip:String = '';
+		
+		[Bindable (event="flagsUpdated")]
+		public function get type ( ) : uint
+		{
+			return _uFlags & TYPES;
+		}
+		public function set type ( val:uint ) : void
+		{
+			// remove any previous type flags and
+			// validate supplied value against all possible type flags
+			_uFlags = ( _uFlags & ~TYPES ) | ( val & TYPES );
+			_TypeLimitsDefaultsUpdate ( );
+			_FlagsUpdateEventDispatch ( );
+		}
+		
+		[Transient]
+		[Bindable (event="flagsUpdated")]
+		public function get typeConfig ( ) : uint
+		{
+			return _uFlags & TYPES;
+		}
+		public function set typeConfig ( val:uint ) : void
+		{
+			if ( val < 1 )
+			{
+				// HEADING
+				_uFlags = 0;
+			}
+			else
+			{
+				// validate against all possible type flags
+				_uFlags = ( _uFlags & ~TYPES ) | ( val & TYPES );
+			}
+			_TypeConfigDefaultsUpdate ( );
+			_FlagsUpdateEventDispatch ( );
+		}
+		
+		[Bindable (event="flagsUpdated")]
+		public function get unsigned ( ) : Boolean
+		{
+			return ( _uFlags & UNSIGNED ) > 0;
+		}
+		public function set unsigned ( val:Boolean ) : void
+		{
+			if ( val )
+			{
+				_uFlags = _uFlags | UNSIGNED;
+			}
+			else
+			{
+				_uFlags = _uFlags & ~UNSIGNED;
+			}
+			_FlagsUpdateEventDispatch ( );
+		}
+		
+		/**
+		 * Value will be cast to the appropriate type when
+		 * read from or written to storage
+		 */
+		[Transient]
+		[Bindable (event="commandUpdated")]
+		public function get value ( ) : *
+		{
+			if ( _uFlags == 0 )
+				return 0; // HEADING
+			
+			if ( ( _uFlags & BOOLEAN ) > 0 )
+				return _ac.boolean; // BOOLEAN
+			
+			if ( ( _uFlags & SELECT ) > 0 )
+				return _ac.unsignedByte; // SELECT
+			
+			var bUnSign:Boolean = ( _uFlags & UNSIGNED ) > 0;
+			if ( ( _uFlags & BYTE ) > 0 )
+			{
+				// BYTE
+				if ( bUnSign )
+				{
+					return _ac.unsignedByte;
+				}
+				return _ac.byte;
+			}
+			
+			// SHORT
+			if ( bUnSign )
+				return _ac.unsignedShort;
+			return _ac.short;
+		}
+		public function set value ( val:* ) : void
+		{
+			_bValueSet = true;
+			if ( _uFlags == 0 )
+			{
+				// HEADING
+				_ac.byte = 0;
+			}
+			else if ( ( _uFlags & BOOLEAN ) > 0 )
+			{
+				// BOOLEAN
+				_ac.boolean = val;
+			}
+			else if ( ( _uFlags & SHORT ) > 0 )
+			{
+				// SHORT
+				_ac.short = val;
+			}
+			else
+			{
+				// BYTE or SELECT
+				_ac.byte = val;
+			}
+			_CommandUpdateEventDispatch ( );
+		}
+		
+		public function get valueByteCount ( ) : uint
+		{
+			if ( ( _uFlags & SHORT ) > 0 )
+				return 2;
+			return 1;
+		}
+		
+		[Bindable (event="flagsUpdated")]
+		public function get widgetIndex ( ) : int
+		{
+			return ( ( _uFlags & ALT_WIDGET ) > 0 ) ? 1 : 0;
+		}
+		public function set widgetIndex ( val:int ) : void
+		{
+			if ( val == 1 )
+			{
+				_uFlags = _uFlags | ALT_WIDGET;
+			}
+			else
+			{
+				_uFlags = _uFlags & ~ALT_WIDGET;
+			}
+			_FlagsUpdateEventDispatch ( );
+		}
+		
+		// CONSTRUCTOR
+		
+		public function CustomCommandConfig (
+			id:uint = 0,
+			defaultValue:* = 0,
+			flags:uint = BOOLEAN,
+			label:String = '',
+			sortIndex:uint = 0
+		)
+		{
+			_ac = new ArduinoCommand ( new ByteArray ( ) );
+			_uSortIdx = sortIndex;
+			_sLabel = label;
+			_uFlags = flags & __ALL_FLAGS;
+			if ( _uFlags == 0 )
+			{
+				// HEADING
+				_ac.commandId = 0;
+				_iDefault = 0;
+				_ac.byte = 0;
+			}
+			else
+			{
+				_ac.commandId = id;
+				_iDefault = int ( defaultValue );
+				var uIntTypeKey:uint = _uFlags & INTEGER;
+				if ( uIntTypeKey > 0 )
+				{
+					// INTEGER
+					var aLims:Array = IntegerDefaultLimits [ uIntTypeKey ];
+					_iMax = _iMaxLim = aLims [ 0 ];
+					_iMin = _iMinLim = aLims [ 1 ];
+					_iStep = aLims [ 2 ];
+					_iStepLim = aLims [ 3 ];
+					if ( ( _uFlags & SHORT ) > 0 )
+					{
+						// SHORT
+						_ac.short = defaultValue;
+					}
+					else
+					{
+						// BYTE
+						_ac.byte = defaultValue;
+					}
+				}
+				else if ( ( _uFlags & BOOLEAN ) > 0 )
+				{
+					// BOOLEAN
+					_iMax = _iMaxLim = 1;
+					_iMin = _iMinLim = 0;
+					_iStep = _iStepLim = 1;
+					_ac.boolean = defaultValue;
+				}
+				else
+				{
+					// SELECT
+					_iMax = _iMaxLim = 255;
+					_iMin = _iMinLim = 0;
+					_iStep = _iStepLim = 1;
+					_ac.byte = defaultValue;
+				}
+			}
+		}
+		
+		// OTHER PUBLIC METHODS
+		
+		public function commandToSFSObject ( ) : ISFSObject
+		{
+			return _ac.toSFSObject ( );
+		}
+		
+		public function setCommandValueFromByteArray ( byteArray:ByteArray ) : Boolean
+		{
+			return _ac.writeValueBytes ( byteArray, valueByteCount );
+		}
+		
+		// PROTECTED PROPERTIES AND GET/SET METHOD GROUPS
+		
+		// PRIVATE PROPERTIES
+		
+		private var _ac:ArduinoCommand;
+		private var _bValueSet:Boolean = false;
+		private var _iDefault:int = 0;
+		private var _iMax:int = 255;
+		private var _iMaxLim:int = 255;
+		private var _iMin:int = 0;
+		private var _iMinLim:int = 0;
+		private var _iStep:int = 1;
+		private var _iStepLim:int = 127;
+		private var _sLabel:String = '';
+		private var _uFlags:uint = BOOLEAN; // default to Boolean type
+		private var _uSortIdx:uint = 0;
+		private var _vOpts:Vector.<CustomSelectOption>;
+		
+		// PRIVATE METHODS
+		
+		private function _CommandUpdateEventDispatch ( ) : void
+		{
+			dispatchEvent ( new Event ( COMMAND_UPDATED ) );
+		}
+		
+		private function _ConfigLabelUpdateEventDispatch ( ) : void
+		{
+			dispatchEvent ( new Event ( CONFIG_LABEL_UPDATED ) );
+		}
+		
+		private function _FlagsUpdateEventDispatch ( ) : void
+		{
+			dispatchEvent ( new Event ( FLAGS_UPDATED ) );
+		}
+		
+		/**
+		 * When type flag is changed during configuration, this is called
+		 * to set defaults appropriate to the new type.
+		 */
+		private function _TypeConfigDefaultsUpdate ( ) : void
+		{
+			_uFlags = _uFlags & ~ALT_WIDGET;
+			if ( ( _uFlags & SELECT ) == 0 )
+			{
+				// not SELECT
+				_vOpts = null;
+				
+				var uIntTypeKey:uint = _uFlags & INTEGER;
+				if ( uIntTypeKey > 0 )
+				{
+					var aLims:Array = IntegerDefaultLimits [ uIntTypeKey ];
+					maxLimit = aLims [ 0 ];
+					minLimit = aLims [ 1 ];
+					stepLimit = aLims [ 3 ];
+					max = aLims [ 0 ];
+					min = aLims [ 1 ];
+					step = aLims [ 2 ];
+				}
+			}
+		}
+		
+		/**
+		 * When type flag is set during restoration, this is
+		 * called to set limits appropriate to the type.
+		 */
+		private function _TypeLimitsDefaultsUpdate ( ) : void
+		{
+			var uIntTypeKey:uint = _uFlags & INTEGER;
+			if ( uIntTypeKey > 0 )
+			{
+				var aLims:Array = IntegerDefaultLimits [ uIntTypeKey ];
+				maxLimit = aLims [ 0 ];
+				minLimit = aLims [ 1 ];
+				stepLimit = aLims [ 3 ];
+			}
+		}
+	}
+}

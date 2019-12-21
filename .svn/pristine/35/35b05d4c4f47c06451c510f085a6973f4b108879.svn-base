@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	alpha.disabled=".4"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="done", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayList;
+			
+			import events.UtilityEvent;
+			
+			import vo.ArduinoEeprom;
+			
+			[Bindable]
+			public var eepromsList:ArrayList;
+			
+			private function _Done ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.DONE ) );
+			}
+			
+			private function _ItemRenderer ( item:Object ) : IFactory 
+			{
+				return ( item as ArduinoEeprom ).itemRenderer;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		styleName="textHead"
+		text="{resourceManager.getString('default','config_eeprom_title')}"
+		/>
+	<s:Scroller
+		height="100%"
+		width="100%"
+		>
+		<s:DataGroup
+			width="100%"
+			dataProvider="{eepromsList}"
+			itemRendererFunction="_ItemRenderer"
+			>
+			<s:layout>
+				<s:VerticalLayout
+					gap="6"
+					variableRowHeight="true"
+					/>
+			</s:layout>
+			
+		</s:DataGroup>
+	</s:Scroller>
+	<s:Button
+		id="btnDone"
+		label="{resourceManager.getString('default','done_btn_label')}"
+		click="_Done()"
+		/>
+</s:SkinnableContainer>

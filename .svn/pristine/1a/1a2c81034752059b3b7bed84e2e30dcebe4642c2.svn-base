@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sView"
+	alpha.disabled=".4"
+	creationComplete="_CreationCompleted()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.SessionManager;
+			
+			import vo.McuEeprom;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _CreationCompleted ( ) : void
+			{
+				_sessionMgr = SessionManager.instance;
+				lblTitle.text = resourceManager.getString ( 'default', _sessionMgr.eepromConfigCaptRsrc );
+				dgEeps.typicalItem = new McuEeprom ( 0, 1, 'typical', 'bool', true, false, 'typical' );
+				dgEeps.dataProvider = _sessionMgr.eepromsCollection;
+			}
+			
+			private function _Done ( ) : void
+			{
+				_sessionMgr.eepromConfigUserDone ( );
+			}
+			
+			private function _ItemRenderer ( item:Object ) : IFactory
+			{
+				return ( item as McuEeprom ).itemRenderer;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		id="lblTitle"
+		styleName="textHead"
+		/>
+	<s:Group
+		height="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="0xffffff" alpha="0.1"
+					/>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0xffffff" alpha="0.2" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:Scroller
+			left="8" right="8"
+			top="8" bottom="8"
+			>
+			<s:DataGroup
+				id="dgEeps"
+				width="100%"
+				itemRendererFunction="_ItemRenderer"
+				>
+				<s:layout>
+					<s:VerticalLayout
+						gap="0"
+						horizontalAlign="left"
+						useVirtualLayout="false"
+						variableRowHeight="true"
+						/>
+				</s:layout>
+			</s:DataGroup>
+		</s:Scroller>
+	</s:Group>
+	<s:Button
+		id="btnDone"
+		styleName="done"
+		label="{resourceManager.getString('default','done_btn_label')}"
+		click="_Done()"
+		/>
+</s:SkinnableContainer>

@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:comp="components.*"
+	creationComplete="_Init()"
+	addedToStage="_Init()"
+	removedFromStage="_Dismiss()"
+	resize="callLater(_LayoutApply)"
+	currentStateChange="callLater(_LayoutApply)"
+	enabled="{_motMgr.enabled}"
+	currentState="{_motMgr.controlState}"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.MotionManager;
+			import controllers.SessionManager;
+			
+			import icons.IconConstrain0;
+			import icons.IconConstrain1;
+			
+			import utils.FlagsUtil;
+			
+			private static const _GAP:uint = 18;
+			private static const _GAP2:uint = _GAP * 2;
+			private static const _GAP4:uint = _GAP * 4;
+			private static const _NONE:int = -1;
+			private static const _LEFT:int = 0;
+			private static const _RIGHT:int = 1;
+			
+			private var _bInited:Boolean = false;
+			[Bindable]
+			private var _bTankSync:Boolean = false;
+			[Bindable]
+			private var _nSideL:Number;
+			[Bindable]
+			private var _nSideR:Number;
+			[Bindable]
+			private var _motMgr:MotionManager;
+			private var _uTankMaster:int = _NONE;
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( !_bInited )
+					return;
+				
+				_bInited = false;
+				_motMgr.removeEventListener ( MotionManager.HAND_PREF_CHANGE, _LayoutApply );
+				_motMgr = null;
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+				{
+					_LayoutApply ( );
+					return;
+				}
+				
+				_bInited = true;
+				_motMgr = MotionManager.instance;
+				_motMgr.addEventListener ( MotionManager.HAND_PREF_CHANGE, _LayoutApply );
+			}
+			
+			private function _LayoutApply ( event:Event = null ) : void
+			{
+				if ( !_bInited )
+					return;
+				
+				var nHt:Number = height - _GAP2;
+				var nWd:Number = width - _GAP2;
+				var bLand:Boolean = ( nWd > nHt );
+				var uFlags:uint = _motMgr.handPref;
+				var bLeft:Boolean = FlagsUtil.IsSet ( uFlags, MotionManager.FLAG_LEFT_HAND );
+				var bOne:Boolean = FlagsUtil.IsSet ( uFlags, MotionManager.FLAG_ONE_HAND );
+				var nGaugeHt:Number;
+				var nGaugeWd:Number;
+				var nGaugeY:Number = 0;
+				var nSlackWd:Number;
+				var nPosX:Number;
+				if ( currentState == 'joystick' )
+				{
+					var nJoySize:Number;
+					var nJoyY:Number;
+					if ( bLand )
+					{
+						// landscape
+						nJoyY = 0;
+						nJoySize = nHt;
+						nGaugeHt = nJoySize * SessionManager.PHI_INT;
+						nGaugeWd = 0.3 * nGaugeHt;
+						
+						if ( bLeft )
+						{
+							nPosX = 0;
+							joystk.x = nPosX;
+							nPosX += nJoySize + _GAP;
+							gaugeL.x = nPosX;
+							nPosX += nGaugeWd + _GAP;
+							gaugeR.x = nPosX;
+						}
+						else
+						{
+							nPosX = nWd - nJoySize - _GAP2 - 2 * nGaugeWd;
+							gaugeL.x = nPosX;
+							nPosX += nGaugeWd + _GAP;
+							gaugeR.x = nPosX;
+							nPosX += nGaugeWd + _GAP;
+							joystk.x = nPosX;
+						}
+					}
+					else
+					{
+						// portrait
+						nJoySize = Math.min ( nWd, SessionManager.PHI_INT * ( nHt - _GAP ) );
+						nJoyY = nHt - nJoySize;
+						nGaugeHt = nJoySize * SessionManager.PHI_INT;
+						nGaugeWd = 0.3 * nGaugeHt;
+						nPosX = bLeft ? 0 : ( nWd - nJoySize );
+						joystk.x = nPosX;
+						gaugeL.x = nPosX;
+						nPosX += nJoySize - nGaugeWd;
+						gaugeR.x = nPosX;
+					}
+					
+					joystk.y = nJoyY;
+					joystk.width = nJoySize;
+					joystk.height = nJoySize;
+					
+					gaugeL.y = nGaugeY;
+					gaugeL.width = nGaugeWd;
+					gaugeL.height = nGaugeHt;
+					
+					gaugeR.y = nGaugeY;
+					gaugeR.width = nGaugeWd;
+					gaugeR.height = nGaugeHt;
+				}
+				else if ( currentState == 'tank' )
+				{
+					var nBtnWd:Number = btnTankSync.width;
+					var nGaugeOffXL:Number; // diff between L gauge X and associated slider X
+					var nGaugeOffXR:Number; // diff between R gauge X and associated slider X
+					var nMinGap:Number;
+					var nSliderHt:Number;
+					var nSliderWd:Number;
+					var nSliderY:Number;
+					if ( bLand )
+					{
+						// landscape
+						// lots of room available between sliders,
+						// so put them side by side with output gauges
+						nSliderY = 0;
+						nSliderHt = nHt;
+						nSliderWd = 0.3 * nSliderHt;
+						nGaugeHt = nSliderHt * SessionManager.PHI_INT;
+						nGaugeWd = nSliderWd * SessionManager.PHI_INT;
+						nGaugeOffXL = nSliderWd + _GAP;
+						nGaugeOffXR = - nGaugeWd - _GAP;
+						nMinGap = _GAP2 + Math.max ( 0, 2 * nGaugeWd - nBtnWd );
+						nSlackWd = nWd - _GAP - nMinGap - nBtnWd - 2 * nSliderWd;
+					}
+					else
+					{
+						// portrait
+						// plenty of room vertically, but
+						// width may be tight on small displays,
+						// so stack output gauges on top
+						nMinGap = _GAP;
+						nSliderHt = SessionManager.PHI_INT * ( nHt - _GAP );
+						nSliderY = nHt - nSliderHt;
+						nSliderWd = Math.min (
+							0.3 * nSliderHt,
+							0.5 * ( nWd - nBtnWd - _GAP2 )
+						);
+						nGaugeHt = nSliderHt * SessionManager.PHI_INT;
+						nGaugeWd = nSliderWd * SessionManager.PHI_INT;
+						nGaugeOffXL = 0;
+						nGaugeOffXR = nSliderWd - nGaugeWd;
+						nSlackWd = nWd - nBtnWd - _GAP2 - 2 * nSliderWd;
+					}
+					
+					var nGapExt:Number;
+					var nGapInt:Number;
+					var nGapL:Number;
+					var nGapR:Number;
+					
+					if ( bOne )
+					{
+						// one handed
+						nGapExt = nSlackWd;
+						nGapInt = nMinGap;
+					}
+					else
+					{
+						// two handed
+						nGapExt = 0;
+						nGapInt = nMinGap + nSlackWd;
+					}
+					if ( bLeft )
+					{
+						// left handed
+						nPosX = 0;
+						nGapL = _GAP;
+						nGapR = nGapInt;
+					}
+					else
+					{
+						// right handed
+						nPosX = nGapExt;
+						nGapL = nGapInt;
+						nGapR = _GAP;
+					}
+					
+					// left slider
+					sldrTankL.x = nPosX;
+					sldrTankL.y = nSliderY;
+					sldrTankL.width = nSliderWd;
+					sldrTankL.height = nSliderHt;
+					// left gauge
+					gaugeL.x = nPosX + nGaugeOffXL;
+					gaugeL.y = nGaugeY;
+					gaugeL.width = nGaugeWd;
+					gaugeL.height = nGaugeHt;
+					// constraint button
+					nPosX += nSliderWd + nGapL;
+					btnTankSync.x = nPosX;
+					btnTankSync.y = nHt - btnTankSync.height;
+					// right slider
+					nPosX += nBtnWd + nGapR;
+					sldrTankR.x = nPosX;
+					sldrTankR.y = nSliderY;
+					sldrTankR.width = nSliderWd;
+					sldrTankR.height = nSliderHt;
+					// right gauge
+					gaugeR.x = nPosX + nGaugeOffXR;
+					gaugeR.y = nGaugeY;
+					gaugeR.width = nGaugeWd;
+					gaugeR.height = nGaugeHt;
+				}
+			}
+			
+			private function _TankLeftChange ( ) : void
+			{
+				var nSliderVal:Number = sldrTankL.value;
+				if ( _TankMasterIs ( _LEFT ) )
+				{
+					sldrTankR.value = nSliderVal;
+					_motMgr.tankBoth ( 1 - nSliderVal * 2 );
+				}
+				else
+				{
+					_motMgr.tankLeft ( 1 - nSliderVal * 2 );
+				}
+			}
+			
+			private function _TankLeftStop ( ) : void
+			{
+				sldrTankL.value = 0.5;
+				if ( _TankMasterRelease ( _LEFT ) )
+				{
+					sldrTankR.value = 0.5;
+					_motMgr.tankBoth ( 0 );
+				}
+				else
+				{
+					_motMgr.tankLeft ( 0 );
+				}
+			}
+			
+			/**
+			 * <b>False</b> if sync was off or is now being turned off because side is not the master.
+			 * <p><b>True</b> if sync is on and side already is or will now become the master.</p>
+			 */
+			private function _TankMasterIs ( side:int ) : Boolean
+			{
+				if ( !_bTankSync )
+					return false;
+				
+				if ( _uTankMaster == side )
+					return true;
+				
+				if ( _uTankMaster == _NONE )
+				{
+					_uTankMaster = side;
+					return true;
+				}
+				
+				// if get here, need to cancel sync mode
+				_uTankMaster = _NONE;
+				_bTankSync = false;
+				return false;
+			}
+			
+			/**
+			 * <b>False</b> if sync was off or side was not the master.
+			 * <p><b>True</b> if sync is on and side was the master.</p>
+			 */
+			private function _TankMasterRelease ( side:int) : Boolean
+			{
+				if ( !_bTankSync )
+					return false;
+				
+				var bRet:Boolean = ( _uTankMaster == side );
+				_uTankMaster = _NONE;
+				
+				return bRet;
+			}
+			
+			private function _TankRightChange ( ) : void
+			{
+				var nSliderVal:Number = sldrTankR.value;
+				if ( _TankMasterIs ( _RIGHT ) )
+				{
+					sldrTankL.value = nSliderVal;
+					_motMgr.tankBoth ( 1 - nSliderVal * 2 );
+				}
+				else
+				{
+					_motMgr.tankRight ( 1 - nSliderVal * 2 );
+				}
+			}
+			
+			private function _TankRightStop ( ) : void
+			{
+				sldrTankR.value = 0.5;
+				if ( _TankMasterRelease ( _RIGHT ) )
+				{
+					sldrTankL.value = 0.5;
+					_motMgr.tankBoth ( 0 );
+				}
+				else
+				{
+					_motMgr.tankRight ( 0 );
+				}
+			}
+			
+			private function _TankSyncSet ( on:Boolean ) : void
+			{
+				_bTankSync = on;
+			}
+			
+			private function _TankSyncToggle ( ) : void
+			{
+				_bTankSync = !_bTankSync;
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="tank" />
+		<s:State name="joystick" />
+		<s:State name="sensors" />
+	</s:states>
+	<s:Group
+		id="gpAll"
+		left="{_GAP}" right="{_GAP}"
+		top="{_GAP}" bottom="{_GAP}"
+		>
+		<comp:DoubleArrow
+			id="gaugeL"
+			stepCount="{_motMgr.smallSteps}"
+			value="{_motMgr.fractionLeft}"
+			/>
+		<comp:DoubleArrow
+			id="gaugeR"
+			stepCount="{_motMgr.smallSteps}"
+			value="{_motMgr.fractionRight}"
+			/>
+	</s:Group>
+	<s:Group
+		id="gpJoy"
+		includeIn="joystick"
+		itemDestructionPolicy="auto"
+		left="{_GAP}" right="{_GAP}"
+		top="{_GAP}" bottom="{_GAP}"
+		>
+		<comp:TouchJoystick
+			id="joystk"
+			joystick_back="_motMgr.buttonBackward()"
+			joystick_front="_motMgr.buttonForward()"
+			joystick_left="_motMgr.buttonLeft()"
+			joystick_release="_motMgr.buttonStop()"
+			joystick_right="_motMgr.buttonRight()"
+			/>
+	</s:Group>
+	<s:Group
+		id="gpTank"
+		includeIn="tank"
+		itemDestructionPolicy="auto"
+		left="{_GAP}" right="{_GAP}"
+		top="{_GAP}" bottom="{_GAP}"
+		>
+		<comp:TouchSliderV
+			id="sldrTankL"
+			value_change="_TankLeftChange()"
+			slider_release="_TankLeftStop()"
+			value="0.5"
+			/>
+		<s:Button
+			id="btnTankSync"
+			styleName="constraint"
+			emphasized="{_bTankSync}"
+			icon="{_bTankSync?IconConstrain1:IconConstrain0}"
+			click="_TankSyncToggle()"
+			/>
+		<comp:TouchSliderV
+			id="sldrTankR"
+			value_change="_TankRightChange()"
+			slider_release="_TankRightStop()"
+			value="0.5"
+			/>
+	</s:Group>
+</s:Group>

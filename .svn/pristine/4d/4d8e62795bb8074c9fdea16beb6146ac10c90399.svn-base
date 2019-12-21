@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ArxRover Main.mxml -->
+<s:Application
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	xmlns:lo="layouts.*"
+	xmlns:vw="views.*"
+	backgroundColor="0x222222"
+	frameRate="6"
+	splashScreenImage="@Embed('assets/splash.png')"
+	splashScreenScaleMode="letterbox"
+	currentState="{_sessionMgr.appViewState}"
+	applicationComplete="_ApplicationCompleted()"
+	>
+	<fx:Style source="css/MainStyles.css" />
+	<fx:Metadata>
+		[ResourceBundle("default")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import controllers.CameraManager;
+			import controllers.DialogManager;
+			import controllers.SessionManager;
+			
+			import events.DebugByteArrayEvent;
+			import events.DebugEventEx;
+			import events.DialogEvent;
+			
+			import utils.HexStringUtil;
+			import utils.NonUIComponentBase;
+			
+			/*
+			[ ] Extend declination utility to use own calculations if web service not available.
+			[ ] Enable handoff from pilot to copilot.
+			
+			[ ] Add p2p capability.
+			[ ] Deal with tiny font sizes, application DPI, etc.
+			[ ] Switch from Gyroscope ANE to DeviceMotion ANE.
+			
+			v Alpha 0.1.68
+			Added RC mode (using Bluetooth) with simple multitouch tank drive controls.
+			Added joystick control option to RC mode.
+			Added right vs left hand and 1 vs 2 hand preferences to RC mode.
+			Added controlMode and handPref to UserState for persistence.
+			v Alpha 0.1.67
+			Continued overhaul of user interface.
+			Refactored configuration views.
+			Abstracted messaging to allow for other control connectors besides SmartFox.
+			- Created IControlConnector interface and ControlConnector utility base class.
+			- Created subclasses ControlConnectorCS, ControlConnectorRC and ControlConnectorPP.
+			- Refactored SmartFox functionality into ControlConnectorCS class.
+			Refactored waypoint functionality into WaypointManager singleton class.
+			Refactored camera configuration functionality into CameraManager singleton class.
+			Refactored most of remaining Main functionality into SessionManager singleton class.
+			UserState now has Bluetooth as the default Arduino connection mode.
+			Added toggles to show/hide advanced details in SFS Connect and Login views.
+			Removed linear startup sequence.
+			Added GUI elements for
+			- Selecting op mode.
+			- Locking and unlocking screen rotation.
+			- Opening configuration views.
+			Added status display for messages such as "Ready for pilot to board"
+			v Alpha 0.1.66
+			Continued overhaul of user interface.
+			v Alpha 0.1.65
+			Report battery level on each battery ANE event, even if unchanged.
+			Started overhaul of user interface.
+			Enabled portrait orientations.
+			v Alpha 0.1.64
+			Updated to Apache Flex 4.13 AIR 15 SWF 26.
+			Bug fixes for Camera Info display.
+			v Alpha 0.1.63
+			Added logic to send Arduino updates of GPS and Heading according configured intervals.
+			Added Waypoint Nav GPS and Heading minimum update intervals to eeprom schema.
+			v Alpha 0.1.62
+			Enabled viewing of debug text area without debug mode active.
+			Removed excess Bluetooth debug traces.
+			v Alpha 0.1.61
+			Added processing and buffering of waypoint list append (wpla) and replace (wplr) messages from Control Panel
+			Added waypoint coordinates format options to eeprom schema
+			When waypoint navigation enabled
+			- Relay heading updates to Arduino
+			- Relay GPS updates to Arduino
+			v Alpha 0.1.60
+			Improved ArduinoCommand serialization
+			Added new ArduinoCommand subclasses CurrentCoordinates and WaypointCoordinates
+			Added maintenance of waypoints list
+			Added handling of waypoint navigation messages
+			Added Idle Ping watchdog message to ArduinoConnector class
+			Refactored iArduinoConnector interface's public method send as sendCommand
+			Added to iArduinoConnector interface the public method sendCommandId and public getter method for isConnected
+			v Alpha 0.1.59
+			Persisted Arduino Bluetooth address to attempt automatic reconnection at startup.
+			Added telemetry packet decoding to ArduinoConnector class.
+			Added packet wrapper to Arduino commands.
+			Changed Bluetooth callout to view, to work around sizing artifacts.
+			Changed states and state groups to allow multiple "active" states.
+			v Alpha 0.1.58
+			Changed Bluetooth architecture to have Arduino as listener (slave, servant, server, service provider), Phone as connector (master, client, service consumer).
+			Changed Bluetooth button action to open callout containing:
+			- Scan toggle switch
+			- List of detected devices listening for Bluetooth SPP connections
+			- Buttons to Connect, Disconnect and open System Bluetooth Settings
+			v Alpha 0.1.55-57
+			Debugging Bluetooth functionality.
+			v Alpha 0.1.54
+			Added Bluetooth button to GUI when in Bluetooth mode.
+			Created class ArduinoConnectorBluetooth as subclass of ArduinoConnector.
+			Refactored ArduinoConnectorSocket and ArduinoConnectorPrimavera as subclasses of ArduinoConnector.
+			Created ArduinoConnector base class to implement IArduinoConnector.
+			v Alpha 0.1.53
+			Refactored old Main code for sending and receiving Arduino data so now programming to interface IArduinoConnector.
+			Created class ArduinoConnectorPrimavera implementing IArduinoConnector.
+			Refactored class ServerSocketArduino as ArduinoConnectorSocket implementing IArduinoConnector.
+			Created interface IArduinoConnector.
+			Added Bluetooth to Arduino connection options list.
+			Added Android Bluetooth capabilities and ANE to manifest.
+			v Alpha 0.1.52
+			Updated SDK to Flex 4.12.1 AIR 13.0 FP 13.0
+			v Alpha 0.1.51
+			Updated sfs-presets.json to use subdomain names instead of IP addresses.
+			v Alpha 0.1.50
+			Saved the updated sfs-presets.json!
+			v Alpha 0.1.49
+			Updated sfs-presets.json to new server IP address.
+			Fixed sfs-presets parsing code to avoid error if no localization resource exists for preset name.
+			Fixed ConnectView _PresetItemLabel function.
+			v Alpha 0.1.48
+			Implement settings files backup and restore on SDCard storage on Android.
+			Automatically sleep robot when configuring custom commands.
+			v Alpha 0.1.47
+			Added help to CustomConfigView command list controls
+			v Alpha 0.1.46
+			Minor fixes to CustomConfigView.mxml and CustomCommandManager.as.
+			v Alpha 0.1.45
+			Began adding JSON import/export of command configuration, but not complete.
+			v Alpha 0.1.44
+			Custom command configuration layout is now adequate.
+			v Alpha 0.1.37-43
+			Reworking layout to fit smaller screens.
+			v Alpha 0.1.36
+			Custom command type no longer changeable once created.
+			Debugging Command [+] button.
+			v Alpha 0.1.35
+			Added HEADING type to custom commmands.
+			Made Command [+] button a callout so user can choose type.
+			v Alpha 0.1.29-34
+			Continued debugging custom controls configuration.
+			v Alpha 0.1.28
+			Added send custom controls configuration to SFS User Variable
+			Initial debugging custom controls configuration.
+			v Alpha 0.1.27
+			Add custom controls Configuration View.
+			Add custom controls messaging.
+			Removed version 2.6 options from sfs-presets.json.
+			v Alpha 0.1.26
+			Added motor stop to _EmergencyFlagsSet to compensate for incorrect implementation of Arduino safe command.
+			v Alpha 0.1.25
+			EEPROM Storage option disabled until reliably functional.
+			v Alpha 0.1.24
+			Implemented storing capabilities in App Storage.
+			Added config/sfs-presets.json in place of sfs-config.xml.
+			Added vo/SfsPreset class.
+			Added ConnectView and related code in Main.
+			v Alpha 0.1.23
+			Improved styling of HelpLabel.
+			v Alpha 0.1.22
+			User can now choose between storing capabilities in Arduino EEPROM or App Storage.
+			Fixed default assets directory behavior.
+			Added contextual help to LoginView.
+			v Alpha 0.1.21
+			Display app version on Robot screen.
+			v Alpha 0.1.20
+			Added app version label user variable.
+			v Alpha 0.1.19
+			Added emergency flagging for ultrasonic range below threshold.
+			Improved handling of dropped pilot.
+			Improved cleanup at exit.
+			v Alpha 0.1.18
+			Cleared latency flag when pilot is discovered to have dropped out of room.
+			v Alpha 0.1.17
+			Added more validation to Robot login name.
+			Listening for user exit room events, so can check whether pilot is still in room.
+			v Alpha 0.1.16
+			Declination utility now functional as long as web service available.
+			Changed DebugEvent class to DebugEventEx to avoid conflict with DebugEvent class of ANE.
+			v Alpha 0.1.15
+			Added sender name validation to _SfsPrivateMessageReceived.
+			Latency emergency state now not set if pilot no longer aboard.
+			v Alpha 0.1.14
+			If connected when exiting on Android, now log out and disconnect first.
+			Handled EmergencyAcknowledge message from Pilot.
+			Changed EmergencyCodes class to EmergencyFlags.
+			Added FlagsUtil class.
+			Changed EMS report from PrivateMessage to UserVariable.
+			Added _uEmFlags to store the various emergency state flags that can be set.
+			Removed unnecessary persistence settings when updating global room variables.
+			v Alpha 0.1.13
+			Debugging global room variable issues
+			v Alpha 0.1.12
+			Declination util debugging
+			v Alpha 0.1.11
+			v Alpha 0.1.10
+			Fixed gps room var send only when changed significantly
+			v Alpha 0.1.9
+			Merged.
+			v Alpha Branch 0.1.8
+			Changed sfs-config: zone = Arx
+			Ready to merge back to trunk
+			v Alpha Branch 0.1.7
+			Build for Android
+			v Alpha Branch 0.1.6
+			Added allowUserCountChange to roomEvents.
+			Added updating of gps room variable at approximately 1 second intervals (assuming it has changed).
+			v Alpha Branch 0.1.5
+			Added text input field for Robot avatar assets directory.
+			Added assets directory room variable initialization.
+			v Alpha Branch 0.1.1 to 0.1.4
+			Added text input fields for Robot name and permitted Pilot names to LoginView.
+			Added room creation.
+			Added room variable initialization.
+			v Alpha Branch 0.1.0 branched
+			Changed sfs-config: zone = ArxDevel, useBlueBox = true.
+			v Alpha 0.0.67 ready to branch for architecture change
+			*/
+			
+			[Bindable]
+			private var _camMgr:CameraManager;
+			
+			private var _reLine0:RegExp = /^.*[\n\r]/;
+			private var _reNewLines:RegExp = /[\n\r]/g;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			// app startup event order (of those we typically listen for):
+			//   initialize
+			//   creationComplete
+			//   applicationComplete
+			private function _ApplicationCompleted ( ) : void
+			{
+				NonUIComponentBase.eventRelay = this;
+				
+				// get DialogManager (singleton) instance
+				var dialogMgr:DialogManager = DialogManager.getInstance ( );
+				
+				// events from objects in display list, using capture phase
+				//    debug
+				addEventListener ( DebugEventEx.DEBUG_OUT, _DebugOutReceived, true );
+				addEventListener ( DebugByteArrayEvent.DEBUG_BYTE_ARRAY, _DebugByteArrayReceived, true );
+				//    route dialog events to DialogManager
+				addEventListener ( DialogEvent.ALERT, dialogMgr.mAlertEventHandler, true );
+				addEventListener ( DialogEvent.DIALOG, dialogMgr.mDialogEventHandler, true );
+				
+				// events from subclasses of NonUIComponentBase, using this as eventRelay
+				//    debug
+				addEventListener ( DebugEventEx.DEBUG_OUT, _DebugOutReceived );
+				addEventListener ( DebugByteArrayEvent.DEBUG_BYTE_ARRAY, _DebugByteArrayReceived );
+				//    route dialog events to DialogManager
+				addEventListener ( DialogEvent.ALERT, dialogMgr.mAlertEventHandler );
+				addEventListener ( DialogEvent.DIALOG, dialogMgr.mDialogEventHandler );
+				
+				_camMgr = CameraManager.instance;
+				_sessionMgr = SessionManager.instance;
+				_sessionMgr.initialize ( this );
+				
+				// ##### TESTING
+				/*
+				var sOut:String = 'Multitouch:';
+				sOut += '\n  supportsTouchEvents: ' + Multitouch.supportsTouchEvents;
+				sOut += '\n  maxTouchPoints: ' + Multitouch.maxTouchPoints;
+				sOut += '\n  supportsGestureEvents: ' + Multitouch.supportsGestureEvents;
+				sOut += '\n  supportedGestures: ' + Multitouch.supportedGestures;
+				sOut += '\n  inputMode: ' + Multitouch.inputMode;
+				sOut += '\n  mapTouchToMouse: ' + Multitouch.mapTouchToMouse;
+				_DebugOut ( sOut );
+				*/
+				// #############
+			}
+			
+			private function _DebugByteArrayReceived ( event:DebugByteArrayEvent ) : void
+			{
+				if ( _sessionMgr.debugOn )
+				{
+					var sHex:String = HexStringUtil.HexStringFromByteArray ( event.bytes );
+					var sMsg:String = resourceManager.getString ( 'default', event.messageResource, [ sHex ] );
+					if ( !sMsg )
+					{
+						sMsg = event.messageResource + ': ' + sHex;
+					}
+					_DebugOut ( sMsg );
+				}
+			}
+			
+			private function _DebugClear ( ) : void
+			{
+				taDebug.text= '';
+			}
+			
+			/**
+			 * @param message Message to display
+			 * @param isResource Indicates that the message string is to be passed to
+			 * resourceManager.getString()
+			 * @param resourceParams Parameters (if any) to pass to resourceManager.getString()
+			 * if isResource is true
+			 * @param alertOk If debug mode is off, display an Alert
+			 * @param end String (if any) to add at end of debug output
+			 * (defaults to new line character)
+			 */
+			private function _DebugOut (
+				message:String = '',
+				isResource:Boolean = false,
+				resourceParams:Array = null,
+				alertOk:Boolean = false,
+				end:String = '\n'
+			) : void
+			{
+				var sMsg:String;
+				if ( _sessionMgr.debugOn )
+				{
+					if ( isResource )
+					{
+						sMsg = resourceManager.getString ( 'default', message, resourceParams );
+						if ( !sMsg )
+						{
+							sMsg = message;
+						}
+					}
+					else
+					{
+						sMsg = message;
+					}
+					// limit line count
+					var s:String = taDebug.text;
+					var iOver:int = s.match ( _reNewLines ).length - 39;
+					if ( iOver > 0 )
+					{
+						for ( var i:int=0; i<iOver; i++ )
+						{
+							s = s.replace ( _reLine0, '' );
+						}
+						taDebug.text = s;
+					}
+					taDebug.appendText ( '-- ' + sMsg + end );
+				}
+				else if ( alertOk )
+				{
+					dispatchEvent (
+						new DialogEvent (
+							DialogEvent.ALERT,
+							message,
+							'',
+							resourceParams
+						)
+					);
+				}
+			}
+			
+			private function _DebugOutReceived ( event:DebugEventEx ) : void
+			{
+				_DebugOut (
+					event.message,
+					event.isResource,
+					event.resourceParams,
+					event.alertOk,
+					event.end
+				);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="home" />
+		<s:State name="home_cs" />
+		<s:State name="home_pp" />
+		<s:State name="home_rc" />
+		<s:State name="bluetooth_config" />
+		<s:State name="connect_prompt_cs" />
+		<s:State name="custom_config" />
+		<s:State name="eeprom_config" />
+		<s:State name="login_prompt_cs" />
+		<s:State name="mode_prompt" />
+		<s:State name="phone_config" />
+	</s:states>
+	<mx:UIComponent
+		id="uicVideo"
+		left="0" right="0"
+		top="0" bottom="0"
+		creationComplete="SessionManager.instance.videoPod=uicVideo"
+		/>
+	<s:TextArea
+		id="taDebug"
+		left="4" right="4"
+		top="{actBar.height + 4}" bottom="{statBar.height + 4}"
+		visible="{_sessionMgr.debugVisible}"
+		includeInLayout="{_sessionMgr.debugVisible}"
+		editable="false"
+		selectable="false"
+		/>
+	<comp:StatusBar
+		id="statBar"
+		bottom="0"
+		width="{width}"
+		/>
+	<vw:HomeRC
+		id="vwHomeRC"
+		includeIn="home_rc"
+		itemDestructionPolicy="auto"
+		x="0" y="{actBar.height}"
+		width="{width}" height="{height-actBar.height}"
+		/>
+	<comp:ActionBarMenuTray
+		id="abmt"
+		y="{actBar.height}"
+		width="{width}"
+		visible="{_sessionMgr.actionMenuOn}"
+		includeInLayout="{_sessionMgr.actionMenuOn}"
+		enabled="{!_sessionMgr.isBusy}"
+		debug_clear="_DebugClear()"
+		triggerButton="{actBar.trayTriggerButton}"
+		/>
+	<comp:ActionBar
+		id="actBar"
+		width="{width}"
+		enabled="{!_sessionMgr.isBusy}"
+		/>
+	<vw:OpModeSelectView
+		id="vwMode"
+		includeIn="mode_prompt"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<vw:PhoneConfigView
+		id="vwConfig"
+		includeIn="phone_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<vw:EepromConfigView
+		id="vwEeprom"
+		includeIn="eeprom_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<vw:CustomConfigView
+		id="vwCustom"
+		includeIn="custom_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<vw:LightView
+		id="vwLight"
+		visible="{_sessionMgr.lightOn}"
+		includeInLayout="{_sessionMgr.lightOn}"
+		/>
+	<vw:ConnectCsView
+		id="vwConnectCS"
+		includeIn="connect_prompt_cs"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<vw:LoginCsView
+		id="vwSfsLogin"
+		includeIn="login_prompt_cs"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<vw:BluetoothConfigView
+		id="vwBluetooth"
+		includeIn="bluetooth_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<s:BusyIndicator
+		id="bi"
+		horizontalCenter="0"
+		verticalCenter="0"
+		visible="{_sessionMgr.isBusy}"
+		includeInLayout="{_sessionMgr.isBusy}"
+		/>
+</s:Application>

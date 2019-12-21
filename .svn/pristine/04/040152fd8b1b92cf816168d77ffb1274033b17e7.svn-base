@@ -1,0 +1,38 @@
+package vo
+{
+	public class EmergencyCodes
+	{
+		// CONSTANTS
+		
+		public static const UNKNOWN:uint = 0;
+		public static const WATCHDOG:uint = 1;
+		public static const OBSTACLE:uint = 2;
+		public static const STALL:uint = 3;
+		public static const POSITION:uint = 4;
+		public static const BATTERY:uint = 5;
+		public static const TEMPERATURE:uint = 6;
+		
+		private static const __CODES:Array = [
+			UNKNOWN,
+			WATCHDOG,
+			OBSTACLE,
+			STALL,
+			POSITION,
+			BATTERY,
+			TEMPERATURE
+		];
+		
+		//  PUBLIC METHODS
+		
+		public function EmergencyCodes()
+		{
+		}
+		
+		public static function ValidateCode ( value:uint ) : uint
+		{
+			if ( __CODES.indexOf ( value ) < 0 )
+				return UNKNOWN;
+			return value;
+		}
+	}
+}

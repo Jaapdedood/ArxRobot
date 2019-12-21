@@ -1,0 +1,25 @@
+{
+	"default": "release",
+	"configs":
+	{
+		"release":
+		{
+			"host": "sfs.arxterra.com",
+			"udpHost": "sfs.arxterra.com",
+			"zone": "Arx"
+		},
+		"development":
+		{
+			"host": "sfsdev.arxterra.com",
+			"udpHost": "sfsdev.arxterra.com",
+			"zone": "ArxDev"
+		},
+		"local":
+		{
+			"host": "192.168.111.3",
+			"udpHost": "192.168.111.3",
+			"zone": "Arx",
+			"useBlueBox": false
+		}
+	}
+}

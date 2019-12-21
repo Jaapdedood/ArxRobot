@@ -1,0 +1,218 @@
+package utils
+{
+	import flash.events.Event;
+	import flash.events.IOErrorEvent;
+	import flash.events.ProgressEvent;
+	import flash.events.SecurityErrorEvent;
+	import flash.events.ServerSocketConnectEvent;
+	import flash.net.ServerSocket;
+	import flash.net.Socket;
+	import flash.utils.ByteArray;
+	
+	/**
+	 * Singleton class extending ArduinoConnector
+	 * to implement connection with USB Microbridge
+	 * via ServerSocket.
+	 */
+	[Bindable]
+	public class ArduinoConnectorSocket extends ArduinoConnector
+	{
+		// STATIC CONSTANTS AND PROPERTIES
+		
+		private static var __instance:ArduinoConnectorSocket;
+		
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		/**
+		 * singleton instance of ArduinoConnectorSocket
+		 */
+		public static function get instance ( ) : ArduinoConnectorSocket
+		{
+			if ( !__instance )
+			{
+				__instance = new ArduinoConnectorSocket ( new SingletonEnforcer() );
+			}
+			return __instance;
+		}
+		
+		/**
+		 * Singleton: use static property <em>instance</em> to access singleton instance.
+		 */	
+		public function ArduinoConnectorSocket ( enforcer:SingletonEnforcer )
+		{
+			super ( );
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			if ( hasClient )
+			{
+				_socketArduino.removeEventListener ( Event.CLOSE, _Closed );
+				_socketArduino.removeEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+				_socketArduino.removeEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+				_socketArduino.removeEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+				_socketArduino.close ( );
+				_socketArduino = null;
+			}
+			if ( _socketServer != null )
+			{
+				_socketServer.removeEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+				_socketServer.close ( );
+				_socketServer = null;
+			}
+			super.dismiss ( );
+		}
+		
+		override public function init ( ) : void
+		{
+			super.init ( );
+			listen ( 4567 );
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		override public function send ( bytes:ByteArray ) : Boolean
+		{
+			if ( _socketArduino != null && _socketArduino.connected )
+			{
+				bytes.position = 0;
+				try
+				{
+					_socketArduino.writeBytes ( bytes );
+					_socketArduino.flush ( );
+				}
+				catch ( err:Error )
+				{
+					debugOut ( 'error_ss_send', true, [ err.message ] );
+				}
+				return true;
+			}
+			
+			debugOut ( 'error_ss_no_conn', true );
+			return false;
+		}
+		
+		
+		// PROTECTED PROPERTIES AND GET/SET METHOD GROUPS
+		
+		protected function get bound ( ) : Boolean
+		{
+			return ( _socketServer != null && _socketServer.bound );
+		}
+		
+		protected function get hasClient ( ) : Boolean
+		{
+			return ( _socketArduino != null && _socketArduino.connected );
+		}
+		
+		protected function get listening ( ) : Boolean
+		{
+			return ( _socketServer != null && _socketServer.listening );
+		}
+		
+		protected function get port ( ) : int
+		{
+			var iPort:int;
+			if ( bound )
+				iPort = _socketServer.localPort;
+			return iPort;
+		}
+		
+		
+		// OTHER PROTECTED METHODS
+		
+		/**
+		 * Binds the server socket to the supplied port number and starts it listening
+		 * @param port The port number the Arduino will connect
+		 */
+		protected function listen ( port:int ) : void
+		{
+			if ( _socketServer != null )
+			{
+				if ( _socketServer.listening && _socketServer.localPort == port )
+				{
+					// already listening on that port
+					return;
+				}
+				// if get here, need to dismiss existing sockets
+				if ( _socketArduino.connected )
+				{
+					_socketArduino.close ( );
+				}
+				_socketServer.removeEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+				_socketServer.close ( );
+			}
+			
+			_socketServer = new ServerSocket ( );
+			_socketServer.addEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+			try
+			{
+				_socketServer.bind ( port );
+				_socketServer.listen ( );
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_ss_init', true, [ err.message ] );
+			}
+		}
+		
+		// PRIVATE PROPERTIES
+		
+		private var _socketArduino:Socket;
+		private var _socketServer:ServerSocket;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _Closed ( event:Event ) : void
+		{
+			if ( _socketArduino != null )
+			{
+				// remove event listeners
+				_socketArduino.removeEventListener ( Event.CLOSE, _Closed );
+				_socketArduino.removeEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+				_socketArduino.removeEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+				_socketArduino.removeEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+				_socketArduino = null;
+				debugOut ( 'status_ss_disconn', true );
+			}
+		}
+		
+		private function _Connected ( event:ServerSocketConnectEvent ) : void
+		{
+			// store reference to socket and add event listeners
+			_socketArduino = event.socket;
+			_socketArduino.addEventListener ( Event.CLOSE, _Closed );
+			_socketArduino.addEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+			_socketArduino.addEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+			_socketArduino.addEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+			debugOut ( 'status_ss_conn', true );
+		}
+		
+		private function _DataReceived ( event:ProgressEvent ) : void
+		{
+			var ba:ByteArray = new ByteArray ( );
+			try
+			{
+				_socketArduino.readBytes ( ba );
+				dataQueuePush ( ba );
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_ss_receive', true, [ err.message ] );
+			}
+		}
+		
+		private function _IoError ( event:IOErrorEvent ) : void
+		{
+			debugOut ( 'error_ss_io', true, [ event.text ] );
+		}
+		
+		private function _SecurityError ( event:SecurityErrorEvent ) : void
+		{
+			debugOut ( 'error_ss_security', true, [ event.text ] );
+		}
+	}
+}
+class SingletonEnforcer {}

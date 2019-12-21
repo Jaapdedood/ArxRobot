@@ -1,0 +1,210 @@
+{
+	"eepv":
+	{
+		"addr": "0x1FE",
+		"bytes": 2,
+		"def": 1,
+		"rep": true,
+		"type": "ushort"
+	},
+	"ccp":
+	{
+		"addr": "0x000",
+		"bytes": 1,
+		"def": true,
+		"rep": true,
+		"type": "bool"
+	},
+	"ccph":
+	{
+		"addr": "0x002",
+		"bytes": 2,
+		"def": 0,
+		"rep": true,
+		"type": "ushort"
+	},
+	"ccpx":
+	{
+		"addr": "0x004",
+		"bytes": 2,
+		"def": 167,
+		"rep": true,
+		"type": "ushort"
+	},
+	"ccpn":
+	{
+		"addr": "0x006",
+		"bytes": 2,
+		"def": 0,
+		"rep": true,
+		"type": "ushort"
+	},
+	"ccpr":
+	{
+		"addr": "0x008",
+		"bytes": 2,
+		"def": 0,
+		"rep": true,
+		"type": "ushort"
+	},
+	"cct":
+	{
+		"addr": "0x00A",
+		"bytes": 1,
+		"def": true,
+		"rep": true,
+		"type": "bool"
+	},
+	"ccth":
+	{
+		"addr": "0x00C",
+		"bytes": 2,
+		"def": 10,
+		"rep": true,
+		"type": "ushort"
+	},
+	"cctx":
+	{
+		"addr": "0x00E",
+		"bytes": 2,
+		"def": 167,
+		"rep": true,
+		"type": "ushort"
+	},
+	"cctn":
+	{
+		"addr": "0x010",
+		"bytes": 2,
+		"def": 10,
+		"rep": true,
+		"type": "ushort"
+	},
+	"cctr":
+	{
+		"addr": "0x012",
+		"bytes": 2,
+		"def": 90,
+		"rep": true,
+		"type": "ushort"
+	},
+	"sne":
+	{
+		"addr": "0x014",
+		"bytes": 1,
+		"def": false,
+		"rep": false,
+		"type": "bool"
+	},
+	"snpc":
+	{
+		"addr": "0x016",
+		"bytes": 1,
+		"def": 8,
+		"rep": false,
+		"type": "ubyte"
+	},
+	"snwd":
+	{
+		"addr": "0x018",
+		"bytes": 8,
+		"def": 6.5,
+		"rep": false,
+		"type": "double"
+	},
+	"usle":
+	{
+		"addr": "0x020",
+		"bytes": 1,
+		"def": false,
+		"rep": true,
+		"type": "bool"
+	},
+	"uslx":
+	{
+		"addr": "0x022",
+		"bytes": 2,
+		"def": 200,
+		"rep": true,
+		"type": "ushort"
+	},
+	"usln":
+	{
+		"addr": "0x024",
+		"bytes": 1,
+		"def": 4,
+		"rep": true,
+		"type": "ubyte"
+	},
+	"usre":
+	{
+		"addr": "0x026",
+		"bytes": 1,
+		"def": false,
+		"rep": true,
+		"type": "bool"
+	},
+	"usrx":
+	{
+		"addr": "0x028",
+		"bytes": 2,
+		"def": 200,
+		"rep": true,
+		"type": "ushort"
+	},
+	"usrn":
+	{
+		"addr": "0x02A",
+		"bytes": 1,
+		"def": 4,
+		"rep": true,
+		"type": "ubyte"
+	},
+	"btme":
+	{
+		"addr": "0x02C",
+		"bytes": 1,
+		"def": true,
+		"rep": true,
+		"type": "bool"
+	},
+	"btmx":
+	{
+		"addr": "0x02E",
+		"bytes": 2,
+		"def": 85,
+		"rep": true,
+		"type": "short"
+	},
+	"btmn":
+	{
+		"addr": "0x030",
+		"bytes": 2,
+		"def": -47,
+		"rep": true,
+		"type": "short"
+	},
+	"cbte":
+	{
+		"addr": "0x032",
+		"bytes": 1,
+		"def": true,
+		"rep": true,
+		"type": "bool"
+	},
+	"dbte":
+	{
+		"addr": "0x034",
+		"bytes": 1,
+		"def": true,
+		"rep": true,
+		"type": "bool"
+	},
+	"spdx":
+	{
+		"addr": "0x036",
+		"bytes": 8,
+		"def": 80,
+		"rep": true,
+		"type": "double"
+	}
+}

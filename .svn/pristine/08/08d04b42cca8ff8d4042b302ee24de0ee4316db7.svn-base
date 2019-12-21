@@ -1,0 +1,499 @@
+package controllers
+{
+	import flash.events.Event;
+	import flash.events.TimerEvent;
+	import flash.media.Camera;
+	import flash.utils.Timer;
+	
+	import org.osmf.layout.HorizontalAlign;
+	import org.osmf.layout.VerticalAlign;
+	
+	import utils.NonUIComponentBase;
+	
+	import vo.CameraConfig;
+	import vo.MessageData;
+	import vo.UserState;
+	
+	[Event(name="camera_changed", type="flash.events.Event")]
+	[Event(name="camera_config_changed", type="flash.events.Event")]
+	[Event(name="camera_dimensions_ready", type="flash.events.Event")]
+	[Event(name="camera_inset_align_h", type="flash.events.Event")]
+	[Event(name="camera_inset_align_v", type="flash.events.Event")]
+	[Event(name="camera_inset_size", type="flash.events.Event")]
+	[Event(name="camera_monitor", type="flash.events.Event")]
+	
+	public class CameraManager extends NonUIComponentBase
+	{
+		// CONSTANTS
+		
+		public static const CAMERA_CHANGED:String = 'camera_changed';
+		public static const CAMERA_CONFIG_CHANGED:String = 'camera_config_changed';
+		public static const CAMERA_DIMENSIONS_READY:String = 'camera_dimensions_ready';
+		public static const CAMERA_INSET_ALIGN_H:String = 'camera_inset_align_h';
+		public static const CAMERA_INSET_ALIGN_V:String = 'camera_inset_align_v';
+		public static const CAMERA_INSET_SIZE:String = 'camera_inset_size';
+		public static const CAMERA_MONITOR:String = 'camera_monitor';
+		
+		public static const INSET_SIZE_MAX:Number = 1.0;
+		public static const INSET_SIZE_MIN:Number = 0.1;
+		
+		// CONSTRUCTOR AND INSTANCE
+		
+		/**
+		 * Singleton: use static property <b>instance</b> to get a reference.
+		 */
+		public function CameraManager ( enforcer:SingletonEnforcer )
+		{
+			super();
+			_sessionMgr = SessionManager.instance;
+			_cfg = new CameraConfig ( );
+			_cam = Camera.getCamera ( );
+		}
+		
+		/**
+		 * Singleton instance
+		 */
+		public static function get instance ( ) : CameraManager
+		{
+			if ( !__instance )
+			{
+				__instance = new CameraManager ( new SingletonEnforcer ( ) );
+			}
+			return __instance;
+		}
+		
+		private static var __instance:CameraManager;
+		
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		[Bindable (event="camera_changed")]
+		public function get camera():Camera
+		{
+			return _cam;
+		}
+		public function set camera(value:Camera):void
+		{
+			if( _cam !== value)
+			{
+				_cam = value;
+				_CfgApply ( );
+				dispatchEvent ( new Event ( CAMERA_CHANGED ) );
+			}
+		}
+		
+		[Bindable (event="camera_dimensions_ready")]
+		public function get cameraHeight():int
+		{
+			return _iHt;
+		}
+		
+		[Bindable (event="camera_dimensions_ready")]
+		public function get cameraWidth():int
+		{
+			return _iWd;
+		}
+		
+		[Bindable (event="camera_config_changed")]
+		public function get configActive():CameraConfig
+		{
+			return _cfg;
+		}
+		public function set configActive(value:CameraConfig):void
+		{
+			if ( _cfg !== value )
+			{
+				_cfg = value;
+				_CfgApply ( );
+				_CfgChangeEventDispatch ( );
+			}
+		}
+		
+		[Bindable]
+		public function get enabled():Boolean
+		{
+			return _bEnabled;
+		}
+		public function set enabled(value:Boolean):void
+		{
+			_bEnabled = value;
+			if ( value )
+			{
+				motionSet ( _sessionMgr.isMoving );
+				// apply current config
+				_CfgApply ( );
+			}
+			else
+			{
+				_FpsTimerClear ( );
+			}
+		}
+		
+		[Bindable (event="camera_monitor")]
+		public function get monitor():Boolean
+		{
+			return _bMon;
+		}
+		public function set monitor(value:Boolean):void
+		{
+			if( _bMon !== value)
+			{
+				_bMon = value;
+				dispatchEvent ( new Event ( CAMERA_MONITOR ) );
+			}
+		}
+		
+		[Inspectable (enumeration="center,left,right")]
+		[Bindable(event="camera_inset_align_h")]
+		public function get insetAlignH():String
+		{
+			return _sInsetAlignH;
+		}
+		public function set insetAlignH(value:String):void
+		{
+			if( _sInsetAlignH !== value)
+			{
+				_sInsetAlignH = value;
+				dispatchEvent ( new Event ( CAMERA_INSET_ALIGN_H ) );
+			}
+		}
+		
+		[Inspectable (enumeration="bottom,middle,top")]
+		[Bindable(event="camera_inset_align_v")]
+		public function get insetAlignV():String
+		{
+			return _sInsetAlignV;
+		}
+		public function set insetAlignV(value:String):void
+		{
+			if( _sInsetAlignV !== value)
+			{
+				_sInsetAlignV = value;
+				dispatchEvent ( new Event ( CAMERA_INSET_ALIGN_V ) );
+			}
+		}
+		
+		[Bindable(event="camera_inset_size")]
+		/**
+		 * Inset size as a fraction of the limiting dimension of video pod
+		 */
+		public function get insetSize():Number
+		{
+			return _nInsetSize;
+		}
+		/**
+		 * @private
+		 */
+		public function set insetSize(value:Number):void
+		{
+			if( _nInsetSize !== value)
+			{
+				_nInsetSize = value;
+				dispatchEvent ( new Event ( CAMERA_INSET_SIZE ) );
+			}
+		}
+		
+		// OTHER PUBLIC METHODS
+		
+		public function configAdjustRequest ( bool:Boolean ) : void
+		{
+			if ( _sessionMgr.moveIgnore )
+			{
+				debugOut ( 'cameraConfigAdjustRequest discarded due to emergency flags: ' + _sessionMgr.emergencyFlagsGet() );
+				return;
+			}
+			
+			// if true, only apply if actually have cameraConfigMotion
+			if ( bool )
+			{
+				if ( !_userState.cameraConfigMotion )
+				{
+					bool = false;
+				}
+			}
+			if ( bool == _userState.cameraAdjustForMotion )
+			{
+				return;  // no change
+			}
+			
+			_userState.cameraAdjustForMotion = bool;
+			
+			callLater ( _CfgAdjustReport );
+			// if we were moving, the change to cameraAdjustForMotion
+			// now puts us in non-compliance, so switch config
+			if ( _sessionMgr.isMoving )
+			{
+				if ( bool )
+				{
+					configActive = _userState.cameraConfigMotion;
+				}
+				else
+				{
+					configActive = _userState.cameraConfigDefault;
+				}
+			}
+		}
+		
+		public function configDefaultRequest ( cc:CameraConfig ) : void
+		{
+			if ( _sessionMgr.moveIgnore )
+			{
+				debugOut ( 'cameraConfigDefaultRequest discarded due to emergency flags: ' + _sessionMgr.emergencyFlagsGet() );
+				return;
+			}
+			
+			_userState.cameraConfigDefault = cc;
+			if ( !_sessionMgr.isMoving || !_userState.cameraAdjustForMotion )
+			{
+				configActive = _userState.cameraConfigDefault;
+			}
+		}
+		
+		public function configMotionRequest ( cc:CameraConfig ) : void
+		{
+			if ( _sessionMgr.moveIgnore )
+			{
+				debugOut ( 'cameraConfigMotionRequest discarded due to emergency flags: ' + _sessionMgr.emergencyFlagsGet() );
+				return;
+			}
+			
+			_userState.cameraConfigMotion = cc;
+			
+			if ( _sessionMgr.isMoving && _userState.cameraAdjustForMotion )
+			{
+				configActive = _userState.cameraConfigMotion;
+			}
+		}
+		
+		public function configRequest ( cc:CameraConfig ) : void
+		{
+			if ( _sessionMgr.moveIgnore )
+			{
+				debugOut ( 'cameraConfigRequest discarded due to emergency flags: ' + _sessionMgr.emergencyFlagsGet() );
+				return;
+			}
+			
+			configActive = cc;
+		}
+		
+		public function dimensionsCheck ( ) : void
+		{
+			if ( _iSizeChks >= 0 )
+				return; // already checking
+			
+			_iSizeChks = 0;
+			callLater ( _SizeCheck );
+		}
+		
+		public function fpsPollRequest ( msec:int ) : void
+		{
+			if ( msec < 1 )
+			{
+				// turn polling off
+				_FpsTimerClear ( );
+			}
+			else
+			{
+				if ( msec < 500 )
+				{
+					// don't poll more often than once every half second
+					_iFpsMsec = 500;
+				}
+				else
+				{
+					_iFpsMsec = msec;
+				}
+				// start polling or update delay value if already running
+				_FpsTimerSet ( );
+			}
+		}
+		
+		public function motionSet ( on:Boolean ) : void
+		{
+			if ( _bEnabled && _userState.cameraAdjustForMotion )
+			{
+				if ( on )
+				{
+					configActive = _userState.cameraConfigMotion;
+				}
+				else
+				{
+					configActive = _userState.cameraConfigDefault;
+				}
+			}
+		}
+		
+		/**
+		 * Index of -1 requests the default camera
+		 */
+		public function cameraSetByIndex ( index:int = -1 ) : void
+		{
+			if ( _cam.index == index )
+				return;
+			
+			if ( index >= 0 && index < Camera.names.length )
+			{
+				camera = Camera.getCamera ( index.toString() );
+			}
+			else
+			{
+				camera = Camera.getCamera ( );
+			}
+		}
+		
+		public function userStateInit ( userState:UserState ) : void
+		{
+			_userState = userState;
+			if ( !_userState.cameraConfigDefault )
+			{
+				_userState.cameraConfigDefault = _cfg;
+			}
+			else
+			{
+				_cfg = _userState.cameraConfigDefault;
+			}
+			if ( isNaN ( _userState.cameraIndex ) )
+			{
+				_userState.cameraIndex = _cam.index;
+			}
+			else
+			{
+				cameraSetByIndex ( _userState.cameraIndex );
+			}
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _bEnabled:Boolean = false;
+		private var _bMon:Boolean = false;
+		private var _cam:Camera;
+		private var _cfg:CameraConfig;
+		private var _iFpsMsec:int = 2000;
+		private var _iHt:int = 0;
+		private var _iWd:int = 0;
+		private var _iSizeChks:int = -1;
+		private var _nInsetSize:Number = 0.4;
+		private var _sessionMgr:SessionManager;
+		private var _sInsetAlignH:String = HorizontalAlign.RIGHT;
+		private var _sInsetAlignV:String = VerticalAlign.BOTTOM;
+		private var _tmrFps:Timer; // FPS polling
+		private var _userState:UserState;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _CfgAdjustReport ( ) : void
+		{
+			_sessionMgr.controlConnector.userVarsQueue ( new <MessageData> [ new MessageData ( 'ccfga', _userState.cameraAdjustForMotion ) ] );
+		}
+		
+		private function _CfgApply ( ) : void
+		{
+			if ( !_bEnabled )
+				return;
+			
+			try
+			{
+				// ask the camera for what we want,
+				// and we'll find out later what it really gives us
+				_cam.setMode (
+					_cfg.width,
+					_cfg.height,
+					_cfg.fps,
+					_cfg.favorArea
+				);
+				_cam.setQuality ( _cfg.bandWidth, _cfg.quality );
+				_cam.setKeyFrameInterval ( _cfg.keyFrameInterval );
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_cam_set', true, [ err.message ] );
+				return;
+			}
+			dimensionsCheck ( );
+		}
+		
+		private function _CfgChangeEventDispatch ( ) : void
+		{
+			dispatchEvent ( new Event ( CAMERA_CONFIG_CHANGED ) );
+		}
+		
+		private function _CfgReport ( ) : void
+		{
+			_sessionMgr.controlConnector.userVarsQueue ( new <MessageData> [
+				new MessageData ( 'ccfg',
+					new CameraConfig (
+						_iWd,
+						_iHt,
+						Math.min ( _cfg.fps, _cam.currentFPS ),
+						_cfg.favorArea,
+						_cam.bandwidth,
+						_cam.quality,
+						_cam.keyFrameInterval
+					),
+					true
+				)
+			] );
+		}
+		
+		private function _FpsPoll ( event:TimerEvent ) : void
+		{
+			_sessionMgr.controlConnector.userVarsQueue ( new <MessageData> [
+				new MessageData ( 'cfps', _cam.currentFPS )
+			] );
+		}
+		
+		private function _FpsTimerClear ( ) : void
+		{
+			if ( !_tmrFps )
+				return;
+			
+			_tmrFps.stop ( );
+			_tmrFps.removeEventListener ( TimerEvent.TIMER, _FpsPoll );
+			_tmrFps = null;
+		}
+		
+		private function _FpsTimerSet ( ) : void
+		{
+			if ( !_tmrFps )
+			{
+				_tmrFps = new Timer ( _iFpsMsec, 0 );
+				_tmrFps.addEventListener ( TimerEvent.TIMER, _FpsPoll );
+			}
+			else
+			{
+				_tmrFps.reset ( );
+				_tmrFps.delay = _iFpsMsec;
+			}
+			_tmrFps.start ( );
+		}
+		
+		private function _SizeCheck ( ) : void
+		{
+			// dimensions may not be populated
+			// instantly after a mode change
+			var nWd:Number = _cam.width || 0;
+			if ( nWd < 1 )
+			{
+				if ( ++_iSizeChks > 99 )
+				{
+					_iSizeChks = -1;
+					debugOut ( 'camera size check exceeded iteration limit' );
+				}
+				else
+				{
+					callLater ( _SizeCheck );
+				}
+				return;
+			}
+			// if get here, we're ready to go
+			_iSizeChks = -1;
+			_iWd = nWd;
+			_iHt = _cam.height;
+			callLater ( _CfgReport );
+			dispatchEvent ( new Event ( CAMERA_DIMENSIONS_READY ) );
+		}
+	}
+}
+class SingletonEnforcer {}

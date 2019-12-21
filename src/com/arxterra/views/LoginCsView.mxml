@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	styleName="sView"
+	alpha.disabled=".4"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	removedFromStage="_Dismiss()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import com.arxterra.controllers.SessionManager;
+			
+			import com.arxterra.utils.PilotConnectorCS;
+			
+			import com.arxterra.vo.UserState;
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _ConfigClose ( ) : void
+			{
+				_sessionMgr.viewStatePop ( 'login_config_cs' );
+			}
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( !_bInited )
+					return;
+				
+				_bInited = false;
+			}
+			
+			private function _Done ( ) : void
+			{
+				var ccsf:PilotConnectorCS = _sessionMgr.pilotConnector as PilotConnectorCS;
+				if ( _sessionMgr.appViewState == 'login_prompt_cs' )
+				{
+					// login attempt if validates, otherwise stay open
+					if ( !ccsf.loginRequestQueue (
+						tinRobot.text,
+						tinPilots.text,
+						tinAssets.text )
+					)
+					{
+						// returned false, which indicates a
+						// validation problem, so reload fields with
+						// recent entries that have possibly been modified
+						// (such as excess spaces removed)
+						_PropsUpdate ( ccsf );
+					}
+				}
+				else
+				{
+					// config stored if validates, otherwise stay open
+					if ( !ccsf.loginValidate (
+						tinRobot.text,
+						tinPilots.text,
+						tinAssets.text )
+					)
+					{
+						// returned false, which indicates a
+						// validation problem, so reload fields with
+						// recent entries that have possibly been modified
+						// (such as excess spaces removed)
+						_PropsUpdate ( ccsf );
+					}
+					else
+					{
+						callLater ( _ConfigClose );
+					}
+				}
+			}
+			
+			private function _DoneBtnLabel ( appViewState:String ) : String
+			{
+				return resourceManager.getString ( 'default', ( appViewState == 'login_prompt_cs' ) ? 'login_login_btn_label' : 'login_done_btn_label' );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+				{
+					_PropsUpdate (
+						_sessionMgr.pilotConnector as PilotConnectorCS
+					);
+					cbExpand.selected = _sessionMgr.expertModeOn;
+					return;
+				}
+				_sessionMgr = SessionManager.instance;
+				_bInited = true;
+			}
+			
+			private function _PropsReset ( ) : void
+			{
+				var userState:UserState = SessionManager.instance.userState;
+				tinAssets.text = userState.assetsDir;
+				tinPilots.text = userState.pilotNames;
+				tinRobot.text = userState.robotName;
+			}
+			
+			private function _PropsUpdate ( ccsf:PilotConnectorCS ) : void
+			{
+				tinAssets.text = ccsf.loginAssetsDir;
+				tinPilots.text = ccsf.loginPilotNames;
+				tinRobot.text = ccsf.loginRobotName;
+				var sPrompt:String = ccsf.loginPrompt;
+				var bPrompt:Boolean = ( sPrompt.length > 0 );
+				lblPrompt.text = sPrompt;
+				lblPrompt.visible = bPrompt;
+				lblPrompt.includeInLayout = bPrompt;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="4"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		id="lblHead"
+		styleName="textHead"
+		text="{resourceManager.getString('default','login_title')}"
+		/>
+	<s:Group
+		height="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="0xffffff" alpha="0.1"
+					/>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0xffffff" alpha="0.2" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:Scroller
+			left="8" right="8"
+			top="8" bottom="8"
+			>
+			<s:VGroup
+				gap="4"
+				horizontalAlign="left"
+				>
+				<s:Label
+					id="lblPrompt"
+					width="100%"
+					/>
+				<s:HGroup
+					paddingTop="12"
+					gap="6"
+					horizontalAlign="left" verticalAlign="middle"
+					width="100%"
+					>
+					<s:Label
+						id="lblRobot"
+						styleName="textSubhead"
+						text="{resourceManager.getString('default','login_robot_label')}"
+						/>
+					<components:HelpLabel
+						id="tipRobot"
+						buttonPinVertical="bottom"
+						popupPinVertical="top"
+						resourceNameOrText="login_robot_tip"
+						/>
+				</s:HGroup>
+				<s:TextInput
+					id="tinRobot"
+					width="100%"
+					returnKeyLabel="done"
+					enter="stage.focus=null"
+					/>
+				<s:HGroup
+					paddingTop="12"
+					gap="6"
+					horizontalAlign="left" verticalAlign="middle"
+					width="100%"
+					>
+					<s:Label
+						id="lblPilots"
+						styleName="textSubhead"
+						text="{resourceManager.getString('default','login_pilots_label')}"
+						/>
+					<components:HelpLabel
+						id="tipPilots"
+						buttonPinVertical="bottom"
+						popupPinVertical="top"
+						resourceNameOrText="login_pilots_tip"
+						/>
+				</s:HGroup>
+				<s:TextInput
+					id="tinPilots"
+					width="100%"
+					returnKeyLabel="done"
+					enter="stage.focus=null"
+					/>
+				<s:Group
+					width="100%"
+					>
+					<s:Rect
+						left="1" right="1"
+						top="11" bottom="1"
+						>
+						<s:fill>
+							<s:SolidColor
+								color="0xffffff" alpha="0.1"
+								/>
+						</s:fill>
+						<s:stroke>
+							<s:SolidColorStroke
+								color="0xffffff" alpha="0.2" weight="1"
+								/>
+						</s:stroke>
+					</s:Rect>
+					<s:VGroup
+						left="4" right="4"
+						top="14" bottom="4"
+						gap="4"
+						horizontalAlign="left"
+						>
+						<s:CheckBox
+							id="cbExpand"
+							styleName="twistyCheckBox"
+							label="{resourceManager.getString('default','optional_btn_label')}"
+							/>
+						<s:HGroup
+							gap="6"
+							horizontalAlign="left" verticalAlign="middle"
+							width="100%"
+							visible="{cbExpand.selected}"
+							includeInLayout="{cbExpand.selected}"
+							>
+							<s:Label
+								id="lblAssets"
+								styleName="textSubhead"
+								text="{resourceManager.getString('default','login_assets_dir_label')}"
+								/>
+							<components:HelpLabel
+								id="tipAssets"
+								resourceNameOrText="login_assets_dir_tip"
+								/>
+						</s:HGroup>
+						<s:TextInput
+							id="tinAssets"
+							width="100%"
+							returnKeyLabel="done"
+							enter="stage.focus=null"
+							visible="{cbExpand.selected}"
+							includeInLayout="{cbExpand.selected}"
+							/>
+					</s:VGroup>
+				</s:Group>
+			</s:VGroup>
+		</s:Scroller>
+	</s:Group>
+	<s:HGroup
+		gap="12"
+		verticalAlign="middle"
+		>
+		<s:Button
+			id="btnDone"
+			styleName="done"
+			label="{_DoneBtnLabel(_sessionMgr.appViewState)}"
+			click="_Done()"
+			/>
+		<s:Button
+			id="btnReload"
+			label="{resourceManager.getString('default','login_reload_btn_label')}"
+			click="_PropsReset()"
+			/>
+	</s:HGroup>
+	
+</s:SkinnableContainer>

@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	width="16" height="16"
+	scaleX="3.5" scaleY="3.5"
+	>
+	<s:Ellipse
+		width="16" height="16"
+		>
+		<s:fill>
+			<s:RadialGradient>
+				<s:GradientEntry color="{symbolColor}" />
+				<s:GradientEntry color="{symbolColor}" alpha="0.2" />
+			</s:RadialGradient>
+		</s:fill>
+	</s:Ellipse>
+	<s:Path
+		x="7.25" y="1.5" winding="nonZero"
+		data="M0.75 3C0.335938 3 0 2.66406 0 2.25L0 0.75C0 0.335938 0.335938 0 0.75 0 1.16406 0 1.5 0.335938 1.5 0.75L1.5 2.25C1.5 2.66406 1.16406 3 0.75 3Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="7.25" y="11.5" winding="nonZero"
+		data="M0.75 3C0.335938 3 0 2.66406 0 2.25L0 0.75C0 0.335938 0.335938 0 0.75 0 1.16406 0 1.5 0.335938 1.5 0.75L1.5 2.25C1.5 2.66406 1.16406 3 0.75 3Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="1.5" y="7.25" winding="nonZero"
+		data="M3 0.75C3 1.16406 2.66406 1.5 2.25 1.5L0.75 1.5C0.335938 1.5 0 1.16406 0 0.75 0 0.335938 0.335938 0 0.75 0L2.25 0C2.66406 0 3 0.335938 3 0.75Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="11.5" y="7.25" winding="nonZero"
+		data="M3 0.75C3 1.16406 2.66406 1.5 2.25 1.5L0.75 1.5C0.335938 1.5 0 1.16406 0 0.75 0 0.335938 0.335938 0 0.75 0L2.25 0C2.66406 0 3 0.335938 3 0.75Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="3.18384" y="3.1842" winding="nonZero"
+		data="M2.34058 2.3407C2.04761 2.63367 1.573 2.63367 1.28003 2.3407L0.219482 1.28015C-0.0734863 0.987183 -0.0734863 0.512573 0.219482 0.219604 0.512451 -0.072876 0.987061 -0.0733643 1.28003 0.219604L2.34058 1.28015C2.63354 1.57312 2.63354 2.04822 2.34058
+		2.3407Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="10.2552" y="10.2549" winding="nonZero"
+		data="M2.34143 2.34082C2.04846 2.63379 1.57288 2.63379 1.28088 2.34082L0.220337 1.28027C-0.0726318 0.987305 -0.0736084 0.512695 0.21936 0.219727 0.511353 -0.0732422 0.987915 -0.0732422 1.28088 0.219727L2.34143 1.28027C2.63342 1.57324 2.63342 2.04883
+		2.34143 2.34082Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="3.18384" y="10.2549" winding="nonZero"
+		data="M2.34058 0.219727C2.63354 0.512695 2.63354 0.987305 2.34058 1.28027L1.28003 2.34082C0.987061 2.63379 0.512451 2.63379 0.219482 2.34082 -0.0734863 2.04785 -0.0734863 1.57324 0.219482 1.28027L1.28003 0.219727C1.573 -0.0732422 2.04761 -0.0732422
+		2.34058 0.219727Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="10.2552" y="3.1842" winding="nonZero"
+		data="M2.34143 0.219604C2.63342 0.512085 2.63342 0.987671 2.34143 1.28015L1.28088 2.3407C0.987915 2.63367 0.511353 2.63367 0.21936 2.34119 -0.0736084 2.04822 -0.0726318 1.57312 0.220337 1.28015L1.28088 0.219604C1.57288 -0.072876 2.04846 -0.0733643 2.34143
+		0.219604Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+</icons:ColorizedIconBase>

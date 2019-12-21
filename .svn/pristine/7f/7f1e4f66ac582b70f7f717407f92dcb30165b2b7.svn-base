@@ -1,0 +1,78 @@
+package utils
+{
+	import controllers.MotionManager;
+	
+	import icons.IconModeSmRC;
+	
+	import vo.MoveProps;
+
+	/**
+	 * Control connector for the Remote Control operational mode.
+	 */
+	[Bindable]
+	public class ControlConnectorRC extends ControlConnector
+	{
+		/**
+		 * @copy ControlConnectorRC
+		 */
+		public function ControlConnectorRC ( )
+		{
+			super ( );
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			_motMgr.enabled = false;
+			_motMgr.controlConnectorClear ( );
+			super.dismiss ( );
+		}
+		
+		/**
+		 * Called automatically by superclass during instantiation,
+		 * but may also be called manually to reactivate
+		 * if object was previously dismissed.
+		 * Subclass overrides must call super.init().
+		 */
+		override public function init ( ) : void
+		{
+			super.init ( );
+			_motMgr = MotionManager.instance;
+			_motMgr.controlConnectorSet ( this );
+			_motMgr.enabled = true;
+		}
+		
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		override public function get icon ( ) : Object
+		{
+			return IconModeSmRC;
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		public function move ( mp:MoveProps ) : void
+		{
+			_sessionMgr.motionRequest ( mp );
+		}
+		
+		override public function sleep ( ) : void
+		{
+			super.sleep ( );
+			_motMgr.enabled = false;
+		}
+		
+		override public function wake ( ) : void
+		{
+			super.wake ( );
+			_motMgr.enabled = true;
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _motMgr:MotionManager;
+		
+	}
+}

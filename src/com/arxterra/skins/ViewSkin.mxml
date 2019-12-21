@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	minWidth="48" minHeight="32">
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[HostComponent("spark.components.SkinnableContainer")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<!-- mask -->
+	<s:Group left="0" top="0" right="0" bottom="0" id="msk" >
+		<s:Rect
+			left="0" top="0" right="0" bottom="0"
+			topLeftRadiusX="9" topLeftRadiusY="9"
+			bottomRightRadiusX="9" bottomRightRadiusY="9">
+			<s:fill>
+				<s:SolidColor alpha="0"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<!-- Background -->
+	<s:Rect
+		left="0" top="0" right="0" bottom="0"
+		topLeftRadiusX="9" topLeftRadiusY="9"
+		bottomRightRadiusX="9" bottomRightRadiusY="9">
+		<s:fill>
+			<s:SolidColor alpha="0.9" />
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="0xffffff"
+				alpha="0.4"
+				weight="1"
+				pixelHinting="true"
+				scaleMode="none"
+				/>
+		</s:stroke>
+	</s:Rect>
+	
+	<!-- Content area -->
+	<s:Group
+		id="contentGroup"
+		mask="{msk}"
+		left="6" top="6" right="6" bottom="6">
+	</s:Group>
+	
+</s:SparkSkin>

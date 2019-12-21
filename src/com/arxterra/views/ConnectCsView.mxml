@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:components="com.arxterra.components.*"
+	styleName="sView"
+	creationComplete="_CreationCompleted()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.components.ThinCallout;
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.icons.IconArrowDown;
+			import com.arxterra.utils.PilotConnectorCS;
+			import com.arxterra.vo.SfsPreset;
+			
+			import mx.collections.ArrayList;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			private var _alPresets:ArrayList;
+			
+			[Bindable]
+			private var _bMod:Boolean;
+			
+			[Bindable]
+			private var _ccCS:PilotConnectorCS;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			[Bindable]
+			private var _nGap:Number;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			[Bindable]
+			private var _sfsPresetSelected:SfsPreset;
+			
+			[Bindable]
+			private var _sfsSettingsCurrent:SfsPreset;
+			
+			private function _ConfigClose ( ) : void
+			{
+				_sessionMgr.viewStatePop ( 'connect_config_cs' );
+			}
+			
+			private function _CreationCompleted ( ) : void
+			{
+				_sessionMgr = SessionManager.instance;
+				_nGap = _sessionMgr.guiGap;
+				_ccCS = _sessionMgr.pilotConnector as PilotConnectorCS;
+				_alPresets = _ccCS.connectPresetsList;
+				_sfsSettingsCurrent = _ccCS.connectSettings.clone ( );
+				_bMod = ( _sfsSettingsCurrent.id.indexOf ( '_mod' ) >= 0 );
+				var cf:ClassFactory = new ClassFactory ( com.arxterra.components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+			}
+			
+			private function _Done ( ) : void
+			{
+				if ( _sessionMgr.appViewState == 'connect_prompt_cs' )
+				{
+					_ccCS.connectQueue ( _sfsSettingsCurrent );
+				}
+				else
+				{
+					_ccCS.connectSettings = _sfsSettingsCurrent;
+					callLater ( _ConfigClose );
+				}
+			}
+			
+			private function _DoneBtnLabel ( appViewState:String ) : String
+			{
+				return resourceManager.getString ( 'default', ( appViewState == 'connect_prompt_cs' ) ? 'sfs_connect_conn_btn_label' : 'sfs_connect_done_btn_label' );
+			}
+			
+			private function _PresetBtnLabel ( prst:SfsPreset, mod:Boolean ) : String
+			{
+				var sId:String = prst.id;
+				var sLoc:String = resourceManager.getString ( 'default', 'sfs_connect_preset_' + sId );
+				if ( !sLoc )
+					return sId;
+				return sLoc;
+			}
+			
+			private function _PresetChanged ( event:IndexChangeEvent ) : void
+			{
+				var idx:int = event.newIndex;
+				if ( idx >= 0 && idx < _alPresets.length )
+				{
+					var prst:SfsPreset = _alPresets.getItemAt ( idx ) as SfsPreset;
+					_sfsSettingsCurrent = prst.clone ( );
+					_bMod = false;
+				}
+			}
+			
+			private function _PresetItemLabel ( item:Object ) : String
+			{
+				var sId:String = ( item as SfsPreset ).id;
+				var sLoc:String = resourceManager.getString ( 'default', 'sfs_connect_preset_' + sId );
+				if ( !sLoc )
+					return sId;
+				return sLoc;
+			}
+			
+			private function _SettingChanged ( ) : void
+			{
+				if ( _bMod )
+					return;
+				
+				_sfsSettingsCurrent.id += '_mod';
+				_sfsPresetSelected = null;
+				_bMod = true;
+			}
+			
+			private function _ToggleState ( ) : void
+			{
+				if ( cbExpand.selected )
+				{
+					currentState = 'expand';
+				}
+				else
+				{
+					currentState = 'collapse';
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="collapse" />
+		<s:State name="expand" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="{_nGap}"
+			horizontalAlign="center"
+			verticalAlign="middle"
+			/>
+	</s:layout>
+	
+	<s:Label
+		id="lblConnect"
+		maxDisplayedLines="0"
+		width="100%"
+		text="{_ccCS.connectPrompt}"
+		/>
+	<s:Group
+		height.expand="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="0xffffff" alpha="0.1"
+					/>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0xffffff" alpha="0.2" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:VGroup
+			left="8" right="8"
+			top="8" bottom="8"
+			gap="{_nGap}"
+			horizontalAlign="left"
+			>
+			<s:CheckBox
+				id="cbExpand"
+				width="100%"
+				styleName="twistyCheckBox"
+				label="{resourceManager.getString('default','details_btn_label')}"
+				change="_ToggleState()"
+				/>
+			<s:Scroller
+				height="100%"
+				width="100%"
+				visible="true"
+				includeInLayout="true"
+				visible.collapse="false"
+				includeInLayout.collapse="false"
+				>
+				<s:Group
+					width="100%"
+					>
+					<s:layout>
+						<s:ConstraintLayout>
+							<s:constraintColumns>
+								<s:ConstraintColumn id="col1" />
+								<s:ConstraintColumn width="{_nGap}" />
+								<s:ConstraintColumn id="col2" width="100%" />
+							</s:constraintColumns>
+							<s:constraintRows>
+								<s:ConstraintRow id="row_prst" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_host" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_port" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_zone" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_uhost" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_udp_port" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_http_port" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_https_port" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_debug" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_bbx" />
+								<s:ConstraintRow height="{_nGap}" />
+								<s:ConstraintRow id="row_bbxpr" />
+							</s:constraintRows>
+						</s:ConstraintLayout>
+					</s:layout>
+					<!-- preset -->
+					<s:Label
+						top="row_prst:0" bottom="row_prst:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_preset_label')}"
+						/>
+					<s:CalloutButton
+						top="row_prst:0" bottom="row_prst:0"
+						left="col2:0" right="col2:0"
+						id="cbPreset"
+						icon="{IconArrowDown}"
+						label="{_PresetBtnLabel(_sfsSettingsCurrent,_bMod)}"
+						dropDown="{_cfDropDown}"
+						>
+						<s:List
+							id="liPreset"
+							dataProvider="{_alPresets}"
+							labelFunction="_PresetItemLabel"
+							requireSelection="false"
+							selectedItem="@{_sfsPresetSelected}"
+							typicalItem="{_ccCS.connectPresetTypical}"
+							change="_PresetChanged(event)"
+							click="cbPreset.closeDropDown()"
+							>
+							<s:layout>
+								<s:VerticalLayout
+									gap="0"
+									horizontalAlign="contentJustify"
+									/>
+							</s:layout>
+						</s:List>
+					</s:CalloutButton>
+					<!-- host -->
+					<s:Label
+						top="row_host:0" bottom="row_host:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_host_label')}"
+						/>
+					<s:TextInput
+						top="row_host:0" bottom="row_host:0"
+						left="col2:0" right="col2:0"
+						id="tinHost"
+						returnKeyLabel="done"
+						enter="stage.focus=null"
+						text="@{_sfsSettingsCurrent.host}"
+						change="_SettingChanged()"
+						/>
+					<!-- port -->
+					<s:Label
+						top="row_port:0" bottom="row_port:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_port_label')}"
+						/>
+					<s:NumericStepper
+						top="row_port:0" bottom="row_port:0"
+						left="col2:0" right="col2:0"
+						id="nsPort"
+						value="@{_sfsSettingsCurrent.port}"
+						maximum="9999" minimum="0" snapInterval="1" stepSize="1"
+						change="_SettingChanged()"
+						/>
+					<!-- zone -->
+					<s:Label
+						top="row_zone:0" bottom="row_zone:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_zone_label')}"
+						/>
+					<s:TextInput
+						top="row_zone:0" bottom="row_zone:0"
+						left="col2:0" right="col2:0"
+						id="tinZone"
+						returnKeyLabel="done"
+						enter="stage.focus=null"
+						text="@{_sfsSettingsCurrent.zone}"
+						change="_SettingChanged()"
+						/>
+					<!-- udp host -->
+					<s:Label
+						top="row_uhost:0" bottom="row_uhost:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_udp_host_label')}"
+						/>
+					<s:TextInput
+						top="row_uhost:0" bottom="row_uhost:0"
+						left="col2:0" right="col2:0"
+						id="tinUdpHost"
+						returnKeyLabel="done"
+						enter="stage.focus=null"
+						text="@{_sfsSettingsCurrent.udpHost}"
+						change="_SettingChanged()"
+						/>
+					<!-- udp port -->
+					<s:Label
+						top="row_udp_port:0" bottom="row_udp_port:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_udp_port_label')}"
+						/>
+					<s:NumericStepper
+						top="row_udp_port:0" bottom="row_udp_port:0"
+						left="col2:0" right="col2:0"
+						id="nsUdpPort"
+						value="@{_sfsSettingsCurrent.udpPort}"
+						maximum="9999" minimum="0" snapInterval="1" stepSize="1"
+						change="_SettingChanged()"
+						/>
+					<!-- http port -->
+					<s:Label
+						top="row_http_port:0" bottom="row_http_port:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_http_port_label')}"
+						/>
+					<s:NumericStepper
+						top="row_http_port:0" bottom="row_http_port:0"
+						left="col2:0" right="col2:0"
+						id="nsHttpPort"
+						value="@{_sfsSettingsCurrent.httpPort}"
+						maximum="9999" minimum="0" snapInterval="1" stepSize="1"
+						change="_SettingChanged()"
+						/>
+					<!-- https port -->
+					<s:Label
+						top="row_https_port:0" bottom="row_https_port:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_https_port_label')}"
+						/>
+					<s:NumericStepper
+						top="row_https_port:0" bottom="row_https_port:0"
+						left="col2:0" right="col2:0"
+						id="nsHttpsPort"
+						value="@{_sfsSettingsCurrent.httpsPort}"
+						maximum="9999" minimum="0" snapInterval="1" stepSize="1"
+						change="_SettingChanged()"
+						/>
+					<!-- debug -->
+					<s:Label
+						top="row_debug:0" bottom="row_debug:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_debug_label')}"
+						/>
+					<s:ToggleSwitch
+						top="row_debug:0" bottom="row_debug:0"
+						left="col2:0" right="col2:0"
+						id="tsDebug"
+						selected="@{_sfsSettingsCurrent.debug}"
+						change="_SettingChanged()"
+						/>
+					<!-- use blue box -->
+					<s:Label
+						top="row_bbx:0" bottom="row_bbx:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_bluebox_use_label')}"
+						/>
+					<s:ToggleSwitch
+						top="row_bbx:0" bottom="row_bbx:0"
+						left="col2:0" right="col2:0"
+						id="tsBlueBoxUse"
+						selected="@{_sfsSettingsCurrent.useBlueBox}"
+						change="_SettingChanged()"
+						/>
+					<!-- blue box polling rate -->
+					<s:Label
+						top="row_bbxpr:0" bottom="row_bbxpr:0"
+						left="col1:0" right="col1:0"
+						text="{resourceManager.getString('default','sfs_connect_bluebox_rate_label')}"
+						/>
+					<s:NumericStepper
+						top="row_bbxpr:0" bottom="row_bbxpr:0"
+						left="col2:0" right="col2:0"
+						id="nsBlueBoxRate"
+						value="@{_sfsSettingsCurrent.blueBoxPollingRate}"
+						maximum="1000" minimum="300" snapInterval="1" stepSize="1"
+						change="_SettingChanged()"
+						/>
+				</s:Group>
+			</s:Scroller>
+		</s:VGroup>
+	</s:Group>
+	<s:Button
+		id="btnDone"
+		styleName="done"
+		label="{_DoneBtnLabel(_sessionMgr.appViewState)}"
+		click="_Done()"
+		/>
+</s:SkinnableContainer>

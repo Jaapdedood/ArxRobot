@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	creationComplete="_Init()"
+	addedToStage="_Init()"
+	width="{_nSize}"
+	height="{_nSize}"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			
+			private static const _ICON_BASE_SCALE:Number = 2;
+			private static const _ICON_BASE_SIZE:Number = 14;
+			
+			public function get status ( ) : String
+			{
+				return currentState;
+			}
+			public function set status ( value:String ) : void
+			{
+				currentState = value;
+			}
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager = SessionManager.instance;
+			
+			[Bindable]
+			private var _nIconScale:Number = _ICON_BASE_SCALE;
+			
+			[Bindable]
+			private var _nSize:Number = _ICON_BASE_SIZE * _ICON_BASE_SCALE;
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					_nIconScale = _ICON_BASE_SCALE * _sessionMgr.guiDpiMult;
+					_nSize = _ICON_BASE_SIZE * _nIconScale;
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="android_not_determined" stateGroups="neutral" />
+		<s:State name="ios_unknown" stateGroups="neutral" />
+		<s:State name="android_unknown" stateGroups="bad" />
+		<s:State name="android_denied" stateGroups="bad" />
+		<s:State name="ios_denied" stateGroups="bad" />
+		<s:State name="android_restricted" stateGroups="bad" />
+		<s:State name="ios_onlyWhenInUse" stateGroups="good,caveat" />
+		<s:State name="android_should_explain" stateGroups="neutral,caveat" />
+		<s:State name="ios_granted" stateGroups="good" />
+		<s:State name="android_authorised" stateGroups="good" />
+	</s:states>
+	<icons:IconO
+		includeIn="neutral"
+		horizontalCenter="0"
+		verticalCenter="0"
+		color="0xcccccc"
+		color.caveat="0xcc9900"
+		scaleX="{_nIconScale}"
+		scaleY="{_nIconScale}"
+		/>
+	<icons:IconX
+		includeIn="bad"
+		horizontalCenter="0"
+		verticalCenter="0"
+		color="0xcc0000"
+		scaleX="{_nIconScale}"
+		scaleY="{_nIconScale}"
+		/>
+	<icons:IconCheck
+		includeIn="good"
+		horizontalCenter="0"
+		verticalCenter="0"
+		color="0x00cc00"
+		color.caveat="0x0066ff"
+		scaleX="{_nIconScale}"
+		scaleY="{_nIconScale}"
+		/>
+</s:Group>

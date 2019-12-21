@@ -1,0 +1,144 @@
+package vo
+{
+	import flash.utils.ByteArray;
+	
+	/**
+	 * <p>Latitude and longitude are stored as 64-bit double precision floating point values
+	 * (the native Number data type of AS3), and the default messageBytes provided by
+	 * superclass McuMessage thus includes 8 bytes for each.</p>
+	 * <p>Use <b>messageBytesByCoordsMode</b>
+	 * to get the ByteArray format specified, which will one of the following:</p>
+	 * <ul><li><b>64-bit double precision floats</b>, exactly as they are stored</li>
+	 * <li><b>32-bit single precision floats</b>, which are standard for most Arduinos
+	 * and similar Mcus</li>
+	 * <li><b>32-bit integer values</b> calculated as decimicrodegrees
+	 * (Number value multiplied by 10,000,000 and rounded to integer) which provides approximately
+	 * 1000 times the precision of the 32-bit float version</li></ul>
+	 */
+	 // Note: Superclass implements IExternalizable.
+	public class CoordinatesMessage extends McuMessage
+	{
+		// CONSTANTS
+		
+		public static const COORDS_MODE_DOUBLE:uint = 0;
+		public static const COORDS_MODE_FLOAT:uint = 1;
+		public static const COORDS_MODE_INTEGER:uint = 2;
+		
+		private static const __COORDS_MODES:Vector.<uint> = new <uint> [
+			COORDS_MODE_DOUBLE,
+			COORDS_MODE_FLOAT,
+			COORDS_MODE_INTEGER
+		];
+		
+		
+		// CONSTRUCTOR
+		
+		public function CoordinatesMessage ( bytes:ByteArray = null )
+		{
+			super ( bytes );
+		}
+		
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		/**
+		 * Latitude as Number (64-bit double precision floating point)
+		 */
+		public function get latitude ( ) : Number
+		{
+			return getDoubleAt ( 1 );
+		}
+		public function set latitude ( value:Number ) : void
+		{
+			setDoubleAt ( value, 1 );
+		}
+		
+		/**
+		 * Longitude as Number (64-bit double precision floating point)
+		 */
+		public function get longitude ( ) : Number
+		{
+			return getDoubleAt ( 9 );
+		}
+		public function set longitude ( value:Number ) : void
+		{
+			setDoubleAt ( value, 9 );
+		}
+		
+		/**
+		 * Returns a message ByteArray structured for the
+		 * configured Coordinates data type.
+		 */
+		public function get messageBytesByCoordsMode ( ) : ByteArray
+		{
+			if ( __uCoordsMode == COORDS_MODE_INTEGER )
+				return _messageBytesIntegerDmDegrees ( );
+			
+			if ( __uCoordsMode == COORDS_MODE_FLOAT )
+				return _messageBytesSinglePrecision ( );
+			
+			// COORDS_MODE_DOUBLE
+			return messageBytes;
+		}
+		
+		
+		// PUBLIC STATIC METHODS
+		
+		/**
+		 * Controls which data mode will be used for
+		 * messageBytesForCoordsMode sent to Mcu.
+		 * Default is COORDS_MODE_FLOAT.
+		 * @param modeId uint One of the COORDS_MODE constants.
+		 */
+		public static function SetCoordsDataMode ( modeId:uint ) : void
+		{
+			if ( __COORDS_MODES.indexOf ( modeId ) >= 0 )
+			{
+				// valid value
+				__uCoordsMode = modeId;
+			}
+		}
+		
+		
+		// PROTECTED METHODS
+		
+		/**
+		 * <b>messageBytesIntegerDmDegrees</b> returns a message ByteArray incorporating
+		 * 32-bit integer values calculated as decimicrodegrees
+		 * (Number value multiplied by 10,000,000 and rounded to integer).
+		 * This provides precision down to about a centimeter, as opposed to the
+		 * 11 meters of <b>messageBytesSinglePrecision</b>.<br />
+		 * REFERENCE: http://sloblog.io/~pdc/kbGgQRBcYsk/latitude-and-longitude-in-32-bits
+		 */
+		protected function _messageBytesIntegerDmDegrees ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeBytes ( _messageBytes, 0, 1 );
+			_messageBytes.position = 1;
+			ba.writeInt ( int ( Math.round ( 10000000.0 * _messageBytes.readDouble() ) ) ); // lat
+			ba.writeInt ( int ( Math.round ( 10000000.0 * _messageBytes.readDouble() ) ) ); // lng
+			return ba;
+		}
+		
+		/**
+		 * <b>messageBytesSinglePrecision</b> returns a message ByteArray incorporating
+		 * 32-bit float values, which thus limits precision to roughly 11 meters.<br />
+		 * REFERENCE: http://sloblog.io/~pdc/kbGgQRBcYsk/latitude-and-longitude-in-32-bits
+		 */
+		protected function _messageBytesSinglePrecision ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeBytes ( _messageBytes, 0, 1 );
+			_messageBytes.position = 1;
+			ba.writeFloat ( _messageBytes.readDouble() ); // lat
+			ba.writeFloat ( _messageBytes.readDouble() ); // lng
+			return ba;
+		}
+		
+		
+		// PRIVATE STATIC PROPERTIES
+		
+		private static var __uCoordsMode:uint = COORDS_MODE_FLOAT;
+		
+	}
+}

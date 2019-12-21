@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	removedFromStage="_Dismiss()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.MotionManager;
+			
+			import icons.IconHand0;
+			import icons.IconHand1;
+			import icons.IconHand2;
+			import icons.IconHand3;
+			
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _motMgr:MotionManager;
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( !_bInited )
+					return;
+				
+				_bInited = false;
+				_motMgr = null;
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+					return;
+				
+				_bInited = true;
+				_motMgr = MotionManager.instance;
+				var cf:ClassFactory = new ClassFactory ( ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				cb.dropDown = cf;
+			}
+			
+			private function _Select ( mode:uint ) : void
+			{
+				_motMgr.handPref = mode;
+				cb.closeDropDown ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:CalloutButton
+		id="cb"
+		styleName="nav"
+		icon="{_motMgr.handIcon}"
+		>
+		<s:VGroup
+			width="100%"
+			gap="8"
+			horizontalAlign="contentJustify"
+			>
+			<s:Label
+				styleName="textSubhead"
+				width="100%" textAlign="center"
+				text="{resourceManager.getString('default','hand_pref_label')}"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconHand0}"
+				label="{resourceManager.getString('default','hand_pref_0_btn_label')}"
+				click="_Select(0)"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconHand1}"
+				label="{resourceManager.getString('default','hand_pref_1_btn_label')}"
+				click="_Select(1)"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconHand2}"
+				label="{resourceManager.getString('default','hand_pref_2_btn_label')}"
+				click="_Select(2)"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconHand3}"
+				label="{resourceManager.getString('default','hand_pref_3_btn_label')}"
+				click="_Select(3)"
+				/>
+		</s:VGroup>
+	</s:CalloutButton>
+</s:Group>

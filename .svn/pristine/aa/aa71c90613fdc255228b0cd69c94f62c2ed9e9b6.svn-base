@@ -1,0 +1,222 @@
+package vo
+{	
+	import flash.events.Event;
+	import flash.events.EventDispatcher;
+	import flash.events.TimerEvent;
+	import flash.utils.Timer;
+	
+	import mx.utils.ObjectUtil;
+	
+	[Event(name="user_state_changed", type="flash.events.Event")]
+	
+	[Bindable]
+	public dynamic class UserState extends EventDispatcher
+	{
+		public static const USER_STATE_CHANGED:String = 'user_state_changed';
+		
+		private var _bArdModeId:uint = ArduinoModes.BLUETOOTH;
+		public function get arduinoModeId():uint
+		{
+			return _bArdModeId;
+		}
+		public function set arduinoModeId(value:uint):void
+		{
+			if ( value == _bArdModeId )
+				return;
+			_QueueSave ( );
+			_bArdModeId = value;
+		}
+		
+		private var _sAssetsDir:String = '';
+		public function get assetsDir():String
+		{
+			return _sAssetsDir;
+		}
+		public function set assetsDir(value:String):void
+		{
+			if ( value == _sAssetsDir )
+				return;
+			_QueueSave ( );
+			_sAssetsDir = value;
+		}
+		
+		private var _sBtAddr:String = '';
+		public function get bluetoothAddress():String
+		{
+			return _sBtAddr;
+		}
+		public function set bluetoothAddress(value:String):void
+		{
+			if ( value == _sBtAddr )
+				return;
+			_QueueSave ( );
+			_sBtAddr = value;
+		}
+		
+		private var _bCamAdjustMot:Boolean = false;
+		public function get cameraAdjustForMotion():Boolean
+		{
+			return _bCamAdjustMot;
+		}
+		public function set cameraAdjustForMotion(value:Boolean):void
+		{
+			if ( value == _bCamAdjustMot )
+				return;
+			_QueueSave ( );
+			_bCamAdjustMot = value;
+		}
+		
+		private var _ccDef:CameraConfig;
+		public function get cameraConfigDefault():CameraConfig
+		{
+			return _ccDef;
+		}
+		public function set cameraConfigDefault(value:CameraConfig):void
+		{
+			if ( ObjectUtil.compare ( value, _ccDef ) == 0 )
+				return;
+			_QueueSave ( );
+			_ccDef = value;
+		}
+		
+		private var _ccMot:CameraConfig;
+		public function get cameraConfigMotion():CameraConfig
+		{
+			return _ccMot;
+		}
+		public function set cameraConfigMotion(value:CameraConfig):void
+		{
+			if ( ObjectUtil.compare ( value, _ccMot ) == 0 )
+				return;
+			_QueueSave ( );
+			_ccMot = value;
+		}
+		
+		private var _iCamIdx:int;
+		public function get cameraIndex():int
+		{
+			return _iCamIdx;
+		}
+		public function set cameraIndex(value:int):void
+		{
+			if ( value == _iCamIdx )
+				return;
+			_QueueSave ( );
+			_iCamIdx = value;
+		}
+		
+		private var _bCapsStorePhone:Boolean = true;
+		public function get capabilitiesStorePhone():Boolean
+		{
+			return _bCapsStorePhone;
+		}
+		public function set capabilitiesStorePhone(value:Boolean):void
+		{
+			if ( value == _bCapsStorePhone )
+				return;
+			_QueueSave ( );
+			_bCapsStorePhone = value;
+		}
+		
+		private var _bDevFaceBack:Boolean = false;
+		public function get deviceFacesBack():Boolean
+		{
+			return _bDevFaceBack;
+		}
+		public function set deviceFacesBack(value:Boolean):void
+		{
+			if ( value == _bDevFaceBack )
+				return;
+			_QueueSave ( );
+			_bDevFaceBack = value;
+		}
+		
+		private var _bExpert:Boolean = true;
+		public function get expertOn():Boolean
+		{
+			return _bExpert;
+		}
+		public function set expertOn(value:Boolean):void
+		{
+			if ( value == _bExpert )
+				return;
+			_QueueSave ( );
+			_bExpert = value;
+		}
+		
+		private var _iPhoneBattMin:int = 10;
+		public function get phoneBatteryMin():int
+		{
+			return _iPhoneBattMin;
+		}
+		public function set phoneBatteryMin(value:int):void
+		{
+			if ( value == _iPhoneBattMin )
+				return;
+			_QueueSave ( );
+			_iPhoneBattMin = value;
+		}
+		
+		private var _sPilotNames:String = '';
+		public function get pilotNames():String
+		{
+			return _sPilotNames;
+		}
+		public function set pilotNames(value:String):void
+		{
+			if ( value == _sPilotNames )
+				return;
+			_QueueSave ( );
+			_sPilotNames = value;
+		}
+		
+		private var _sRobotName:String = '';
+		public function get robotName():String
+		{
+			return _sRobotName;
+		}
+		public function set robotName(value:String):void
+		{
+			if ( value == _sRobotName )
+				return;
+			_QueueSave ( );
+			_sRobotName = value;
+		}
+		
+		public function UserState ( deserialized:Boolean = true )
+		{
+			_bDeserialized = deserialized;
+		}
+		
+		private var _bDeserialized:Boolean = true;
+		private var _bSaveQueued:Boolean = false;
+		private var _tmr:Timer;
+		
+		private function _QueueSave ( ) : void
+		{
+			if ( _bSaveQueued )
+				return;
+			
+			_bSaveQueued = true;
+			
+			_tmr = new Timer ( 20, 1 );
+			_tmr.addEventListener ( TimerEvent.TIMER, _RequestSave );
+			_tmr.start ( );
+		}
+		
+		private function _RequestSave ( event:TimerEvent ) : void
+		{
+			_bSaveQueued = false;
+			_tmr.stop ( );
+			_tmr.removeEventListener ( TimerEvent.TIMER, _RequestSave );
+			_tmr = null;
+			if ( _bDeserialized )
+			{
+				// skip first time
+				_bDeserialized = false;
+				return;
+			}
+			dispatchEvent ( new Event ( USER_STATE_CHANGED ) );
+		}
+	}
+}

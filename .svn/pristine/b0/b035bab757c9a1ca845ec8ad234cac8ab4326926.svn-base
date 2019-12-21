@@ -1,0 +1,32 @@
+package events
+{
+	import flash.events.Event;
+	import flash.utils.ByteArray;
+	
+	public class TelemetryEvent extends Event
+	{
+		// event type constants
+		public static const PACKET_PAYLOADS:String = 'packet_payloads';
+		
+		// event properties
+		public var payloads:Vector.<ByteArray>;
+		
+		// constructor
+		public function TelemetryEvent ( type:String, payloads:Vector.<ByteArray>, bubbles:Boolean = false, cancelable:Boolean = false )
+		{
+			super ( type, bubbles, cancelable );
+			this.payloads = payloads;
+		}
+		
+		// overrides
+		public override function clone ( ) : Event
+		{
+			return new TelemetryEvent ( type, this.payloads, bubbles, cancelable );
+		}
+		
+		public override function toString ( ) : String
+		{
+			return formatToString ( 'TelemetryEvent', 'type', 'payloads', 'bubbles', 'cancelable' );
+		}
+	}
+}

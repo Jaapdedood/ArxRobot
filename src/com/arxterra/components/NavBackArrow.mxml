@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Button
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	styleName="nav"
+	x="0"
+	y="0"
+	icon="{IconNavBack}"
+	click="SessionManager.instance.backButton();"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.icons.IconNavBack;
+		]]>
+	</fx:Script>
+</s:Button>

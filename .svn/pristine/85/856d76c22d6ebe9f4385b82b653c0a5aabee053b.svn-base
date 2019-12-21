@@ -1,0 +1,168 @@
+package utils
+{
+	import flash.events.EventDispatcher;
+	import flash.events.IEventDispatcher;
+	import flash.events.TimerEvent;
+	import flash.utils.Timer;
+	
+	import mx.resources.IResourceManager;
+	import mx.resources.ResourceManager;
+	import mx.styles.IStyleManager2;
+	import mx.styles.StyleManager;
+	
+	import events.DebugEventEx;
+	import events.DialogEvent;
+	
+	[Event(name="debugOut", type="events.DebugEventEx")]
+	
+	/**
+	 * Extends EventDispatcher with utility methods, such as <code>callLater</code>,
+	 * and access to <code>resourceManager</code> and <code>styleManager</code>,
+	 * providing a light-weight alternative to UIComponent.
+	 */
+	public class NonUIComponentBase extends EventDispatcher
+	{
+		/**
+		 * eventRelay IEventDispatcher reference to top level event dispatcher,
+		 * such as the topLevelApplication, to dispatch events on behalf of
+		 * objects not in the display list.
+		 */
+		public static var eventRelay:IEventDispatcher;
+		/**
+		 * fileSpaceExistsForBytes is a function reference to check if storage space available
+		 * sufficient to hold the number of bytes passed as an argument
+		 */		
+		public static var fileSpaceExistsForBytes:Function;
+		
+		protected var _tmrCallQueue:Timer;
+		protected var _vCallQueue:Vector.<CallLaterData>;
+		
+		public function NonUIComponentBase ( )
+		{
+		}
+		
+		public function mDismiss ( ) : void
+		{
+			_CallQueueDismiss ( );
+		}
+		
+		protected function alert (
+			a_message:String,
+			a_title:String = 'error',
+			a_messageParams:Array = null,
+			a_titleParams:Array = null
+		) : void
+		{
+			if ( eventRelay )
+				eventRelay.dispatchEvent (
+					new DialogEvent (
+						DialogEvent.ALERT,
+						a_message,
+						a_title,
+						a_messageParams,
+						a_titleParams
+					)
+				);
+		}
+		
+		protected function callLater ( a_function:Function, a_args:Array = null, a_scope:Object = null ) : void
+		{
+			_CallQueueInit ( );
+			a_scope = a_scope || this;
+			_vCallQueue.push ( new CallLaterData ( a_function, a_args, a_scope ) );
+			
+			if ( !_tmrCallQueue.running )
+			{
+				_tmrCallQueue.start ( );
+			}
+		}
+		
+		protected function debugOut (
+			message:String = '',
+			isResource:Boolean = false,
+			resourceParams:Array = null,
+			alertOk:Boolean = false,
+			end:String = '\n'
+		) : void
+		{
+			if ( eventRelay && eventRelay.hasEventListener ( DebugEventEx.DEBUG_OUT ) )
+			{
+				eventRelay.dispatchEvent ( new DebugEventEx (
+					DebugEventEx.DEBUG_OUT,
+					message,
+					isResource,
+					resourceParams,
+					alertOk,
+					end
+				) );
+			}
+			if ( hasEventListener ( DebugEventEx.DEBUG_OUT ) )
+			{
+				dispatchEvent ( new DebugEventEx (
+					DebugEventEx.DEBUG_OUT,
+					message,
+					isResource,
+					resourceParams,
+					alertOk,
+					end
+				) );
+			}
+		}
+		
+		private var _resourceManager:IResourceManager;
+		protected function get resourceManager ( ) : IResourceManager
+		{
+			if ( !_resourceManager )
+				_resourceManager = ResourceManager.getInstance ( );
+			return _resourceManager;
+		}
+		
+		private var _styleManager:IStyleManager2;
+		protected function get styleManager ( ) : IStyleManager2
+		{
+			if ( !_styleManager )
+				_styleManager = StyleManager.getStyleManager ( null );
+			return _styleManager;
+		}
+		
+		private var _bCallQueueInited:Boolean = false;
+		private function _CallQueueDismiss ( ) : void
+		{
+			if ( _bCallQueueInited )
+			{
+				_tmrCallQueue.removeEventListener ( TimerEvent.TIMER, _CallQueueService );
+				_tmrCallQueue.stop ( );
+				_tmrCallQueue = null;
+				_vCallQueue.length = 0;
+				_vCallQueue = null;
+			}
+		}
+		
+		private function _CallQueueInit ( ) : void
+		{
+			if ( _bCallQueueInited ) return;
+			_bCallQueueInited = true;
+			_vCallQueue = new <CallLaterData> [];
+			_tmrCallQueue = new Timer( 20, 0 );
+			_tmrCallQueue.addEventListener ( TimerEvent.TIMER, _CallQueueService );
+		}
+		
+		private function _CallQueueService ( e:TimerEvent = null ) : void
+		{
+			var i_cld:CallLaterData;
+			// clear main queue in case current calls generate new callLaters
+			var vQueue:Vector.<CallLaterData> = _vCallQueue;
+			_vCallQueue = new <CallLaterData> [];
+			while ( vQueue.length > 0 )
+			{
+				i_cld = vQueue.shift();
+				i_cld.call();
+			}
+			// if new queue is still empty, stop the timer
+			if ( _vCallQueue.length < 1 )
+			{
+				_tmrCallQueue.stop( );
+			}
+		}
+	}
+}

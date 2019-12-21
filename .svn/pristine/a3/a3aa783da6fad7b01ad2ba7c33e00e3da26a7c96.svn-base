@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:skins="skins.*"
+	>
+	<fx:Script>
+		<![CDATA[
+			
+			public function set stepCount ( value:int ) : void
+			{
+				// if ( value > 0 ) grdArw.scaleX = 48.77307 / ( value + 1 ); // 48.77307
+			}
+			
+			// expects value between -1.0 and 1.0
+			public function set value ( value:Number ) : void
+			{
+				if ( value < 0 )
+				{
+					mskValue.y = 50;
+					mskValue.height = -48.78 * value;
+				}
+				else
+				{
+					var nHt:Number = 48.78 * value;
+					mskValue.y = 50 - nHt;
+					mskValue.height = nHt;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Group
+		id="gpArws"
+		left="0" right="0" top="0" bottom="0"
+		resizeMode="scale"
+		>
+		<!-- outer shape -->
+		<s:Path
+			winding="nonZero"
+			data="M18.337 86.6085C18.337 87.7267 19.253 88.6427 20.3722 88.6427L21.3888 88.6427C22.5059 88.6427 22.7745 89.2902 21.9845 90.0802L12.6563 99.4073C11.8663 100.197 10.5724 100.197 9.78134 99.4073L0.454677 90.0802C-0.336339 89.2902 -0.0682727 88.6427
+			1.05038 88.6427L2.06747 88.6427C3.18612 88.6427 4.10116 87.7267 4.10116 86.6085L4.10116 13.3917C4.10116 12.2731 3.18612 11.358 2.06747 11.358L1.05038 11.358C-0.0682727 11.358 -0.336339 10.7111 0.454677 9.92004L9.78134 0.593384C10.5724 -0.197632
+			11.8663 -0.197632 12.6563 0.593384L21.9845 9.92004C22.7745 10.7111 22.5059 11.358 21.3888 11.358L20.3722 11.358C19.253 11.358 18.337 12.2731 18.337 13.3917L18.337 86.6085Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="{getStyle('chromeColor')}"
+					/>
+			</s:fill>
+		</s:Path>
+		<s:Group
+			id="mskValue"
+			left="0" right="0" y="50" height="0"
+			>
+			<s:Rect
+				left="0" right="0" top="0" bottom="0"
+				>
+				<s:fill>
+					<s:SolidColor />
+				</s:fill>
+			</s:Rect>
+		</s:Group>
+		
+		<s:Path
+			winding="nonZero"
+			data="M18.337 86.6085C18.337 87.7267 19.253 88.6427 20.3722 88.6427L21.3888 88.6427C22.5059 88.6427 22.7745 89.2902 21.9845 90.0802L12.6563 99.4073C11.8663 100.197 10.5724 100.197 9.78134 99.4073L0.454677 90.0802C-0.336339 89.2902 -0.0682727 88.6427
+			1.05038 88.6427L2.06747 88.6427C3.18612 88.6427 4.10116 87.7267 4.10116 86.6085L4.10116 13.3917C4.10116 12.2731 3.18612 11.358 2.06747 11.358L1.05038 11.358C-0.0682727 11.358 -0.336339 10.7111 0.454677 9.92004L9.78134 0.593384C10.5724 -0.197632
+			11.8663 -0.197632 12.6563 0.593384L21.9845 9.92004C22.7745 10.7111 22.5059 11.358 21.3888 11.358L20.3722 11.358C19.253 11.358 18.337 12.2731 18.337 13.3917L18.337 86.6085Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="{getStyle('chromeColor')}"
+					/>
+			</s:fill>
+		</s:Path>	
+		<s:Path
+			mask="{mskValue}"
+			x="2.20905" y="1.22693"
+			winding="nonZero"
+			data="M15.1122 86.9069C15.1122 87.7457 15.7968 88.4323 16.6376 88.4323L17.2333 88.4323C18.0712 88.4323 18.2724 88.9176 17.6796 89.5104L10.0878 97.1012C9.49603 97.694 8.52435 97.694 7.93157 97.1012L0.356866 89.526C-0.236396 88.9332 -0.0357122 88.4518
+			0.803643 88.4567L1.38323 88.4606C2.22259 88.4655 2.90862 87.7838 2.90862 86.944L2.90862 10.6393C2.90862 9.80042 2.22259 9.11389 1.38323 9.11389L0.78753 9.11389C-0.0513372 9.11389 -0.252021 8.62854 0.340753 8.03577L7.93157 0.444458C8.52435 -0.148315
+			9.49505 -0.148315 10.0878 0.444458L17.663 8.02014C18.2558 8.61292 18.0556 9.09436 17.2177 9.08948L16.6376 9.08508C15.7968 9.0802 15.1122 9.76184 15.1122 10.6012L15.1122 86.9069Z"
+			>
+			<s:fill>
+				<s:LinearGradient
+					rotation="90"
+					interpolationMethod="rgb"
+					spreadMethod="pad"
+					>
+					<s:GradientEntry
+						color="0xff0000"
+						ratio="0.05"
+						/>
+					<s:GradientEntry
+						color="0xffff00"
+						ratio="0.1"
+						/>
+					<s:GradientEntry
+						color="0xffff00"
+						ratio="0.15"
+						/>
+					<s:GradientEntry
+						color="0x009900"
+						ratio="0.3"
+						/>
+					<s:GradientEntry
+						color="0x009900"
+						ratio="0.7"
+						/>
+					<s:GradientEntry
+						color="0xffff00"
+						ratio="0.85"
+						/>
+					<s:GradientEntry
+						color="0xffff00"
+						ratio="0.9"
+						/>
+					<s:GradientEntry
+						color="0xff0000"
+						ratio="0.95"
+						/>
+				</s:LinearGradient>
+				<!--
+				<s:LinearGradient
+				id="grdArw"
+				rotation="90"
+				spreadMethod="reflect"
+				>
+				<s:GradientEntry
+				color="{getStyle('accentColor')}"
+				/>
+				<s:GradientEntry
+				color="{getStyle('accentColor')}" alpha="0"
+				/>
+				<s:GradientEntry
+				color="{getStyle('accentColor')}"
+				/>
+				</s:LinearGradient>
+				-->
+			</s:fill>
+		</s:Path>
+		
+	</s:Group>
+</s:Group>

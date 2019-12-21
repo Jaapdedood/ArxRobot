@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:CalloutBtn
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	styleName="action"
+	color="{_ColorBlinkIcon}"
+	icon="{_oIcon}"
+	iconValue="{_nIconVal}"
+	includeInLayout="{_bEnabled}"
+	visible="{_bEnabled}"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	removedFromStage="_Dismiss()"
+	open="_MsgUpdate()"
+	horizontalPosition="start"
+	verticalPosition="after"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.binding.utils.ChangeWatcher;
+			
+			private static const WATCH_PROPS:Object =
+				{
+					'clean':
+					{
+						'enabled': 'batteryCleanEnabled',
+						'icon': 'batteryCleanIcon',
+						'minSafe': 'batteryCleanMinSafe',
+						'pct': 'batteryCleanPct',
+						'rsrc': 'batteryCleanRsrc'
+					},
+					'dirty':
+					{
+						'enabled': 'batteryDirtyEnabled',
+						'icon': 'batteryDirtyIcon',
+						'minSafe': 'batteryDirtyMinSafe',
+						'pct': 'batteryDirtyPct',
+						'rsrc': 'batteryDirtyRsrc'
+					}
+				};
+			
+			[Inspectable (defaultValue="clean", enumeration="clean,dirty")]
+			public var batteryRole:String = 'clean';
+			
+			[Bindable]
+			private var _bEnabled:Boolean = false;
+			
+			private var _bInited:Boolean = false;
+			private var _bLow:Boolean = true;
+			
+			private var _cwEnabled:ChangeWatcher;
+			private var _cwIcon:ChangeWatcher;
+			private var _cwMinSafe:ChangeWatcher;
+			private var _cwPct:ChangeWatcher;
+			private var _cwRsrc:ChangeWatcher;
+			
+			private var _iMinSafe:int = 20;
+			private var _iPct:int = 100;
+			
+			[Bindable]
+			private var _nIconVal:Number = 1;
+			
+			[Bindable]
+			private var _oIcon:Object;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			[Bindable]
+			private var _sMsg:String = '';
+			
+			private var _sRsrc:String = '';
+			private var _sRsrcBase:String = '';
+			
+			private var _tmrBlink:Timer;
+			private var _uBlinkIdx:uint = 0;
+			private var _vIconColors:Vector.<uint> = new <uint> [ 0xffffff, 0xff0000 ];
+			
+			private function _Blink ( event:TimerEvent = null ) : void
+			{
+				_uBlinkIdx = 1 - _uBlinkIdx;
+				dispatchEvent ( new Event ( 'icon_color_changed' ) );
+				if ( isDropDownOpen )
+				{
+					dispatchEvent ( new Event ( 'text_color_changed' ) );
+				}
+			}
+			
+			private function _BlinkTimer ( low:Boolean ) : void
+			{
+				if ( low )
+				{
+					if ( !_tmrBlink )
+					{
+						_uBlinkIdx = 1;
+						_tmrBlink = new Timer ( 1000, 0 );
+						_tmrBlink.addEventListener ( TimerEvent.TIMER, _Blink );
+						_tmrBlink.start ( );
+					}
+				}
+				else
+				{
+					_uBlinkIdx = 0
+					if ( _tmrBlink )
+					{
+						_tmrBlink.stop ( );
+						_tmrBlink.removeEventListener ( TimerEvent.TIMER, _Blink );
+						_tmrBlink = null;
+					}
+				}
+				dispatchEvent ( new Event ( 'icon_color_changed' ) );
+				dispatchEvent ( new Event ( 'text_color_changed' ) );
+			}
+			
+			[Bindable (event="icon_color_changed")]
+			private function get _ColorBlinkIcon():uint
+			{
+				return _vIconColors [ _uBlinkIdx ];
+			}
+			
+			[Bindable (event="text_color_changed")]
+			private function get _ColorBlinkText():uint
+			{
+				return _vIconColors [ _uBlinkIdx ];
+			}
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( !_bInited )
+					return;
+				
+				_bInited = false;
+				_EnabledChanged ( false );
+				_cwEnabled.unwatch ( );
+				_cwEnabled = null;
+				_sessionMgr = null;
+			}
+			
+			private function _EnabledChanged ( value:Boolean ) : void
+			{
+				if ( value == _bEnabled )
+				{
+					// no change
+					return; // return
+				}
+				
+				var oProps:Object = WATCH_PROPS [ batteryRole ];
+				var sProp:String;
+				_bEnabled = value;
+				if ( _bEnabled )
+				{
+					sProp = oProps [ 'icon' ];
+					_cwIcon = BindingUtils.bindSetter ( _IconChanged, _sessionMgr, sProp );
+					_oIcon = _sessionMgr [ sProp ];
+					sProp = oProps [ 'minSafe' ];
+					_cwMinSafe = BindingUtils.bindSetter ( _MinSafeChanged, _sessionMgr, sProp );
+					_iMinSafe = _sessionMgr [ sProp ];
+					sProp = oProps [ 'pct' ];
+					_cwPct = BindingUtils.bindSetter ( _PctChanged, _sessionMgr, sProp );
+					_iPct = _sessionMgr [ sProp ];
+					sProp = oProps [ 'rsrc' ];
+					_cwRsrc = BindingUtils.bindSetter ( _RsrcChanged, _sessionMgr, sProp );
+					_sRsrcBase = _sessionMgr [ sProp ];
+					_sRsrc = _sRsrcBase + ( _bLow ? '0' : '1' );
+					_ValueUpdate ( );
+				}
+				else
+				{
+					_BlinkTimer ( false );
+					_cwIcon.unwatch ( );
+					_cwIcon = null;
+					_cwMinSafe.unwatch ( );
+					_cwMinSafe = null;
+					_cwPct.unwatch ( );
+					_cwPct = null;
+					_cwRsrc.unwatch ( );
+					_cwRsrc = null;
+				}
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+					return;
+				
+				_bInited = true;
+				_sessionMgr = SessionManager.instance;
+				var cf:ClassFactory = new ClassFactory ( com.arxterra.components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				dropDown = cf;
+				var sProp:String = WATCH_PROPS [ batteryRole ] [ 'enabled' ];
+				_cwEnabled = BindingUtils.bindSetter ( _EnabledChanged, _sessionMgr, sProp );
+				_EnabledChanged ( _sessionMgr [ sProp ] );
+			}
+			
+			private function _IconChanged ( value:Object ) : void
+			{
+				_oIcon = value;
+			}
+			
+			private function _MinSafeChanged ( value:int ) : void
+			{
+				_iMinSafe = value;
+				_VisualsUpdate ( );
+			}
+			
+			private function _MsgUpdate ( ) : void
+			{
+				_sMsg = resourceManager.getString ( 'default', _sRsrc, [ _iPct.toString(), _iMinSafe.toString() ] );
+			}
+			
+			private function _PctChanged ( value:int ) : void
+			{
+				_iPct = value;
+				_ValueUpdate ( );
+			}
+			
+			private function _RsrcChanged ( value:String ) : void
+			{
+				_sRsrcBase = value;
+				_sRsrc = _sRsrcBase + ( _bLow ? '0' : '1' );
+				_VisualsUpdate ( );
+			}
+			
+			private function _ValueUpdate ( ) : void
+			{
+				_nIconVal = _iPct / 100.0;
+				_VisualsUpdate ( );
+			}
+			
+			private function _VisualsUpdate ( ) : void
+			{
+				var bLowNow:Boolean = ( _iPct < _iMinSafe );
+				if ( bLowNow != _bLow )
+				{
+					_bLow = bLowNow;
+					_sRsrc = _sRsrcBase + ( _bLow ? '0' : '1' );
+					_BlinkTimer ( _bLow );
+					if ( isDropDownOpen != _bLow )
+					{
+						if ( _bLow )
+						{
+							callLater ( openDropDown );
+							_MsgUpdate ( );
+						}
+						else
+						{
+							callLater ( closeDropDown );
+						}
+					}
+				}
+				else if ( isDropDownOpen )
+				{
+					_MsgUpdate ( );
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Label
+		text="{_sMsg}"
+		width="98%"
+		color="{_ColorBlinkText}"
+		/>
+</components:CalloutBtn>

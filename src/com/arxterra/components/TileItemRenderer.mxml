@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	autoDrawBackground="false"
+	width="96" height="96"
+	initialize="_Initialized()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import mx.core.DPIClassification;
+			import mx.core.FlexGlobals;
+			
+			import spark.components.Application;
+			
+			private function _Initialized ( ) : void
+			{
+				switch ( Application ( FlexGlobals.topLevelApplication ).applicationDPI )
+				{
+					case DPIClassification.DPI_640:
+					{
+						width = 384;
+						height = 384;
+						labelDisplay.left = 24;
+						labelDisplay.right = 24;
+						labelDisplay.top = 24;
+						labelDisplay.bottom = 24;
+						break;
+					}
+					case DPIClassification.DPI_480:
+					{
+						width = 288;
+						height = 288;
+						labelDisplay.left = 18;
+						labelDisplay.right = 18;
+						labelDisplay.top = 18;
+						labelDisplay.bottom = 18;
+						break;
+					}
+					case DPIClassification.DPI_320:
+					{
+						width = 192;
+						height = 192;
+						labelDisplay.left = 12;
+						labelDisplay.right = 12;
+						labelDisplay.top = 12;
+						labelDisplay.bottom = 12;
+						break;
+					}
+					case DPIClassification.DPI_240:
+					{
+						width = 144;
+						height = 144;
+						labelDisplay.left = 9;
+						labelDisplay.right = 9;
+						labelDisplay.top = 9;
+						labelDisplay.bottom = 9;
+						break;
+					}
+					default:
+					{
+						// default DPI_160
+						width = 96;
+						height = 96;
+						labelDisplay.left = 6;
+						labelDisplay.right = 6;
+						labelDisplay.top = 6;
+						labelDisplay.bottom = 6;
+						break;
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="down" />
+		<s:State name="selected" />
+	</s:states>
+	<s:Rect
+		left="1" right="1"
+		top="1" bottom="1"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="0x333333"
+				color.down="{getStyle('downColor')}"
+				color.selected="{getStyle('selectionColor')}"
+				/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="0x999999"
+				/>
+		</s:stroke>
+	</s:Rect>
+	<s:Label
+		id="labelDisplay"
+		styleName="tileItemLabel"
+		left="6" right="6"
+		top="6" bottom="6"
+		maxDisplayedLines="-1"
+		/>
+</s:ItemRenderer>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	initialize="_Initialized()"
+	>
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("spark.components.CheckBox")]
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.DPIClassification;
+			import mx.core.FlexGlobals;
+			
+			import spark.components.Application;
+			
+			private function _Initialized ( ) : void
+			{
+				switch ( Application ( FlexGlobals.topLevelApplication ).applicationDPI )
+				{
+					case DPIClassification.DPI_640:
+					{
+						twistyDisplay.width = 56;
+						twistyDisplay.height = 56;
+						twistyDisplay.left = 12;
+						labelDisplay.left = 112;
+						break;
+					}
+					case DPIClassification.DPI_480:
+					{
+						twistyDisplay.width = 42
+						twistyDisplay.height = 42;
+						twistyDisplay.left = 9;
+						labelDisplay.left = 84;
+						break;
+					}
+					case DPIClassification.DPI_320:
+					{
+						twistyDisplay.width = 28;
+						twistyDisplay.height = 28;
+						twistyDisplay.left = 6;
+						labelDisplay.left = 56;
+						break;
+					}
+					case DPIClassification.DPI_240:
+					{
+						twistyDisplay.width = 21;
+						twistyDisplay.height = 21;
+						twistyDisplay.left = 4;
+						labelDisplay.left = 42;
+						break;
+					}
+					default:
+					{
+						// default DPI_160
+						twistyDisplay.width = 14;
+						twistyDisplay.height = 14;
+						twistyDisplay.left = 3;
+						labelDisplay.left = 28;
+						break;
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="disabledAndSelected" stateGroups="selected" />
+		<s:State name="downAndSelected" stateGroups="selected" />
+		<s:State name="overAndSelected" stateGroups="selected" />
+		<s:State name="upAndSelected" stateGroups="selected" />
+		<s:State name="disabled" stateGroups="deselected" />
+		<s:State name="down" stateGroups="deselected" />
+		<s:State name="over" stateGroups="deselected" />
+		<s:State name="up" stateGroups="deselected" />
+	</s:states>
+	
+	<!-- hit area -->
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0x333333" />
+		</s:fill>
+	</s:Rect>
+	
+	<!-- twisty -->
+	<s:Group
+		id="twistyDisplay"
+		width="14" height="14"
+		left="3" verticalCenter="0"
+		rotation="-90"
+		rotation.selected="0"
+		resizeMode="scale"
+		>
+		<s:Path
+			horizontalCenter="0" bottom="0"
+			data="M 0 0 L 24 0 L 12 18 L 0 0 Z"
+			>
+			<s:fill>
+				<s:SolidColor color="0xcccccc" />
+			</s:fill>
+		</s:Path>
+	</s:Group>
+	
+	<!-- Label -->
+	<s:Label
+		id="labelDisplay"
+		color="0xffffff"
+		left="28" verticalCenter="0"
+		textAlign="left"
+		verticalAlign="middle"
+		maxDisplayedLines="1"
+		/>
+	
+</s:Skin>

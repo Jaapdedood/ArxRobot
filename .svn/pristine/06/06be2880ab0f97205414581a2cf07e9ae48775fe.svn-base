@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	>
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("spark.components.CheckBox")]
+	</fx:Metadata>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="disabledAndSelected" stateGroups="selected" />
+		<s:State name="downAndSelected" stateGroups="selected" />
+		<s:State name="overAndSelected" stateGroups="selected" />
+		<s:State name="upAndSelected" stateGroups="selected" />
+		<s:State name="disabled" stateGroups="deselected" />
+		<s:State name="down" stateGroups="deselected" />
+		<s:State name="over" stateGroups="deselected" />
+		<s:State name="up" stateGroups="deselected" />
+	</s:states>
+	
+	<!-- SkinParts
+	name=iconDisplay, type=spark.primitives.BitmapImage, required=false
+	name=labelDisplay, type=spark.core.IDisplayText, required=false
+	-->
+	<!-- hit area -->
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0x333333" />
+		</s:fill>
+	</s:Rect>
+	
+	<!-- twisty -->
+	<s:Group
+		width="24" height="24"
+		left="3" verticalCenter="0"
+		rotation="-90"
+		rotation.selected="0"
+		>
+		<s:Path
+			horizontalCenter="0" bottom="0"
+			data="M 0 0 L 24 0 L 12 18 L 0 0 Z"
+			>
+			<s:fill>
+				<s:SolidColor color="0xcccccc" />
+			</s:fill>
+		</s:Path>
+	</s:Group>
+	
+	<!-- Label -->
+	<s:Label
+		id="labelDisplay"
+		color="0xffffff"
+		fontSize="18"
+		left="36" verticalCenter="0"
+		textAlign="left"
+		verticalAlign="middle"
+		maxDisplayedLines="1"
+		paddingTop="16" paddingBottom="16"
+		/>
+	
+</s:Skin>

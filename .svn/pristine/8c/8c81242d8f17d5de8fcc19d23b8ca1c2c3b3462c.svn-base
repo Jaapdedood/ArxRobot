@@ -1,0 +1,99 @@
+package utils
+{
+	import com.distriqt.extension.battery.Battery;
+	
+	public class BatteryUtil extends NonUIComponentBase
+	{
+		// static constants and properties
+		
+		private static const DISTRIQT_ANE_DEV_KEY:String = '1e89e8495fb41930f708d5bb2a0da10c1ea466e6eL6aPB6BwQNi6DcovNC3t/qvq8TDoDKzMEZBQYtH3OIXtHAqpuDY7epxHUVQoB96hYCMzrCaD76HISnpXvMuxA==';
+		private static var __instance:BatteryUtil;
+		
+		
+		// constructor and instance
+		
+		/**
+		 * singleton instance of BatteryUtil
+		 */
+		public static function get instance ( ) : BatteryUtil
+		{
+			if ( !__instance )
+			{
+				__instance = new BatteryUtil ( new SingletonEnforcer() );
+			}
+			return __instance;
+		}
+		
+		/**
+		 * Singleton: use static property <em>instance</em> to access singleton instance, then add listeners to Battery service via instance.service.
+		 */	
+		public function BatteryUtil ( enforcer:SingletonEnforcer )
+		{
+			super();
+			try
+			{
+				Battery.init ( DISTRIQT_ANE_DEV_KEY );
+				if ( Battery.isSupported )
+				{
+					callLater ( _Register, [ true ] );
+				}
+				else
+				{
+					debugOut ( 'error_battery_support', true );
+				}
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_battery_init', true, [ err.message ] );
+			}
+			
+		}
+		
+		
+		// public properties and get/set methods
+		
+		public function get isSupported ( ) : Boolean
+		{
+			return Battery.isSupported;
+		}
+		
+		public function get service ( ) : Battery
+		{
+			return Battery.service;
+		}
+		
+		
+		// private properties
+		
+		private var _bRegistered:Boolean = false;
+		
+		
+		// private methods
+		
+		private function _Register ( on:Boolean ) : void
+		{
+			// _debugOut ( 'Battery register: ' + on ); // TESTING
+			if ( !Battery.isSupported || on == _bRegistered )
+				return;
+			
+			try
+			{
+				if ( on )
+				{
+					Battery.service.getBatteryInfo ( );
+				}
+				else
+				{
+					Battery.service.cancel ( );
+				}
+				_bRegistered = on;
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_battery_reg', true, [ err.message ] );
+			}
+		}
+		
+	}
+}
+class SingletonEnforcer {}

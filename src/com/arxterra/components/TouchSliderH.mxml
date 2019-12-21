@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	mouseChildren="false"
+	minWidth="72" minHeight="36"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	resize="_Resized()"
+	>
+	<fx:Metadata>
+		[Event(name="slider_press", type="flash.events.Event")]
+		[Event(name="slider_release", type="flash.events.Event")]
+		[Event(name="value_change", type="flash.events.Event")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			public const SLIDER_PRESS:String = 'slider_press';
+			public const SLIDER_RELEASE:String = 'slider_release';
+			public const VALUE_CHANGE:String = 'value_change';
+			
+			[Bindable(event="value_change")]
+			public function get value():Number
+			{
+				return _nVal;
+			}
+			public function set value(value:Number):void
+			{
+				if ( _nVal !== value )
+				{
+					_nVal = value;
+					_ThumbUpdate ( );
+					// this is only for setting the value
+					// from outside, so don't dispatch value_change event
+				}
+			}
+			
+			private var _iInitPhase:int = 0;
+			
+			private var _iTouchId:int = -1;
+			
+			private var _nMaxStgX:Number;
+			private var _nMinStgX:Number;
+			private var _nPrevStgX:Number = 0;
+			private var _nStgRangeH:Number;
+			private var _nThumbMargin:Number;
+			private var _nThumbOffset:Number;
+			private var _nThumbRangeX:Number;
+			private var _nVal:Number = 0.5;
+			private var _rStg:Rectangle;
+			private var _uAccent:uint;
+			private var _uChrome:uint;
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( _iInitPhase < 2 )
+					return;
+				
+				_iInitPhase = 0;
+				removeEventListener ( TouchEvent.TOUCH_BEGIN, _TouchBegin );
+				if ( _iTouchId >= 0 )
+				{
+					_StageListenersRemove ( );
+					_iTouchId = -1;
+				}
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _iInitPhase > 1 )
+				{
+					// nothing more to do here
+					return;
+				}
+				
+				if ( _iInitPhase > 0  )
+				{
+					// second pass, when creationComplete
+					// and addedToStage should have both fired
+					_iInitPhase = 2;
+					addEventListener ( TouchEvent.TOUCH_BEGIN, _TouchBegin );
+					_uAccent = getStyle ( 'accentColor' );
+					_uChrome = getStyle ( 'chromeColor' );
+					scTrack.color = _uChrome;
+					scThumb.color = getStyle ( 'color' );
+					_Resized ( );
+					return;
+				}
+				
+				// first pass
+				_iInitPhase = 1;
+			}
+			
+			private function _Resized ( ) : void
+			{
+				var nWd:Number = width;
+				var nHt:Number = height;
+				var nThumbExtWd:Number = Math.min ( nWd * 0.5, nHt );
+				_nThumbOffset = nThumbExtWd * 0.5;
+				_nThumbMargin = Math.ceil ( nHt * 0.06 );
+				var nThumbMargins:Number = _nThumbMargin * 2;
+				var nThumbHt:Number = nHt - nThumbMargins;
+				var nThumbWd:Number = nThumbExtWd - nThumbMargins;
+				_nThumbRangeX = nWd - nThumbExtWd;
+				var nRadX:Number = nThumbWd * 0.5;
+				var nRadY:Number = nThumbHt * 0.5;
+				rThumb.y = _nThumbMargin;
+				rThumb.width = nThumbWd;
+				rThumb.height = nThumbHt;
+				rThumb.radiusX = nRadX;
+				rThumb.radiusY = nRadY;
+				rTrack.radiusX = nRadX + _nThumbMargin;
+				rTrack.radiusY = nRadY + _nThumbMargin;
+				_ThumbUpdate ( );
+			}
+			
+			private function _StageListenersAdd ( ) : void
+			{
+				stage.addEventListener ( TouchEvent.TOUCH_END, _TouchEnd );
+				stage.addEventListener ( TouchEvent.TOUCH_MOVE, _TouchMove );
+			}
+			
+			private function _StageListenersRemove ( ) : void
+			{
+				stage.removeEventListener ( TouchEvent.TOUCH_END, _TouchEnd );
+				stage.removeEventListener ( TouchEvent.TOUCH_MOVE, _TouchMove );
+			}
+			
+			private function _ThumbUpdate ( ) : void
+			{
+				rThumb.x = _nVal * _nThumbRangeX + _nThumbMargin;
+			}
+			
+			private function _TouchBegin ( event:TouchEvent ) : void
+			{
+				if ( _iTouchId >= 0 )
+				{
+					return; // already busy with another one
+				}
+				
+				_iTouchId = event.touchPointID;
+				
+				// have to get these stage-transformed dimensions here,
+				// because the correct values aren't yet available
+				// when resize event fires
+				_rStg = this.getRect(stage);
+				var nStgThumbOffset:Number = this.localToGlobal ( new Point ( _nThumbOffset, 0 ) ).x - _rStg.x;
+				_nMinStgX = _rStg.x + nStgThumbOffset;
+				_nMaxStgX = _rStg.right - nStgThumbOffset;
+				_nStgRangeH = _nMaxStgX - _nMinStgX;
+				
+				_StageListenersAdd ( );
+				scTrack.color = _uAccent;
+				
+				var bChanged:Boolean = _ValueUpdate ( event.stageX );
+				
+				// send press event after calculating the value
+				dispatchEvent ( new Event ( SLIDER_PRESS ) );
+				
+				if ( bChanged )
+				{
+					// send value changed event
+					dispatchEvent ( new Event ( VALUE_CHANGE ) );
+				}
+			}
+			
+			private function _TouchEnd ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+				{
+					return; // not the one we want
+				}
+				
+				_StageListenersRemove ( );
+				_iTouchId = -1;
+				_nPrevStgX = 0;
+				scTrack.color = _uChrome;
+				
+				// send release event
+				dispatchEvent ( new Event ( SLIDER_RELEASE ) );
+			}
+			
+			private function _TouchMove ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+				{
+					return; // not the one we want
+				}
+				
+				if ( _rStg.contains ( event.stageX, event.stageY ) )
+				{
+					if ( _ValueUpdate ( event.stageX ) )
+					{
+						// send value changed event
+						dispatchEvent ( new Event ( VALUE_CHANGE ) );
+					}
+				}
+			}
+			
+			private function _ValueUpdate ( stageX:Number ) : Boolean
+			{
+				var bChanged:Boolean = false;
+				// constrain X and see if changed
+				var nNewX:Number;
+				if ( stageX < _nMinStgX )
+				{
+					nNewX = _nMinStgX;
+				}
+				else if ( stageX > _nMaxStgX )
+				{
+					nNewX = _nMaxStgX;
+				}
+				else
+				{
+					nNewX = stageX;
+				}
+				if ( nNewX != _nPrevStgX )
+				{
+					bChanged = true;
+					_nPrevStgX = nNewX;
+					// calculate value and set private var
+					_nVal = ( nNewX - _nMinStgX ) / _nStgRangeH;
+					
+					// calculate indicator position
+					_ThumbUpdate ( );
+				}
+				return bChanged;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Rect
+		id="rTrack"
+		left="0" right="0"
+		top="0" bottom="0"
+		>
+		<s:fill>
+			<s:SolidColor
+				id="scTrack"
+				/>
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		id="rThumb"
+		>
+		<s:fill>
+			<s:SolidColor
+				id="scThumb"
+				color="0x999999"
+				/>
+		</s:fill>
+	</s:Rect>
+</s:Group>

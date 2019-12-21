@@ -1,0 +1,39 @@
+package vo
+{
+	public class McuConnectModes
+	{
+		// CONSTANTS
+		
+		/**
+		 * Connect mode BLUETOOTH
+		 */
+		public static const BLUETOOTH:uint = 0;
+		/**
+		 * Connect mode USB_ADB
+		 */
+		public static const USB_ADB:uint = 1;
+		/**
+		 * Connect mode USB_HOST
+		 */
+		public static const USB_HOST:uint = 2;
+		/**
+		 * Unspecified. Used only during startup.
+		 */
+		public static const NA:uint = 99;
+		
+		public static const MODES:Array = [ BLUETOOTH, USB_ADB, USB_HOST ];
+		
+		// PUBLIC METHODS
+		
+		public function McuConnectModes()
+		{
+		}
+		
+		public static function ValidateMode ( value:uint ) : uint
+		{
+			if ( MODES.indexOf ( value ) < 0 )
+				return BLUETOOTH;
+			return value;
+		}
+	}
+}

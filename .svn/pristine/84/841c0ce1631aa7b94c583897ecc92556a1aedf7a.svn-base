@@ -1,0 +1,265 @@
+package utils
+{
+	import flash.events.TimerEvent;
+	import flash.utils.ByteArray;
+	import flash.utils.Timer;
+	
+	import events.TelemetryEvent;
+	
+	import interfaces.IArduinoConnector;
+	
+	[Event(name="packet_payloads", type="events.TelemetryEvent")]
+	
+	/**
+	 * Base class for serial connection to exchange
+	 * byte arrays with Arduino. Must be extended by subclasses
+	 * specific to the various connection modes, such as
+	 * USB Microbridge, USB Android as Host, and Bluetooth.
+	 */
+	[Bindable]
+	public class ArduinoConnector extends NonUIComponentBase implements IArduinoConnector
+	{
+		// PUBLIC CONSTANTS
+		
+		public static const COMMAND_PACKET_ID:uint =	0xA5;
+		public static const TELEMETRY_PACKET_ID:uint =	0xCA;
+		
+		
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		public function ArduinoConnector()
+		{
+			super ( );
+			init ( );
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			_tmrIn.stop ( );
+			_tmrIn.removeEventListener ( TimerEvent.TIMER, _InputQueueService );
+			_tmrIn = null;
+			_tmrOut.stop ( );
+			_tmrOut.removeEventListener ( TimerEvent.TIMER, _OutputQueueService );
+			_tmrOut = null;
+			_baIn.clear ( );
+			_baIn = null;
+			_baPayload.clear ( );
+			_baPayload = null;
+			var i_ba:ByteArray;
+			for ( var i:int = _vbaOut.length; i>0; i-- )
+			{
+				i_ba = _vbaOut.pop ( );
+				i_ba.clear ( );
+				i_ba = null;
+			}
+			_vbaOut = null;
+			super.dismiss ( );
+		}
+		
+		/**
+		 * Called automatically during instantiation,
+		 * but may also be called manually to reactivate
+		 * (if object was previously dismissed).
+		 * Subclass overrides must call super.init().
+		 */		
+		public function init ( ) : void
+		{
+			_baIn = new ByteArray ( );
+			_baPayload = new ByteArray ( );
+			_vbaOut = new <ByteArray> [ ];
+			_tmrIn = new Timer ( 20, 0 );
+			_tmrIn.addEventListener ( TimerEvent.TIMER, _InputQueueService );
+			_tmrOut = new Timer ( 20, 0 );
+			_tmrOut.addEventListener ( TimerEvent.TIMER, _OutputQueueService );
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		/**
+		 * Send data to Arduino.
+		 * @param bytes Data to send to Arduino.
+		 * @return true if connected or unknown status,
+		 * false if known not to be connected.
+		 */
+		// Treat as abstract method.  Subclass must override.
+		public function send ( bytes:ByteArray ) : Boolean
+		{
+			return false;
+		}
+		
+		
+		// PROTECTED METHODS
+		
+		protected function dataQueuePush ( ba:ByteArray ) : void
+		{
+			// ##### TESTING #####
+			debugByteArrayOut ( 'arduino_data_in', ba );
+			// ###################
+			
+			_baIn.writeBytes ( ba );
+			
+			_tmrIn.start ( );
+		}
+		
+		
+		// PRIVATE CONSTANTS
+		
+		private static const _FSM_START:uint =		0;
+		private static const _FSM_LENGTH:uint =		1;
+		private static const _FSM_PAYLOAD:uint =	2;
+		private static const _FSM_CHECKSUM:uint =	3;
+		private static const _FSM_EXCEPTION:uint =	4;
+
+		private static const _ERR_START:String =		'1'	// error_arduino_telem_pkt_1	Telemetry packet exception 0x01: start byte 0xCA expected [{0}]
+		private static const _ERR_LENGTH:String =		'2'	// error_arduino_telem_pkt_2	Telemetry packet exception 0x02: payload length out of range 1 - 20 [{0}]
+		private static const _ERR_CHECKSUM:String =		'3'	// error_arduino_telem_pkt_3	Telemetry packet exception 0x03: LPC checksum error [{0}]
+		private static const _ERR_UNDEFINED:String =	'4'	// error_arduino_telem_pkt_4	Telemetry packet exception 0x04: undefined decoder FSM state [{0}]
+		private static const _ERR_OVERFLOW:String =		'5'	// error_arduino_telem_pkt_5	Telemetry packet exception 0x05: potential data buffer overflow [{0}]
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _baIn:ByteArray;
+		private var _baPayload:ByteArray;
+		private var _tmrIn:Timer;
+		private var _tmrOut:Timer;
+		private var _uCheckSum:uint = 0;
+		private var _uLength:uint = 0;
+		private var _uState:uint = _FSM_START;
+		private var _vbaOut:Vector.<ByteArray>;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _InputQueueService ( event:TimerEvent = null ) : void
+		{
+			_tmrIn.stop ( );
+			_baIn.position = 0;
+			
+			// FSM
+			var uNextState:uint;
+			var i_uByte:uint;
+			
+			function errorReset ( sErr:String, uByte:uint ) : void
+			{
+				var sHexDec:String = '0x';
+				if ( uByte < 0x10 )
+					sHexDec += '0';
+				sHexDec += uByte.toString ( 16 ).toUpperCase ( ) + ' (' + uByte.toString() + ')';
+				
+				debugOut ( 'error_arduino_telem_pkt_' + sErr, true, [ sHexDec ] );
+				reset ( _FSM_EXCEPTION );
+			}
+			
+			function reset ( uNext:uint ) : void
+			{
+				_baPayload.clear ( );
+				_uCheckSum = 0;
+				uNextState = uNext;
+			}
+			
+			// out of bounds check
+			if ( _baPayload.length > 22 )
+			{
+				errorReset ( _ERR_OVERFLOW, _baPayload [ 22 ] );
+				_uState = _FSM_EXCEPTION;
+			}
+			
+			// FSM loop
+			while ( _baIn.bytesAvailable > 0 )
+			{
+				i_uByte = _baIn.readUnsignedByte ( );
+				_uCheckSum ^= i_uByte;
+				
+				switch ( _uState )
+				{
+					case _FSM_PAYLOAD:
+						// should hit this one more often than any other, so deal with it first
+						_baPayload.writeByte ( i_uByte );
+						if ( _baPayload.length < _uLength )
+						{
+							uNextState = _FSM_PAYLOAD;
+						}
+						else
+						{
+							uNextState = _FSM_CHECKSUM;
+						}
+						break;
+					case _FSM_START:
+						if ( i_uByte == TELEMETRY_PACKET_ID )
+						{
+							uNextState = _FSM_LENGTH;
+						}
+						else
+						{
+							errorReset ( _ERR_START, i_uByte );
+						}
+						break;
+					case _FSM_LENGTH:
+						_uLength = i_uByte;
+						if ( 0 < _uLength && _uLength <= 20 )
+						{
+							uNextState = _FSM_PAYLOAD;
+						}
+						else
+						{
+							errorReset ( _ERR_LENGTH, _uLength );
+						}
+						break;
+					case _FSM_CHECKSUM:
+						if ( _uCheckSum == 0 )
+						{
+							// packet is complete, so queue the payload for output
+							var ba:ByteArray = new ByteArray ( );
+							ba.writeBytes ( _baPayload );
+							_OutputQueuePush ( ba );
+							reset ( _FSM_START );
+						}
+						else
+						{
+							errorReset ( _ERR_CHECKSUM, _uCheckSum );
+						}
+						break;
+					case _FSM_EXCEPTION:
+						if ( i_uByte == TELEMETRY_PACKET_ID )
+						{
+							// found a possible new start
+							uNextState = _FSM_LENGTH;
+						}
+						else
+						{
+							// keep looking for new start
+							_uCheckSum = 0;
+							uNextState = _FSM_EXCEPTION;
+						}
+						break;
+					default:
+						// should never get here!
+						errorReset ( _ERR_UNDEFINED, i_uByte );
+						break;
+				} // end switch
+				
+				_uState = uNextState; // update FSM
+				
+			} // end FSM loop
+			
+			_baIn.clear ( ); // free up memory
+			
+		} // end _DataQueueService
+		
+		private function _OutputQueuePush ( ba:ByteArray ) : void
+		{
+			_vbaOut.push ( ba );
+			_tmrOut.start ( );
+		}
+		
+		private function _OutputQueueService ( event:TimerEvent = null ) : void
+		{
+			_tmrOut.stop ( );
+			dispatchEvent ( new TelemetryEvent ( TelemetryEvent.PACKET_PAYLOADS, _vbaOut ) );
+			_vbaOut = new <ByteArray> [];
+		}
+		
+	}
+}

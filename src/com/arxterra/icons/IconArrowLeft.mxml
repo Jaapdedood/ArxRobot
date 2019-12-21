@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	scaleX="2"
+	scaleY="2"
+	>
+	<s:Path
+		data="M0 5L7 0 8 0 8 11 7 11 0 6 0 5Z">
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+</icons:ColorizedIconBase>

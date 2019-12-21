@@ -1,0 +1,34 @@
+package utils
+{
+	/**
+	 * Control connector for the Remote Control operational mode.
+	 */
+	[Bindable]
+	public class ControlConnectorRC extends ControlConnector
+	{
+		/**
+		 * @copy ControlConnectorRC
+		 */
+		public function ControlConnectorRC ( )
+		{
+			super ( );
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			
+			super.dismiss ( );
+		}
+		
+		/**
+		 * Called automatically by superclass during instantiation,
+		 * but may also be called manually to reactivate
+		 * if object was previously dismissed.
+		 * Subclass overrides must call super.init().
+		 */
+		override public function init ( ) : void
+		{
+			super.init ( );
+		}
+	}
+}

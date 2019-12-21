@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	removedFromStage="_Dismiss()"
+	resizeMode="scale"
+	>
+	<fx:Metadata>
+		[Event(name="joystick_back", type="flash.events.Event")]
+		[Event(name="joystick_front", type="flash.events.Event")]
+		[Event(name="joystick_left", type="flash.events.Event")]
+		[Event(name="joystick_press", type="flash.events.Event")]
+		[Event(name="joystick_release", type="flash.events.Event")]
+		[Event(name="joystick_right", type="flash.events.Event")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			public static const JOYSTICK_BACK:String = 'joystick_back';
+			public static const JOYSTICK_FRONT:String = 'joystick_front';
+			public static const JOYSTICK_LEFT:String = 'joystick_left';
+			public static const JOYSTICK_PRESS:String = 'joystick_press';
+			public static const JOYSTICK_RELEASE:String = 'joystick_release';
+			public static const JOYSTICK_RIGHT:String = 'joystick_right';
+			
+			private static const _NONE:int = -1;
+			private static const _LEFT:int = 0;
+			private static const _RIGHT:int = 1;
+			private static const _FRONT:int = 2;
+			private static const _BACK:int = 3;
+			
+			private static const _DIR_EVENTS:Vector.<String> = new <String> [
+				JOYSTICK_LEFT,
+				JOYSTICK_RIGHT,
+				JOYSTICK_FRONT,
+				JOYSTICK_BACK
+			];
+			
+			public function get repeatDelay():Number
+			{
+				return _nDelay;
+			}
+			public function set repeatDelay(value:Number):void
+			{
+				_nDelay = value;
+				if ( _tmr )
+				{
+					_tmr.delay = value;
+				}
+			}
+			
+			private var _iInitPhase:int = 0;
+			private var _iState:int = -1;
+			private var _iTouchId:int = -1;
+			private var _nDelay:Number = 250;
+			private var _tmr:Timer;
+			private var _uAccent:uint;
+			private var _uChrome:uint;
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( _iInitPhase < 2 )
+					return;
+				
+				_iInitPhase = 0;
+				if ( _tmr )
+				{
+					_tmr.stop ( );
+					_tmr.removeEventListener ( TimerEvent.TIMER, _Update );
+					_tmr = null;
+				}
+				if ( _iTouchId >= 0 )
+				{
+					_StageListenersRemove ( );
+					_iTouchId = -1;
+				}
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _iInitPhase > 1 )
+				{
+					// nothing more to do here
+					return;
+				}
+				
+				if ( _iInitPhase > 0  )
+				{
+					// second pass, when creationComplete
+					// and addedToStage should have both fired
+					_iInitPhase = 2;
+					_uAccent = getStyle ( 'accentColor' );
+					_uChrome = getStyle ( 'chromeColor' );
+					scBase.color = _uChrome;
+					scBack.color = _uChrome;
+					scCenter.color = _uChrome;
+					scFront.color = _uChrome;
+					scLeft.color = _uChrome;
+					scRight.color = _uChrome;
+					return;
+				}
+				
+				// first pass
+				_iInitPhase = 1;
+				_tmr = new Timer ( _nDelay, 0 );
+				_tmr.addEventListener ( TimerEvent.TIMER, _Update );
+			}
+			
+			private function _IsNewTouch ( touchId:int, newStateId:int ) : Boolean
+			{
+				
+				if ( _iTouchId >= 0 )
+					return false; // already busy with another one
+				
+				_iTouchId = touchId;
+				_iState = newStateId;
+				_StageListenersAdd ( );
+				dispatchEvent ( new Event ( JOYSTICK_PRESS ) );
+				_tmr.reset ( );
+				_tmr.start ( );
+				_Update ( );
+				return true;
+			}
+			
+			private function _StageListenersAdd ( ) : void
+			{
+				stage.addEventListener ( TouchEvent.TOUCH_END, _TouchEnd );
+				// stage.addEventListener ( TouchEvent.TOUCH_MOVE, _TouchMove );
+			}
+			
+			private function _StageListenersRemove ( ) : void
+			{
+				stage.removeEventListener ( TouchEvent.TOUCH_END, _TouchEnd );
+				// stage.removeEventListener ( TouchEvent.TOUCH_MOVE, _TouchMove );
+			}
+			
+			private function _TouchEnd ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_tmr.stop ( );
+				_StageListenersRemove ( );
+				_iTouchId = -1;
+				_iState = _NONE;
+				scCenter.color = _uChrome;
+				scBack.color = _uChrome;
+				scFront.color = _uChrome;
+				scLeft.color = _uChrome;
+				scRight.color = _uChrome;
+				
+				// send release event
+				dispatchEvent ( new Event ( JOYSTICK_RELEASE ) );
+			}
+			
+			// Back
+			private function _BackBegin ( event:TouchEvent ) : void
+			{
+				if ( !_IsNewTouch ( event.touchPointID, _BACK ) )
+					return; // already busy with another one
+					
+				scBack.color = _uAccent;
+			}
+			
+			private function _BackOut ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _NONE;
+				scBack.color = _uChrome;
+			}
+			
+			private function _BackOver ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _BACK;
+				scBack.color = _uAccent;
+			}
+			
+			// Base
+			private function _BaseBegin ( event:TouchEvent ) : void
+			{
+				if ( !_IsNewTouch ( event.touchPointID, _NONE ) )
+					return; // already busy with another one
+					
+				scCenter.color = _uAccent;
+			}
+			
+			private function _BaseOut ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _NONE;
+				scCenter.color = _uChrome;
+			}
+			
+			private function _BaseOver ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _NONE;
+				scCenter.color = _uAccent;
+			}
+			
+			// Front
+			private function _FrontBegin ( event:TouchEvent ) : void
+			{
+				if ( !_IsNewTouch ( event.touchPointID, _FRONT ) )
+					return; // already busy with another one
+				
+				scFront.color = _uAccent;
+			}
+			
+			private function _FrontOut ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _NONE;
+				scFront.color = _uChrome;
+			}
+			
+			private function _FrontOver ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _FRONT;
+				scFront.color = _uAccent;
+			}
+			
+			// Left
+			private function _LeftBegin ( event:TouchEvent ) : void
+			{
+				if ( !_IsNewTouch ( event.touchPointID, _LEFT ) )
+					return; // already busy with another one
+				
+				scLeft.color = _uAccent;
+			}
+			
+			private function _LeftOut ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _NONE;
+				scLeft.color = _uChrome;
+			}
+			
+			private function _LeftOver ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _LEFT;
+				scLeft.color = _uAccent;
+			}
+			
+			// Right
+			private function _RightBegin ( event:TouchEvent ) : void
+			{
+				if ( !_IsNewTouch ( event.touchPointID, _RIGHT ) )
+					return; // already busy with another one
+				
+				scRight.color = _uAccent;
+			}
+			
+			private function _RightOut ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _NONE;
+				scRight.color = _uChrome;
+			}
+			
+			private function _RightOver ( event:TouchEvent ) : void
+			{
+				if ( event.touchPointID != _iTouchId )
+					return;
+				
+				_iState = _RIGHT;
+				scRight.color = _uAccent;
+			}
+			
+			private function _Update ( event:TimerEvent = null ) : void
+			{
+				if ( _iState < 0 )
+					return;
+				
+				dispatchEvent ( new Event ( _DIR_EVENTS [ _iState ] ) );
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group
+		id="gpBase"
+		left="0" right="0"
+		top="0" bottom="0"
+		width="256" height="256"
+		touchBegin="_BaseBegin(event)"
+		touchOut="_BaseOut(event)"
+		touchOver="_BaseOver(event)"
+		>
+		<s:Ellipse
+			left="0" right="0"
+			top="0" bottom="0"
+			>
+			<s:fill>
+				<s:SolidColor
+					id="scBase"
+					/>
+			</s:fill>
+		</s:Ellipse>
+		<s:Ellipse
+			horizontalCenter="0"
+			verticalCenter="0"
+			width="96" height="96"
+			>
+			<s:fill>
+				<s:SolidColor
+					id="scCenter"
+					/>
+			</s:fill>
+		</s:Ellipse>
+	</s:Group>
+	<s:Group
+		id="gpFront"
+		horizontalCenter="0" y="0"
+		width="181" height="94"
+		touchBegin="_FrontBegin(event)"
+		touchOut="_FrontOut(event)"
+		touchOver="_FrontOver(event)"
+		>
+		<s:Path
+			winding="nonZero"
+			data="M56.563 94C65.2485 85.3203 77.2471 79.9502 90.5005 79.9502 103.753 79.9502 115.751 85.3203 124.438 94L181 37.4673C157.84 14.3184 125.842 0 90.5005 0 55.1587 0 23.1621 14.3184 0 37.4673L56.563 94Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					id="scFront"
+					/>
+			</s:fill>
+		</s:Path>
+		<s:Path
+			horizontalCenter="0"
+			verticalCenter="0"
+			width="60" height="32"
+			data="M7 0 0 7 0 8 1 8 7 4 8 4 14 8 15 8 15 7 8 0 7 0Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="{getStyle('color')}"/>
+			</s:fill>
+		</s:Path>
+	</s:Group>
+	<s:Group
+		id="gpLeft"
+		x="0" verticalCenter="0"
+		width="94" height="181"
+		touchBegin="_LeftBegin(event)"
+		touchOut="_LeftOut(event)"
+		touchOver="_LeftOver(event)"
+		>
+		<s:Path
+			winding="nonZero"
+			data="M94 124.438C85.3203 115.751 79.9502 103.753 79.9502 90.5 79.9502 77.2466 85.3203 65.248 94 56.5625L37.4668 0C14.3184 23.1616 0 55.1582 0 90.5 0 125.842 14.3184 157.839 37.4668 181L94 124.438Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					id="scLeft"
+					/>
+			</s:fill>
+		</s:Path>
+		<s:Path
+			horizontalCenter="0"
+			verticalCenter="0"
+			width="32" height="60"
+			data="M0 7 7 0 8 0 8 1 4 7 4 8 8 14 8 15 7 15 0 8 0 7Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="{getStyle('color')}"/>
+			</s:fill>
+		</s:Path>
+	</s:Group>
+	<s:Group
+		id="gpRight"
+		right="0" verticalCenter="0"
+		width="94" height="181"
+		touchBegin="_RightBegin(event)"
+		touchOut="_RightOut(event)"
+		touchOver="_RightOver(event)"
+		>
+		<s:Path
+			winding="nonZero"
+			data="M56.5332 0 0 56.5625C8.67969 65.248 14.0498 77.2466 14.0498 90.5 14.0498 103.753 8.67969 115.751 0 124.438L56.5332 181C79.6826 157.841 94 125.844 94 90.5 94 55.1572 79.6826 23.1606 56.5332 0Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					id="scRight"
+					/>
+			</s:fill>
+		</s:Path>
+		<s:Path
+			horizontalCenter="0"
+			verticalCenter="0"
+			width="32" height="60"
+			data="M8 7 1 0 0 0 0 1 4 7 4 8 0 14 0 15 1 15 8 8 8 7Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="{getStyle('color')}"/>
+			</s:fill>
+		</s:Path>
+	</s:Group>
+	<s:Group
+		id="gpBack"
+		horizontalCenter="0" bottom="0"
+		width="181" height="94"
+		touchBegin="_BackBegin(event)"
+		touchOut="_BackOut(event)"
+		touchOver="_BackOver(event)"
+		>
+		<s:Path
+			winding="nonZero"
+			data="M124.438 0C115.751 8.67969 103.753 14.0498 90.5 14.0498 77.2466 14.0498 65.248 8.67969 56.5625 0L0 56.5332C23.1606 79.6826 55.1572 94 90.5 94 125.844 94 157.841 79.6826 181 56.5332L124.438 0Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					id="scBack"
+					/>
+			</s:fill>
+		</s:Path>
+		<s:Path
+			horizontalCenter="0"
+			verticalCenter="0"
+			width="60" height="32"
+			data="M7 8 0 1 0 0 1 0 7 4 8 4 14 0 15 0 15 1 8 8 7 8Z"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="{getStyle('color')}"/>
+			</s:fill>
+		</s:Path>
+	</s:Group>
+</s:Group>

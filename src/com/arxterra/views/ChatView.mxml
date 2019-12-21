@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	gap="8"
+	horizontalAlign="left"
+	minWidth="160"
+	minHeight="200"
+	creationComplete="_Initialized()"
+	removedFromStage="_Dismissed()"
+	>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.smartfoxserver.v2.SmartFox;
+			import com.smartfoxserver.v2.core.SFSEvent;
+			import com.smartfoxserver.v2.entities.SFSRoom;
+			import com.smartfoxserver.v2.entities.SFSUser;
+			import com.smartfoxserver.v2.requests.PublicMessageRequest;
+			
+			private var _reLine0:RegExp = /^.*[\n\r]/;
+			private var _reNewLines:RegExp = /[\n\r]/g;
+			
+			[Bindable]
+			public var rover:SFSRoom;
+			
+			public var sfs:SmartFox;
+			
+			private function _Dismissed ( ) : void
+			{
+				sfs.removeEventListener ( SFSEvent.PUBLIC_MESSAGE, _Receive );
+			}
+			
+			private function _Initialized ( ) : void
+			{
+				sfs.addEventListener ( SFSEvent.PUBLIC_MESSAGE, _Receive );
+			}
+			
+			private function _Send ( ) : void
+			{
+				var sInput:String = tinChat.text;
+				if ( sInput.length > 0 )
+				{
+					tinChat.text = '';
+					sfs.send ( new PublicMessageRequest ( sInput ) );
+				}
+			}
+			
+			private function _Receive ( event:SFSEvent ) : void
+			{
+				var sName:String;
+				var sender:SFSUser = event.params.sender;
+				if ( sender == sfs.mySelf )
+				{
+					sName = 'me';
+				}
+				else
+				{
+					sName = sender.name;
+				}
+				var s:String = taChat.text;
+				var iOver:int = s.match ( _reNewLines ).length - 28;
+				if ( iOver > 0 )
+				{
+					for ( var i:int=0; i<iOver; i++ )
+					{
+						s = s.replace ( _reLine0, '' );
+					}
+					taChat.text = s;
+				}
+				taChat.appendText ( '[' + sName + ']\n' + event.params.message + '\n\n' );
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:Label
+		id="lblChat"
+		styleName="textSubhead"
+		maxDisplayedLines="0"
+		text="{resourceManager.getString('default','chat_label')}"
+		/>	
+	<s:TextArea
+		id="taChat"
+		width="100%"
+		height="100%"
+		editable="false"
+		selectable="false"
+		/>
+	<!--
+	<s:Scroller
+		id="scrl"
+		horizontalScrollPolicy="off"
+		verticalScrollPolicy="auto"
+		width="100%"
+		height="100%"
+		>
+		<s:Group
+			id="gpScrl"
+			width="100%"
+			height="100%"
+			>
+		</s:Group>
+	</s:Scroller>
+	-->
+	<s:HGroup
+		width="100%"
+		gap="8"
+		verticalAlign="middle"
+		>
+		<s:TextInput
+			id="tinChat"
+			width="100%"
+			enter="_Send()"
+			/>
+		<s:Button
+			id="btnSend"
+			label="{resourceManager.getString('default','chat_send_btn_label')}"
+			click="_Send()"
+			/>
+	</s:HGroup>
+	
+</s:VGroup>

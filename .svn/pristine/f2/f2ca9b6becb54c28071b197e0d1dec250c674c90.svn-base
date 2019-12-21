@@ -1,0 +1,537 @@
+package utils
+{
+	import flash.events.Event;
+	import flash.events.TimerEvent;
+	import flash.utils.ByteArray;
+	import flash.utils.Timer;
+	import flash.utils.getTimer;
+	
+	import events.TelemetryEvent;
+	import events.UtilityEvent;
+	
+	import interfaces.IArduinoConnector;
+	
+	import vo.ArduinoMessage;
+	import vo.ArduinoModes;
+	
+	[Event(name="arduino_mode_changed", type="flash.events.Event")]
+	[Event(name="arduino_connection_changed", type="flash.events.Event")]
+	
+	[Event(name="packet_payloads", type="events.TelemetryEvent")]
+	[Event(name="arduino_connected", type="events.UtilityEvent")]
+	[Event(name="arduino_disconnected", type="events.UtilityEvent")]
+	
+	/**
+	 * Base class for serial connection to exchange
+	 * byte arrays with Arduino. Must be extended by subclasses
+	 * specific to the various connection modes, such as
+	 * USB Microbridge, USB Android as Host, and Bluetooth.
+	 */
+	[Bindable]
+	public class ArduinoConnector extends NonUIComponentBase implements IArduinoConnector
+	{
+		// PUBLIC CONSTANTS
+		
+		//   Events
+		
+		public static const ARDUINO_CONNECTION_CHANGED:String = 'arduino_connection_changed';
+		public static const ARDUINO_MODE_CHANGED:String = 'arduino_mode_changed';
+		
+		//   Packet IDs
+		public static const COMMAND_PACKET_ID:uint =	0xA5;
+		public static const TELEMETRY_PACKET_ID:uint =	0xCA;
+		
+		//   Command (outgoing) IDs are constants of the ArduinoCommand class
+		
+		//   Telemetry (incoming) IDs
+		public static const MOTOR1_CURRENT_ID:uint =	0x01; // motor 1 is left motor
+		public static const MOTOR2_CURRENT_ID:uint =	0x02; // motor 2 is right motor
+		public static const TEMP_SENSOR_ID:uint =		0x03; // temperature sensor
+		public static const RANGE_LEFT_ID:uint =		0x04; // ultrasonic range 1 is left
+		public static const RANGE_RIGHT_ID:uint =		0x05; // ultrasonic range 2 is right
+		public static const CLEAN_BATTERY_ID:uint =		0x06; // Arduino battery
+		public static const DIRTY_BATTERY_ID:uint =		0x07; // DC and servo motors battery 
+		public static const PAN_POSITION_ID:uint =		0x08; // camera turret pan position
+		public static const TILT_POSITION_ID:uint =		0x09; // camera turret tilt position
+		public static const EEPROM_RESPONSE_ID:uint =	0x0A; // sent in response to EEPROM Read Command
+		public static const EMERGENCY_ID:uint =			0x0B;
+		public static const COMMAND_DUMP_ID:uint =		0x0D;
+		public static const EXCEPTION_ID:uint =			0x0E;
+		public static const PONG_ID:uint =				0x11; // no argument bytes
+		public static const ROUTE_STATUS_ID:uint =		0x12; // 1 argument byte for status code
+		public static const WAYPOINT_ARRIVE_ID:uint =	0x13; // 1 argument byte for admin ID
+		
+		
+		// PRIVATE CONSTANTS
+		
+		private static const _ERR_START:String =		'1'; // error_arduino_telem_pkt_1	Telemetry packet exception 0x01: start byte 0xCA expected [{0}]
+		private static const _ERR_LENGTH:String =		'2'; // error_arduino_telem_pkt_2	Telemetry packet exception 0x02: payload length out of range 1 - 20 [{0}]
+		private static const _ERR_CHECKSUM:String =		'3'; // error_arduino_telem_pkt_3	Telemetry packet exception 0x03: LPC checksum error [{0}]
+		private static const _ERR_UNDEFINED:String =	'4'; // error_arduino_telem_pkt_4	Telemetry packet exception 0x04: undefined decoder FSM state [{0}]
+		private static const _ERR_OVERFLOW:String =		'5'; // error_arduino_telem_pkt_5	Telemetry packet exception 0x05: potential data buffer overflow [{0}]
+		
+		private static const _FSM_START:uint =		0;
+		private static const _FSM_LENGTH:uint =		1;
+		private static const _FSM_PAYLOAD:uint =	2;
+		private static const _FSM_CHECKSUM:uint =	3;
+		private static const _FSM_EXCEPTION:uint =	4;
+		
+		private static const _DISCONNECT_ASSUMED_MSECS:uint = 5000;
+		private static const _PING_INTERVAL_MSECS_DEF:uint = 3000;
+		private static const _PONG_ALERT_MSECS:uint = 1000;
+		private static const _PONG_PAD_MSECS:uint = 500;
+		
+		
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		public function ArduinoConnector()
+		{
+			super ( );
+			init ( );
+		}
+		
+		/**
+		 * Overrides must call super.dismiss().
+		 */
+		override public function dismiss ( ) : void
+		{
+			_tmrQueueIn.stop ( );
+			_tmrQueueIn.removeEventListener ( TimerEvent.TIMER, _TelemetryInputQueueService );
+			_tmrQueueIn = null;
+			_tmrQueueOut.stop ( );
+			_tmrQueueOut.removeEventListener ( TimerEvent.TIMER, _TelemetryOutputQueueService );
+			_tmrQueueOut = null;
+			_baIn.clear ( );
+			_baIn = null;
+			_baPayload.clear ( );
+			_baPayload = null;
+			var i_ba:ByteArray;
+			for ( var i:int = _vbaOut.length; i>0; i-- )
+			{
+				i_ba = _vbaOut.pop ( );
+				i_ba.clear ( );
+				i_ba = null;
+			}
+			_vbaOut = null;
+			super.dismiss ( );
+		}
+		
+		/**
+		 * Called automatically during instantiation,
+		 * but may also be called manually to reactivate
+		 * if object was previously dismissed.
+		 * Overrides must call super.init().
+		 */
+		public function init ( ) : void
+		{
+			_baIn = new ByteArray ( );
+			_baPayload = new ByteArray ( );
+			_vbaOut = new <ByteArray> [ ];
+			_uPingMsecs = _PING_INTERVAL_MSECS_DEF;
+			_tmrQueueIn = new Timer ( 20, 0 );
+			_tmrQueueIn.addEventListener ( TimerEvent.TIMER, _TelemetryInputQueueService );
+			_tmrQueueOut = new Timer ( 20, 0 );
+			_tmrQueueOut.addEventListener ( TimerEvent.TIMER, _TelemetryOutputQueueService );
+		}
+		
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		[Bindable (event="arduino_mode_changed")]
+		final public function get isBluetooth():Boolean
+		{
+			return ( _uMode == ArduinoModes.BLUETOOTH );
+		}
+		
+		/**
+		 * Boolean true if device is currently connected,
+		 * false otherwise
+		 */
+		[Bindable (event="arduino_connection_changed")]
+		public function get isConnected ( ) : Boolean
+		{
+			return _bConnected;
+		}
+		protected function _isConnectedSet ( value:Boolean ) : void
+		{
+			if ( value == _bConnected )
+				return;
+			
+			_bConnected = value;
+			if ( value )
+			{
+				// start pinging
+				_PingEnable ( );
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.ARDUINO_CONNECTED ) );
+			}
+			else
+			{
+				// stop pinging
+				_PingDisable ( );
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.ARDUINO_DISCONNECTED ) );
+			}
+			dispatchEvent ( new Event ( ARDUINO_CONNECTION_CHANGED ) );
+		}
+		
+		[Bindable (event="arduino_mode_changed")]
+		final public function get mode():uint
+		{
+			return _uMode;
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		/**
+		 * Wraps Command ByteArray data in command packet and sends to Arduino.
+		 * @param bytes Command data to send to Arduino.
+		 * @return true if connected or unknown status,
+		 * false if known not to be connected.
+		 */
+		final public function sendCommand ( bytes:ByteArray ) : Boolean
+		{
+			return _send ( _commandPacketFromByteArray ( bytes ) );
+		}
+		
+		/**
+		 * Wraps single byte command ID in command packet and sends to Arduino.
+		 * @param id uint representation of byte value to be sent to Arduino.
+		 * @return true if connected or unknown status,
+		 * false if known not to be connected.
+		 */		
+		final public function sendCommandId ( id:int ) : Boolean
+		{
+			return _send ( _commandPacketFromId ( id ) );
+		}
+		
+		
+		// PROTECTED METHODS
+		
+		/**
+		 * Wraps command ByteArray payload in command packet and returns the resulting ByteArray.
+		 * @param bytes ByteArray command payload to be converted to command packet.
+		 */		
+		final protected function _commandPacketFromByteArray ( bytes:ByteArray ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			var i:int;
+			var iCount:int = bytes.length;
+			var iCheckSum:int = COMMAND_PACKET_ID ^ iCount;
+			ba.writeByte ( COMMAND_PACKET_ID );
+			ba.writeByte ( iCount );
+			ba.writeBytes ( bytes );
+			for ( i=0; i<iCount; i++ )
+			{
+				iCheckSum ^= bytes [ i ];
+			}
+			ba.writeByte ( iCheckSum );
+			return ba;
+		}
+		
+		/**
+		 * Wraps single byte command ID in command packet and returns the resulting ByteArray.
+		 * @param id uint representation of byte value to be converted to command packet.
+		 */		
+		final protected function _commandPacketFromId ( id:int ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( COMMAND_PACKET_ID );
+			ba.writeByte ( 1 );
+			ba.writeByte ( id );
+			ba.writeByte ( COMMAND_PACKET_ID ^ 1 ^ id );
+			return ba;
+		}
+		
+		final protected function _modeSet ( value:uint ) : void
+		{
+			if ( value !== _uMode )
+			{
+				_uMode = value;
+				dispatchEvent ( new Event ( ARDUINO_MODE_CHANGED ) );
+			}
+		}
+		
+		/**
+		 * Treat as abstract method.  Subclass must override to implement
+		 * sending of command packet as required by the specific type
+		 * of connection.
+		 * @param bytes ByteArray command packet
+		 * @return true if connected or unknown status,
+		 * false if known not to be connected.
+		 */
+		protected function _send ( bytes:ByteArray ) : Boolean
+		{
+			return false;
+		}
+		
+		// all messages from Arduino come through here
+		final protected function _telemetryInputQueuePush ( ba:ByteArray ) : void
+		{
+			// ##### TESTING #####
+			// debugByteArrayOut ( 'arduino_data_in', ba );
+			// ###################
+			_iLastInMarkMsec = getTimer ( );
+			
+			_isConnectedSet ( true );
+			
+			_baIn.writeBytes ( ba );
+			
+			_tmrQueueIn.start ( );
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _baIn:ByteArray;
+		private var _baPayload:ByteArray;
+		private var _baPingPacket:ByteArray;
+		private var _bConnected:Boolean = false;
+		private var _bIsBlue:Boolean;
+		private var _iLastInMarkMsec:int = 0;
+		private var _iPingMarkMsec:int = 0;
+		private var _tmrPing:Timer;
+		private var _tmrQueueIn:Timer;
+		private var _tmrQueueOut:Timer;
+		private var _tmrPong:Timer;
+		private var _uCheckSum:uint = 0;
+		private var _uLength:uint = 0;
+		private var _uMode:uint = ArduinoModes.NA; // default to unknown
+		private var _uPingMsecs:uint;
+		private var _uState:uint = _FSM_START;
+		private var _vbaOut:Vector.<ByteArray>;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _PingDisable ( ) : void
+		{
+			if ( _tmrPing )
+			{
+				_tmrPing.stop ( );
+				_tmrPing.removeEventListener ( TimerEvent.TIMER, _PingSend );
+				_tmrPing = null;
+			}
+			if ( _tmrPong )
+			{
+				_tmrPong.stop ( );
+				_tmrPong.removeEventListener ( TimerEvent.TIMER, _PongOverdue );
+				_tmrPong = null;
+			}
+			_baPingPacket.clear ( );
+			_baPingPacket = null;
+		}
+		
+		private function _PingEnable ( ) : void
+		{
+			_baPingPacket = _commandPacketFromId ( ArduinoMessage.PING );
+			if ( !_tmrPing )
+			{
+				_tmrPing = new Timer ( _uPingMsecs, 0 );
+				_tmrPing.addEventListener ( TimerEvent.TIMER, _PingSend );
+			}
+			if ( !_tmrPong )
+			{
+				_tmrPong = new Timer ( _PONG_ALERT_MSECS, 1 );
+				_tmrPong.addEventListener ( TimerEvent.TIMER, _PongOverdue );
+			}
+			_PingIntervalSend ( );
+			_tmrPing.start ( );
+		}
+		
+		private function _PingIntervalSend ( ) : void
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( ArduinoMessage.PING_INTERVAL );
+			ba.writeUnsignedInt ( _uPingMsecs + _PONG_PAD_MSECS );
+			sendCommand ( ba );
+			_iPingMarkMsec = getTimer ( );
+			_tmrPong.start ( );
+		}
+		
+		private function _PingSend ( event:TimerEvent = null ) : void
+		{
+			_send ( _baPingPacket );
+			_iPingMarkMsec = getTimer ( );
+			_tmrPong.start ( );
+		}
+		
+		private function _PongOverdue ( event:TimerEvent ) : void
+		{
+			// problem with connection
+			_tmrPong.reset ( );
+			
+			// for now, just check if total time since any
+			// incoming message is long enough to assume
+			// we are probably disconnected
+			if ( getTimer ( ) - _iLastInMarkMsec > _DISCONNECT_ASSUMED_MSECS )
+			{
+				_isConnectedSet ( false );
+			}
+			
+			debugOut ( 'error_arduino_pong_overdue', true );
+			// what can we do if not disconnected completely,
+			// but having latency issues?
+			// ##### TODO
+		}
+		
+		private function _PongReceived ( ) : void
+		{
+			if ( _tmrPong.running )
+			{
+				// all is well
+				_tmrPong.reset ( );
+			}
+			else
+			{
+				// was overdue, so report how long it took Pong to arrive
+				debugOut ( 'status_arduino_pong_msecs', true, [ getTimer ( ) - _iPingMarkMsec ] );
+			}
+		}
+		
+		private function _TelemetryInputQueueService ( event:TimerEvent = null ) : void
+		{
+			_tmrQueueIn.stop ( );
+			_baIn.position = 0;
+			
+			// FSM
+			var uNextState:uint;
+			var i_uByte:uint;
+			
+			function errorReset ( sErr:String, uByte:uint ) : void
+			{
+				var sHexDec:String = '0x';
+				if ( uByte < 0x10 )
+					sHexDec += '0';
+				sHexDec += uByte.toString ( 16 ).toUpperCase ( ) + ' (' + uByte.toString() + ')';
+				
+				debugOut ( 'error_arduino_telem_pkt_' + sErr, true, [ sHexDec ] );
+				reset ( _FSM_EXCEPTION );
+			}
+			
+			function reset ( uNext:uint ) : void
+			{
+				_baPayload.clear ( );
+				_uCheckSum = 0;
+				uNextState = uNext;
+			}
+			
+			// out of bounds check
+			if ( _baPayload.length > 22 )
+			{
+				errorReset ( _ERR_OVERFLOW, _baPayload [ 22 ] );
+				_uState = _FSM_EXCEPTION;
+			}
+			
+			// FSM loop
+			while ( _baIn.bytesAvailable > 0 )
+			{
+				i_uByte = _baIn.readUnsignedByte ( );
+				_uCheckSum ^= i_uByte;
+				
+				switch ( _uState )
+				{
+					case _FSM_PAYLOAD:
+						// should hit this one more often than any other, so deal with it first
+						_baPayload.writeByte ( i_uByte );
+						if ( _baPayload.length < _uLength )
+						{
+							// still accumulating payload bytes
+							uNextState = _FSM_PAYLOAD;
+						}
+						else
+						{
+							// done with payload and ready to check the lpc
+							uNextState = _FSM_CHECKSUM;
+						}
+						break;
+					case _FSM_START:
+						if ( i_uByte == TELEMETRY_PACKET_ID )
+						{
+							// found expected start ID, so look for length byte next
+							uNextState = _FSM_LENGTH;
+						}
+						else
+						{
+							// not the expected start byte
+							errorReset ( _ERR_START, i_uByte );
+						}
+						break;
+					case _FSM_LENGTH:
+						_uLength = i_uByte;
+						if ( 0 < _uLength && _uLength <= 20 )
+						{
+							// length value is in range, so start reading payload
+							uNextState = _FSM_PAYLOAD;
+						}
+						else
+						{
+							// length byte out of range
+							errorReset ( _ERR_LENGTH, _uLength );
+						}
+						break;
+					case _FSM_CHECKSUM:
+						if ( _uCheckSum == 0 )
+						{
+							// packet is complete, with valid lpc
+							if ( _baPayload [ 0 ] == PONG_ID )
+							{
+								// handle pong here
+								_PongReceived ( );
+							}
+							else
+							{
+								// queue the payload for output
+								var ba:ByteArray = new ByteArray ( );
+								ba.writeBytes ( _baPayload );
+								_TelemetryOutputQueuePush ( ba );
+							}
+							reset ( _FSM_START );
+						}
+						else
+						{
+							// lpc invalid
+							errorReset ( _ERR_CHECKSUM, _uCheckSum );
+						}
+						break;
+					case _FSM_EXCEPTION:
+						if ( i_uByte == TELEMETRY_PACKET_ID )
+						{
+							// found a possible new start
+							uNextState = _FSM_LENGTH;
+						}
+						else
+						{
+							// keep looking for new start
+							_uCheckSum = 0;
+							uNextState = _FSM_EXCEPTION;
+						}
+						break;
+					default:
+						// should never get here!
+						errorReset ( _ERR_UNDEFINED, i_uByte );
+						break;
+				} // end switch
+				
+				_uState = uNextState; // update FSM
+				
+			} // end FSM loop
+			
+			_baIn.clear ( ); // free up memory
+			
+		} // end _TelemetryInputQueueService
+		
+		private function _TelemetryOutputQueuePush ( ba:ByteArray ) : void
+		{
+			_vbaOut.push ( ba );
+			_tmrQueueOut.start ( );
+		}
+		
+		private function _TelemetryOutputQueueService ( event:TimerEvent = null ) : void
+		{
+			_tmrQueueOut.stop ( );
+			dispatchEvent ( new TelemetryEvent ( TelemetryEvent.PACKET_PAYLOADS, _vbaOut ) );
+			_vbaOut = new <ByteArray> [];
+		}
+		
+	}
+}

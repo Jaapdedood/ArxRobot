@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	xmlns:icons="com.arxterra.icons.*"
+	autoDrawBackground="false"
+	initialize="_Initialized()"
+	dataChange="_DataChanged()"
+	width="100%"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.utils.BlePeripheralAgent;
+			
+			[Bindable]
+			private var _bpa:BlePeripheralAgent;
+			[Bindable]
+			private var _nGap:Number;
+			[Bindable]
+			private var _nGap2:Number;
+			[Bindable]
+			private var _nSize:Number;
+			private var _sessionMgr:SessionManager;
+			
+			private function _DataChanged ( ) : void
+			{
+				if ( data == null )
+				{
+					_bpa = null;
+				}
+				else
+				{
+					_bpa = data as BlePeripheralAgent;
+				}
+			}
+			
+			private function _Initialized ( ) : void
+			{
+				_sessionMgr = SessionManager.instance;
+				_nGap = _sessionMgr.guiGap;
+				_nGap2 = _sessionMgr.guiGap2;
+				_nSize = 20 * _sessionMgr.guiDpiMult;
+			}
+			
+			private function _TestNow ( ) : void
+			{
+				if ( _bpa )
+				{
+					_bpa.discoveryStart ( );
+				}
+			}
+			
+			private function _ToggleState ( ) : void
+			{
+				if ( cbExpand.selected )
+				{
+					currentState = 'expand';
+				}
+				else
+				{
+					currentState = 'collapse';
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="collapse" />
+		<s:State name="expand" />
+	</s:states>
+	
+	<s:VGroup
+		width="100%"
+		gap="0"
+		horizontalAlign="left"
+		>
+		<s:Group
+			width="100%"
+			>
+			<s:CheckBox
+				id="cbExpand"
+				styleName="twistyCheckBox"
+				label="{_bpa.label}"
+				change="_ToggleState()"
+				width="100%"
+				minHeight="{_nSize}"
+				verticalCenter="0"
+				/>
+			<icons:IconLink0
+				width="{_nSize}"
+				height="{_nSize}"
+				verticalCenter="0"
+				right="{_nGap}"
+				visible="{!_bpa.isConnected}"
+				includeInLayout="{!_bpa.isConnected}"
+				color="{_bpa.iconColorBlink}"
+				>
+			</icons:IconLink0>
+			<icons:IconLink1
+				width="{_nSize}"
+				height="{_nSize}"
+				verticalCenter="0"
+				right="{_nGap}"
+				visible="{_bpa.isConnected}"
+				includeInLayout="{_bpa.isConnected}"
+				color="{_bpa.iconColorBlink}"
+				>
+			</icons:IconLink1>
+		</s:Group>
+		<s:Label
+			width="100%"
+			styleName="textSubhead"
+			backgroundColor="0x333333"
+			text="{_bpa.statusCaption}"
+			maxDisplayedLines="-1"
+			includeInLayout="{_bpa.statusCaptionOn}"
+			visible="{_bpa.statusCaptionOn}"
+			/>
+		<s:Group
+			width="100%"
+			includeIn="expand"
+			>
+			<s:layout>
+				<s:ConstraintLayout>
+					<s:constraintColumns>
+						<s:ConstraintColumn id="gutterL" width="{_nGap}" />
+						<s:ConstraintColumn id="colLabel" />
+						<s:ConstraintColumn id="colGap" width="{_nGap}" />
+						<s:ConstraintColumn id="colValue" width="100%" />
+						<s:ConstraintColumn id="gutterR" width="{_nGap}" />
+					</s:constraintColumns>
+					<s:constraintRows>
+						<s:ConstraintRow id="rowRssi" baseline="{_nGap2}" />
+						<s:ConstraintRow id="rowState" baseline="{_nGap2}" />
+						<s:ConstraintRow id="rowId" baseline="{_nGap2}" />
+					</s:constraintRows>
+				</s:ConstraintLayout>
+			</s:layout>
+			<!-- bg grad -->
+			<s:Rect
+				left="gutterL:0" right="gutterR:0"
+				top="rowRssi:0" bottom="rowId:0"
+				>
+				<s:fill>
+					<s:LinearGradient
+						rotation="90"
+						>
+						<s:GradientEntry
+							color="0x333333"
+							/>
+						<s:GradientEntry
+							color="0x000000"
+							/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<!-- rssi -->
+			<s:Label
+				baseline="rowRssi:0"
+				left="colLabel:0" right="colLabel:0"
+				styleName="textConfigItem"
+				text="{resourceManager.getString('default','ble_pr_rssi_label')}"
+				/>
+			<s:Label
+				baseline="rowRssi:0"
+				left="colValue:0" right="colValue:0"
+				styleName="textConfigValue"
+				text="{_bpa.rssiDisplay}"
+				/>
+			<!-- state -->
+			<s:Label
+				baseline="rowState:0"
+				left="colLabel:0" right="colLabel:0"
+				styleName="textConfigItem"
+				text="{resourceManager.getString('default','ble_pr_state_label')}"
+				/>
+			<s:Label
+				baseline="rowState:0"
+				left="colValue:0" right="colValue:0"
+				styleName="textConfigValue"
+				text="{_bpa.stateDisplay}"
+				/>
+			<!-- id -->
+			<s:Label
+				baseline="rowId:0"
+				left="colLabel:0" right="colLabel:0"
+				styleName="textConfigItem"
+				text="{resourceManager.getString('default','ble_pr_dev_id_label')}"
+				/>
+			<s:Label
+				baseline="rowId:0"
+				left="colValue:0" right="colValue:0"
+				styleName="textConfigValue"
+				text="{_bpa.deviceId}"
+				/>
+		</s:Group>
+		<s:Group
+			width="100%"
+			>
+			<s:Button
+				id="btnTest"
+				styleName="constraint"
+				left="{_nSize}"
+				top="{_nGap}"
+				bottom="0"
+				label="{resourceManager.getString('default','test_now_btn_label')}"
+				includeInLayout="{!_bpa.isUsable}"
+				visible="{!_bpa.isUsable}"
+				enabled="{!_bpa.isConnected}"
+				click="_TestNow()"
+				/>
+		</s:Group>
+		<s:HGroup
+			gap="0"
+			width="100%"
+			paddingLeft="{_nSize}"
+			paddingRight="{_nGap}"
+			paddingTop="{_nGap}"
+			paddingBottom="{_nGap}"
+			>
+			<s:DataGroup
+				id="dgBpe"
+				width="100%"
+				dataProvider="{_bpa.compatibleProtocolExecs}"
+				itemRenderer="com.arxterra.components.BleExecItemRenderer"
+				>
+				<s:layout>
+					<s:VerticalLayout
+						gap="{_nGap}"
+						horizontalAlign="left"
+						useVirtualLayout="false"
+						variableRowHeight="true"
+						/>
+				</s:layout>
+			</s:DataGroup>
+		</s:HGroup>
+	</s:VGroup>
+	<!-- sep -->
+	<s:Rect
+		id="rSep"
+		left="0" right="0"
+		top="0" height="1"
+		>
+		<s:fill>
+			<s:SolidColor color="0x666666" />
+		</s:fill>
+	</s:Rect>
+</s:ItemRenderer>

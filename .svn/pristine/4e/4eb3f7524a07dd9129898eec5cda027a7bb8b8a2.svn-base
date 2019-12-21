@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	xmlns:skins="skins.*"
+	autoDrawBackground="false"
+	width="100%"
+	>
+	<fx:Script>
+		<![CDATA[
+			protected function _ToggleState ( ) : void
+			{
+				if ( cbExpand.selected )
+				{
+					currentState = 'expand';
+				}
+				else
+				{
+					currentState = 'collapse';
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="collapse" />
+		<s:State name="expand" />
+	</s:states>
+	<s:layout>
+		<s:ConstraintLayout>
+			<s:constraintColumns>
+				<s:ConstraintColumn id="col0" width="8" />
+				<s:ConstraintColumn id="col1" width="65%" />
+				<s:ConstraintColumn id="col2" width="10" />
+				<s:ConstraintColumn id="col3" width="35%" />
+			</s:constraintColumns>
+			<s:constraintRows>
+				<s:ConstraintRow id="sep" />
+				<s:ConstraintRow id="row0" />
+				<s:ConstraintRow id="row1" />
+				<s:ConstraintRow id="row2" />
+				<s:ConstraintRow id="row3" />
+			</s:constraintRows>
+		</s:ConstraintLayout>
+	</s:layout>
+	<!-- sep -->
+	<s:Rect
+		id="rSep"
+		top="sep:0" height="1"
+		left="col0:0" right="col3:0"
+		>
+		<s:fill>
+			<s:SolidColor color="0x666666" />
+		</s:fill>
+	</s:Rect>
+	<!-- row 0: value -->
+	<s:CheckBox
+		id="cbExpand"
+		skinClass="skins.TwistyCheckBoxSkin"
+		top="row0:0" bottom="row0:0"
+		left="col0:0" right="col1:0"
+		label="{resourceManager.getString('default',data.resource)}"
+		change="_ToggleState()"
+		/>
+	<s:ToggleSwitch
+		id="tsValue"
+		top="row0:0" bottom="row0:0"
+		left="col3:0" right="col3:0"
+		selected="@{data.value}"
+		/>
+	<!-- row 1: address -->
+	<s:Label
+		includeIn="expand"
+		top="row1:0" bottom="row1:0"
+		right="col1:0"
+		styleName="textConfigItem"
+		text="{resourceManager.getString('default','eeprom_label_address')}"
+		/>
+	<s:Label
+		includeIn="expand"
+		top="row1:0" bottom="row1:0"
+		left="col3:0"
+		styleName="textConfigItem"
+		text="{data.addressHex}"
+		/>
+	<!-- row 2: number of bytes -->
+	<s:Label
+		includeIn="expand"
+		top="row2:0" bottom="row2:0"
+		right="col1:0"
+		styleName="textConfigItem"
+		text="{resourceManager.getString('default','eeprom_label_bytes')}"
+		/>
+	<s:Label
+		includeIn="expand"
+		top="row2:0" bottom="row2:0"
+		left="col3:0"
+		styleName="textConfigItem"
+		text="{data.byteCount}"
+		/>
+	<!-- row 3: data type -->
+	<s:Label
+		includeIn="expand"
+		top="row3:0" bottom="row3:0"
+		right="col1:0"
+		styleName="textConfigItem"
+		text="{resourceManager.getString('default','eeprom_label_type')}"
+		/>
+	<s:Label
+		includeIn="expand"
+		top="row3:0" bottom="row3:0"
+		left="col3:0"
+		styleName="textConfigItem"
+		text="{resourceManager.getString('default','eeprom_type_bool')}"
+		/>
+</s:ItemRenderer>

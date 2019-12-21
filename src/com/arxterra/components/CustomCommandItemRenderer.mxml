@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	xmlns:layouts="com.arxterra.layouts.*"
+	xmlns:skins="com.arxterra.skins.*"
+	autoDrawBackground="false"
+	mouseChildren="true"
+	width="{_sessionMgr.customCommandOuterWidth}"
+	minHeight="{_sessionMgr.guiGap}"
+	dataChange="_DataChanged()"
+	stateChangeComplete="invalidateDisplayList()"
+	>
+	<!--
+	mouseEnabled="{_bTipOn}"
+	toolTip="{_ccc.tip}"
+	-->
+	<fx:Script>
+		<![CDATA[
+			import spark.collections.Sort;
+			import spark.collections.SortField;
+			
+			import com.arxterra.controllers.SessionManager;
+			
+			import org.apache.flex.collections.VectorCollection;
+			
+			import com.arxterra.vo.CustomCommandConfig;
+			import com.arxterra.vo.CustomSelectOption;
+			
+			[Bindable]
+			private var _bLabelOn:Boolean;
+			/*
+			[Bindable]
+			private var _bTipOn:Boolean;
+			*/
+			[Bindable]
+			private var _ccc:CustomCommandConfig;
+			[Bindable]
+			private var _cfRadioRend:ClassFactory;
+			[Bindable]
+			private var _csoSelection:CustomSelectOption;
+			[Bindable]
+			private var _csoTypical:CustomSelectOption;
+			[Bindable]
+			private var _iRadioRows:int;
+			[Bindable]
+			private var _nInnerWd:Number;
+			[Bindable]
+			private var _sessionMgr:SessionManager = SessionManager.instance;
+			[Bindable]
+			private var _vcOpts:VectorCollection;
+			
+			private function _DataChanged ( ) : void
+			{
+				if ( data == null )
+					return;
+				
+				_ccc = data as CustomCommandConfig;
+				
+				_bLabelOn = ( _ccc.label.length > 0 );
+				// _bTipOn = ( _ccc.tip.length > 0 );
+				
+				if ( _ccc.isBoolean )
+				{
+					currentState = 'boolean';
+				}
+				else if ( _ccc.isHeading )
+				{
+					if ( _bLabelOn )
+					{
+						currentState = 'heading';
+					}
+					else
+					{
+						currentState = 'separator';
+					}
+				}
+				else if ( _ccc.isSelect )
+				{
+					var vOpts:Vector.<CustomSelectOption> = _ccc.options;
+					var iLim:int = vOpts.length;
+					if ( iLim < 1 )
+					{
+						// no options, so punt to heading/separator
+						if ( _bLabelOn )
+						{
+							currentState = 'heading';
+						}
+						else
+						{
+							currentState = 'separator';
+						}
+					}
+					else
+					{
+						_vcOpts = new VectorCollection ( vOpts );
+						var srt:Sort = new Sort ( );
+						srt.fields = [ new SortField ( 'sortIndex', false, true ) ];
+						_vcOpts.sort = srt;
+						_vcOpts.refresh ( );
+						
+						if ( _ccc.widgetIndex < 1 )
+						{
+							_cfRadioRend = new ClassFactory ( com.arxterra.components.CustomRadioItemRenderer );
+							_cfRadioRend.properties = { radioButtonGroup: rbg };
+							_iRadioRows = Math.ceil ( iLim / 3.0 );
+							currentState = 'radio';
+						}
+						else
+						{
+							var uVal:uint = _ccc.value;
+							var i:int;
+							var i_uLen:uint;
+							var i_uLenMax:uint = 0;
+							var i_cso:CustomSelectOption;
+							var csoTyp:CustomSelectOption;
+							for ( i=0; i<iLim; i++ )
+							{
+								i_cso = vOpts [ i ];
+								i_uLen = i_cso.label.length;
+								if ( i_uLen > i_uLenMax )
+								{
+									i_uLenMax = i_uLen;
+									csoTyp = i_cso;
+								}
+								if ( i_cso.id == uVal )
+								{
+									_csoSelection = i_cso; // current selection
+								}
+							}
+							_csoTypical = csoTyp; // item with the longest label
+							currentState = 'list';
+						}
+					}
+				}
+				else
+				{
+					// integer
+					if ( _ccc.widgetIndex < 1 )
+					{
+						currentState = 'slider';
+					}
+					else
+					{
+						currentState = 'stepper';
+					}
+				}
+			}
+			
+			private function _OptionChanged ( ) : void
+			{
+				if ( _ccc != null && _csoSelection != null )
+				{
+					_ccc.value = _csoSelection.id;
+					callLater ( _Transmit );
+				}
+			}
+			
+			private function _Transmit ( ) : void
+			{
+				if ( _ccc != null )
+				{
+					_ccc.valueTransmit ( );
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup
+			id="rbg"
+			selectedValue="@{_ccc.value}"
+			change="callLater(_Transmit)"
+			/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="separator" stateGroups="header" />
+		<s:State name="heading" stateGroups="header, content" />
+		<s:State name="boolean" stateGroups="command, content" />
+		<s:State name="radio" stateGroups="command, content" />
+		<s:State name="list" stateGroups="command, content" />
+		<s:State name="slider" stateGroups="command, content" />
+		<s:State name="stepper" stateGroups="command, content" />
+	</s:states>
+	<!--
+	<s:Rect
+		left="0" right="0" top="0" bottom="0"
+		radiusX="{_sessionMgr.guiGap}" radiusY="{_sessionMgr.guiGap}"
+		includeIn="header"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{getStyle('chromeColor')}"
+				/>
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		left="1" right="1" top="1" bottom="1"
+		radiusX="{_sessionMgr.guiGap}" radiusY="{_sessionMgr.guiGap}"
+		includeIn="command"
+		>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="{getStyle('chromeColor')}"
+				weight="2"
+				/>
+		</s:stroke>
+	</s:Rect>
+	-->
+	<s:Rect
+		left="0" right="0" top="0" bottom="0"
+		radiusX="{_sessionMgr.guiGap}" radiusY="{_sessionMgr.guiGap}"
+		includeIn="command"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="0x222222"
+				/>
+		</s:fill>
+	</s:Rect>
+	<s:VGroup
+		id="gpContent"
+		gap="{_sessionMgr.guiGap}"
+		left="{_sessionMgr.guiGap}" right="{_sessionMgr.guiGap}"
+		top="{_sessionMgr.guiGap}" bottom="{_sessionMgr.guiGap}"
+		width="{_sessionMgr.customCommandInnerWidth}"
+		includeIn="content"
+		>
+		<s:Label
+			id="lbl"
+			width="100%"
+			styleName="customCommand"
+			styleName.heading="customCommandHeading"
+			maxDisplayedLines="1"
+			text="{_ccc.label}"
+			visible="{_bLabelOn}"
+			includeInLayout="{_bLabelOn}"
+			/>
+		<s:ToggleSwitch
+			id="ts"
+			selected="@{_ccc.value}"
+			change="callLater(_Transmit)"
+			includeIn="boolean"
+			itemDestructionPolicy="auto"
+			enabled="{_ccc.isFlowCommand}"
+			/>
+		<s:HSlider
+			id="sl"
+			value="@{_ccc.value}"
+			maximum="{_ccc.max}" minimum="{_ccc.min}" stepSize="{_ccc.step}" snapInterval="{_ccc.step}"
+			width="192"
+			liveDragging="false"
+			dataTipPrecision="0"
+			change="callLater(_Transmit)"
+			includeIn="slider"
+			itemDestructionPolicy="auto"
+			enabled="{_ccc.isFlowCommand}"
+			/>
+		<s:NumericStepper
+			id="ns"
+			value="@{_ccc.value}"
+			maximum="{_ccc.max}" minimum="{_ccc.min}" stepSize="{_ccc.step}"
+			change="callLater(_Transmit)"
+			includeIn="stepper"
+			itemDestructionPolicy="auto"
+			enabled="{_ccc.isFlowCommand}"
+			/>
+		<s:DropDownList
+			id="dd"
+			dataProvider="{_vcOpts}"
+			itemRenderer="com.arxterra.components.CustomSelectListItemRenderer"
+			selectedItem="@{_csoSelection}"
+			typicalItem="{_csoTypical}"
+			change="_OptionChanged()"
+			includeIn="list"
+			itemDestructionPolicy="auto"
+			enabled="{_ccc.isFlowCommand}"
+			/>
+		<s:DataGroup
+			id="radgp"
+			width="{_sessionMgr.customCommandInnerWidth}"
+			dataProvider="{_vcOpts}"
+			itemRenderer="{_cfRadioRend}"
+			includeIn="radio"
+			itemDestructionPolicy="auto"
+			enabled="{_ccc.isFlowCommand}"
+			>
+			<s:layout>
+				<layouts:FlowLayoutH
+					horizontalGap="{_sessionMgr.guiGap2}"
+					verticalGap="{_sessionMgr.guiGap}"
+					verticalAlign="middle"
+					useVirtualLayout="false"
+					/>
+				<!--
+				<s:TileLayout
+					horizontalAlign="left"
+					horizontalGap="{_sessionMgr.guiGap}"
+					verticalAlign="middle"
+					verticalGap="{_sessionMgr.guiGap}"
+					orientation="rows"
+					requestedRowCount="{_iRadioRows}"
+					useVirtualLayout="false"
+					/>
+				-->
+			</s:layout>
+		</s:DataGroup>
+	</s:VGroup>
+</s:ItemRenderer>

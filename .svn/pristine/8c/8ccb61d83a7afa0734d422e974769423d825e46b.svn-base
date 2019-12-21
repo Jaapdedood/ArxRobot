@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	xmlns:lo="layouts.*"
+	styleName="sLogin"
+	addedToStage="_AddedToStage()"
+	removedFromStage="_RemovedFromStage()"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="done", type="events.UtilityEvent")]
+		[Event(name="connected", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.distriqt.extension.bluetooth.BluetoothClass;
+			import com.distriqt.extension.bluetooth.BluetoothDevice;
+			
+			import events.UtilityEvent;
+			
+			import icons.IconBluetooth;
+			
+			import utils.ArduinoConnectorBluetooth;
+			
+			[Bindable]
+			public var arduinoBluetooth:ArduinoConnectorBluetooth
+			
+			private function _AddedToStage ( ) : void
+			{
+				_EventListenersAdd ( );
+			}
+			
+			private function _Connect ( ) : void
+			{
+				var dev:BluetoothDevice = lstDevs.selectedItem as BluetoothDevice;
+				if ( dev != null )
+					arduinoBluetooth.connect ( dev );
+			}
+			
+			private function _Connected ( event:UtilityEvent ) : void
+			{
+				_DeviceListRefresh ( );
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.CONNECTED ) );
+			}
+			
+			private function _DeviceListItemLabel ( item:Object ) : String
+			{
+				var dev:BluetoothDevice = item as BluetoothDevice;
+				var sAddr:String = dev.address;
+				var sConn:String = ( sAddr == arduinoBluetooth.connectedDeviceAddress ) ? "[X] " : "[_] ";
+				var cls:BluetoothClass = dev.bluetoothClass;
+				var sCls:String;
+				if ( cls != null )
+				{
+					sCls = ' [' + cls.majorDeviceClass + '::' + cls.deviceClass + ']';
+				}
+				else
+				{
+					sCls = ' [0::0]';
+				}
+				return sConn + dev.deviceName + ' (' + sAddr + ')';
+			}
+			
+			private function _DeviceListRefresh ( ) : void
+			{
+				lstDevs.dataProvider = null;
+				lstDevs.dataProvider = arduinoBluetooth.pairedList;
+			}
+			
+			private function _Disconnect ( ) : void
+			{
+				arduinoBluetooth.disconnect ( );
+			}
+			
+			private function _Disconnected ( event:UtilityEvent ) : void
+			{
+				_DeviceListRefresh ( );
+			}
+			
+			private function _Done ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.DONE ) );
+			}
+			
+			private function _EventListenersAdd ( ) : void
+			{
+				if ( !arduinoBluetooth )
+				{
+					callLater ( _EventListenersAdd );
+					return;
+				}
+				arduinoBluetooth.addEventListener ( UtilityEvent.BLUETOOTH_CONNECTED, _Connected );
+				arduinoBluetooth.addEventListener ( UtilityEvent.BLUETOOTH_DISCONNECTED, _Disconnected );
+			}
+			
+			private function _EventListenersRemove ( ) : void
+			{
+				if ( arduinoBluetooth != null )
+				{
+					arduinoBluetooth.removeEventListener ( UtilityEvent.BLUETOOTH_CONNECTED, _Connected );
+					arduinoBluetooth.removeEventListener ( UtilityEvent.BLUETOOTH_DISCONNECTED, _Disconnected );
+				}
+			}
+			
+			private function _RemovedFromStage ( ) : void
+			{
+				_EventListenersRemove ( );
+			}
+			
+			private function _SystemOpen ( ) : void
+			{
+				arduinoBluetooth.systemSettingsOpen ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<!--	
+	-->
+	<s:Label
+		styleName="textHead"
+		text="{resourceManager.getString('default','bt_config_title')}"
+		/>
+	<s:Group
+		height="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0x666666" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:Scroller
+			left="2" right="2"
+			top="2" bottom="2"
+			>
+			<s:Group
+				width="100%"
+				>
+				<s:layout>
+					<s:ConstraintLayout>
+						<s:constraintColumns>
+							<s:ConstraintColumn id="col0a" width="2" />
+							<s:ConstraintColumn id="col0" />
+							<s:ConstraintColumn id="col1a" width="4" />
+							<s:ConstraintColumn id="col1" width="100%" />
+							<s:ConstraintColumn id="col2a" width="2" />
+						</s:constraintColumns>
+						<s:constraintRows>
+							<s:ConstraintRow id="row1" />
+							<s:ConstraintRow id="row2" />
+							<s:ConstraintRow id="row3a" height="2" />
+							<s:ConstraintRow id="row3" />
+							<s:ConstraintRow id="row4a" height="2" />
+							<s:ConstraintRow id="row4" />
+							<s:ConstraintRow id="row5a" height="2" />
+						</s:constraintRows>
+					</s:ConstraintLayout>
+				</s:layout>
+				<!-- Scanning toggle -->
+				<s:Label
+					id="lbTogScan"
+					top="row1:0" bottom="row1:0"
+					left="col0:0" right="col0:0"
+					styleName="textHead"
+					text="{resourceManager.getString('default','bt_scanning_label')}"
+					/>
+				<s:ToggleSwitch
+					id="btnTogScan"
+					top="row1:0" bottom="row1:0"
+					left="col1:0"
+					selected="{arduinoBluetooth.isScanning}"
+					click="arduinoBluetooth.toggleScan()"
+					/>
+				<!-- Device list -->
+				<s:Label
+					id="lbDevs"
+					top="row2:0" bottom="row2:0"
+					left="col0:0" right="col0:0"
+					styleName="textConfigItem"
+					text="{resourceManager.getString('default','bt_devices_label')}"
+					/>
+				<s:Group
+					top="row2:0" bottom="row2:0"
+					left="col1:0" right="col1:0"
+					>
+					<s:Rect
+						left="0" right="0"
+						top="0" bottom="0"
+						>
+						<s:stroke>
+							<s:SolidColorStroke
+								color="0x666666" weight="1"
+								/>
+						</s:stroke>
+					</s:Rect>
+					<s:List
+						id="lstDevs"
+						left="2" right="2"
+						top="2" bottom="2"
+						dataProvider="{arduinoBluetooth.pairedList}"
+						labelFunction="_DeviceListItemLabel"
+						verticalScrollPolicy="off"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:Group>
+				<s:Button
+					id="btnConnect"
+					top="row3:0" bottom="row3:0"
+					left="col0:0" right="col0:0"
+					label="{resourceManager.getString('default','bt_connect_btn_label')}"
+					enabled="{lstDevs.selectedItem != null}"
+					click="_Connect()"
+					/>
+				<s:Button
+					id="btnSysConfig"
+					top="row3:0" bottom="row3:0"
+					left="col1:0"
+					color="{arduinoBluetooth.iconColor}"
+					icon="{IconBluetooth}"
+					label="{resourceManager.getString('default','bt_system_btn_label')}"
+					click="_SystemOpen()"
+					/>
+				<s:Button
+					id="btnDisconnect"
+					top="row4:0" bottom="row4:0"
+					left="col0:0" right="col0:0"
+					label="{resourceManager.getString('default','bt_disconnect_btn_label')}"
+					enabled="{arduinoBluetooth.isConnected}"
+					click="_Disconnect()"
+					/>
+				<!-- bottom spacer -->
+				<s:Spacer
+					top="row5a:0"
+					left="col0:0"
+					height="2"
+					/>
+			</s:Group>
+		</s:Scroller>
+	</s:Group>
+	<s:Button
+		id="btnDone"
+		styleName="done"
+		label="{resourceManager.getString('default','done_btn_label')}"
+		click="_Done()"
+		/>
+	
+</s:SkinnableContainer>

@@ -1,0 +1,72 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	import com.smartfoxserver.v2.entities.data.SFSObject;
+	
+	import flash.utils.ByteArray;
+	
+	import interfaces.IArduinoCommand;
+
+	public class ArduinoCommand implements IArduinoCommand
+	{
+		// CONSTRUCTOR
+		
+		public function ArduinoCommand ( commandBytes:ByteArray )
+		{
+			_commandBytes = commandBytes;
+		}
+		
+		// PUBLIC METHODS IMPLEMENTING IArduinoCommand
+		
+		public function get commandBytes ( ) : ByteArray
+		{
+			return _commandBytesClone ( );
+		}
+		
+		public function get commandString ( ) : String
+		{
+			if ( _commandString.length < 1 )
+			{
+				var iLim:int = _commandBytes.length;
+				if ( iLim > 0 )
+				{
+					_commandString += _commandBytes [ 0 ];
+					for ( var i:int=1; i<iLim; i++ )
+					{
+						_commandString += ',' + _commandBytes [ i ];
+					}
+				}
+			}
+			return _commandString;
+		}
+		
+		// OTHER PUBLIC METHODS
+		
+		public function toSFSObject ( ) : ISFSObject
+		{
+			var sfso:ISFSObject = new SFSObject ( );
+			sfso.putByteArray ( 'b', _commandBytes );
+			return sfso;
+		}
+
+		// PROTECTED PROPERTIES
+		
+		protected var _commandBytes:ByteArray;
+		protected var _commandString:String = '';
+		
+		// PROTECTED METHODS
+		
+		protected function _commandBytesClone ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeBytes ( _commandBytes );
+			return ba;
+		}
+		
+		protected function _commandStringClear ( ) : void
+		{
+			_commandString = '';
+		}
+		
+	}
+}

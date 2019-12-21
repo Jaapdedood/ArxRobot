@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	autoDrawBackground="false"
+	left="0" top="0" right="0" bottom="0"
+	dataChange="_DataChanged()"
+	stateChangeComplete="invalidateDisplayList()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.SessionManager;
+			
+			import vo.CustomSelectOption;
+			
+			[Bindable]
+			private var _cso:CustomSelectOption;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager = SessionManager.instance;
+			
+			private function _DataChanged ( ) : void
+			{
+				if ( data == null )
+					return;
+				
+				_cso = data as CustomSelectOption;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="selected" />
+	</s:states>
+
+	<s:Rect
+		left="0" right="0" top="0" bottom="0"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="0x000000"
+				color.selected="{getStyle('selectionColor')}"
+				/>
+		</s:fill>
+	</s:Rect>
+	<s:Label
+		id="labelDisplay"
+		left="{_sessionMgr.guiGap}" right="{_sessionMgr.guiGap}"
+		top="{_sessionMgr.guiGap}" bottom="{_sessionMgr.guiGap}"
+		text="{_cso.label}"
+		/>
+</s:ItemRenderer>

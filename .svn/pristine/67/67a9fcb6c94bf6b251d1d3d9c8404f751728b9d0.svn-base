@@ -1,0 +1,112 @@
+package utils
+{
+	import com.distriqt.extension.compass.Compass;
+	import com.distriqt.extension.compass.events.MagneticFieldEvent;
+	
+	public class CompassUtil extends NonUIComponentBase
+	{
+		// static constants and properties
+		
+		private static const DISTRIQT_ANE_DEV_KEY:String = '1e89e8495fb41930f708d5bb2a0da10c1ea466e6eL6aPB6BwQNi6DcovNC3t/qvq8TDoDKzMEZBQYtH3OIXtHAqpuDY7epxHUVQoB96hYCMzrCaD76HISnpXvMuxA==';
+		private static var _instance:CompassUtil;
+		
+		
+		// constructor and instance
+		
+		/**
+		 * @return singleton instance of CompassUtil
+		 */
+		public static function get instance ( ) : CompassUtil
+		{
+			if ( !_instance )
+			{
+				_instance = new CompassUtil ( new SingletonEnforcer() );
+			}
+			return _instance;
+		}
+		
+		/**
+		 * Singleton: use static property <em>instance</em> to access singleton instance, then add listeners to Compass service via instance.service.
+		 */	
+		public function CompassUtil ( enforcer:SingletonEnforcer )
+		{
+			super();
+			try
+			{
+				Compass.init ( DISTRIQT_ANE_DEV_KEY );
+				if ( Compass.isSupported )
+				{
+					Compass.service.addEventListener ( MagneticFieldEvent.MAGNETIC_FIELD_AVAILABLE, _MagneticFieldAvailable );
+					Compass.service.addEventListener ( MagneticFieldEvent.MAGNETIC_FIELD_UNAVAILABLE, _MagneticFieldUnavailable );
+					callLater ( _Register, [ true ] );
+				}
+				else
+				{
+					_debugOut ( 'Compass service not supported' );
+				}
+			}
+			catch ( err:Error )
+			{
+				_debugOut ( 'Problem initializing compass service: ' + err.message );
+			}
+			
+		}
+		
+		
+		// public properties and get/set methods
+		
+		public function get isSupported ( ) : Boolean
+		{
+			return Compass.isSupported;
+		}
+		
+		public function get service ( ) : Compass
+		{
+			return Compass.service;
+		}
+		
+		
+		// private properties
+		
+		private var _bResistered:Boolean = false;
+		
+		
+		// private methods
+		
+		private function _MagneticFieldAvailable ( event:MagneticFieldEvent ) : void
+		{
+			_debugOut ( 'Magnetic field available' );
+		}
+		
+		private function _MagneticFieldUnavailable ( event:MagneticFieldEvent ) : void
+		{
+			_debugOut ( 'Magnetic field not available' );
+		}
+		
+		private function _Register ( on:Boolean ) : void
+		{
+			// _debugOut ( 'Compass register: ' + on ); // TESTING
+			if ( !Compass.isSupported || on == _bResistered )
+				return;
+			
+			try
+			{
+				if ( on )
+				{
+					Compass.service.register ( );
+				}
+				else
+				{
+					Compass.service.unregister ( );
+				}
+				_bResistered = on;
+			}
+			catch ( err:Error )
+			{
+				_debugOut ( 'Problem registering or unregistering for compass updates: ' + err.message );
+			}
+		}
+		
+	}
+}
+class SingletonEnforcer {}

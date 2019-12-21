@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	alpha.disabled=".4"
+	styleName="sView"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.interfaces.IPermissionsChecker;
+			import com.arxterra.vo.UserState;
+			
+			[Bindable]
+			private var _bAndroid:Boolean = false;
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _prmsChkr:IPermissionsChecker;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			[Bindable]
+			private var _userState:UserState;
+			
+			private function _Continue ( ) : void
+			{
+				_sessionMgr.permissionsContinue ( );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					_sessionMgr = SessionManager.instance;
+					_bAndroid = _sessionMgr.osIsAndroid;
+					_userState = _sessionMgr.userState;
+					_prmsChkr = _sessionMgr.permissionsChecker;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:VGroup
+		horizontalAlign="center"
+		width="100%" height="100%"
+		gap="{_sessionMgr.guiGap}"
+		>
+		<!-- Instructions -->
+		<s:Label
+			width="100%"
+			paddingLeft="{_sessionMgr.guiGap}"
+			paddingRight="{_sessionMgr.guiGap}"
+			paddingTop="{_sessionMgr.guiGap}"
+			text="{resourceManager.getString('default',_prmsChkr.viewHeaderResource)}"
+			/>
+		<!-- Column Headings -->
+		<s:HGroup
+			width="100%"
+			paddingLeft="{_sessionMgr.guiGap}"
+			paddingRight="{_sessionMgr.guiGap}"
+			>
+			<s:Label
+				styleName="permissionHeading"
+				textAlign="left"
+				text="{resourceManager.getString('default','perms_status_head')}"
+				/>
+			<s:Label
+				width="100%"
+				styleName="permissionHeading"
+				text="{resourceManager.getString('default','perms_why_head')}"
+				/>
+			<s:Label
+				styleName="permissionHeading"
+				textAlign="right"
+				text="{resourceManager.getString('default','perms_now_head')}"
+				/>
+		</s:HGroup>
+		<s:Group
+			height="100%" width="100%"
+			>
+			<s:Rect
+				left="1" right="1"
+				top="1" bottom="1"
+				>
+				<s:stroke>
+					<s:SolidColorStroke
+						color="0x666666" weight="1"
+						/>
+				</s:stroke>
+			</s:Rect>
+			<s:Scroller
+				left="2" right="2"
+				top="2" bottom="2"
+				>
+				<s:Group
+					width="100%"
+					>
+					<s:layout>
+						<s:ConstraintLayout>
+							<s:constraintColumns>
+								<s:ConstraintColumn id="colLmarg" width="{_sessionMgr.guiGap}" />
+								<s:ConstraintColumn id="colL" />
+								<s:ConstraintColumn id="colLgap" width="{_sessionMgr.guiGap}" />
+								<s:ConstraintColumn id="colM" width="100%" />
+								<s:ConstraintColumn id="colRgap" width="{_sessionMgr.guiGap}" />
+								<s:ConstraintColumn id="colR" />
+								<s:ConstraintColumn id="colRmarg" width="{_sessionMgr.guiGap}" />
+							</s:constraintColumns>
+							<s:constraintRows>
+								<s:ConstraintRow id="row1marg" height="{_sessionMgr.guiGap}" />
+								<!--
+								<s:ConstraintRow id="row1" />
+								<s:ConstraintRow id="row1gap" height="{_sessionMgr.guiGap}" />
+								-->
+								<s:ConstraintRow id="rowCam" minHeight="{icnCam.height}" />
+								<s:ConstraintRow id="rowCamgap" height="{_sessionMgr.guiGap2}" />
+								<s:ConstraintRow id="rowMic" minHeight="{icnCam.height}" />
+								<s:ConstraintRow id="rowMicgap" height="{_sessionMgr.guiGap2}" />
+								<s:ConstraintRow id="rowGeo" minHeight="{icnCam.height}" />
+								<s:ConstraintRow id="rowGeogap" height="{_sessionMgr.guiGap}" />
+								<s:ConstraintRow id="rowFile" minHeight="{icnCam.height}" />
+								<s:ConstraintRow id="rowFilegap" height="{_sessionMgr.guiGap}" />
+								<!--
+								<s:ConstraintRow id="row5" />
+								<s:ConstraintRow id="row5marg" height="{_sessionMgr.guiGap}" />
+								-->
+							</s:constraintRows>
+						</s:ConstraintLayout>
+					</s:layout>
+					<!-- Camera -->
+					<components:PermissionCheckStatusIcon
+						id="icnCam"
+						top="rowCam:0"
+						left="colL:0" right="colL:0"
+						status="{_prmsChkr.cameraStatus}"
+						/>
+					<s:Label
+						top="rowCam:0" bottom="rowCam:0"
+						left="colM:0" right="colM:0"
+						text="{resourceManager.getString('default','perms_cam_label')}"
+						maxDisplayedLines="0"
+						/>
+					<s:ToggleSwitch
+						top="rowCam:0"
+						left="colR:0" right="colR:0"
+						selected="@{_userState.mayRequestCamera}"
+						enabled="{_prmsChkr.cameraChangeable}"
+						/>
+					<!-- Mic -->
+					<components:PermissionCheckStatusIcon
+						top="rowMic:0"
+						left="colL:0" right="colL:0"
+						status="{_prmsChkr.microphoneStatus}"
+						/>
+					<s:Label
+						top="rowMic:0" bottom="rowMic:0"
+						left="colM:0" right="colM:0"
+						text="{resourceManager.getString('default','perms_mic_label')}"
+						maxDisplayedLines="0"
+						/>
+					<s:ToggleSwitch
+						top="rowMic:0"
+						left="colR:0" right="colR:0"
+						selected="@{_userState.mayRequestMicrophone}"
+						enabled="{_prmsChkr.microphoneChangeable}"
+						/>
+					<!-- Geo -->
+					<components:PermissionCheckStatusIcon
+						top="rowGeo:0"
+						left="colL:0" right="colL:0"
+						status="{_prmsChkr.geolocationStatus}"
+						/>
+					<s:Label
+						top="rowGeo:0" bottom="rowGeo:0"
+						left="colM:0" right="colM:0"
+						text="{resourceManager.getString('default','perms_geo_label')}"
+						maxDisplayedLines="0"
+						/>
+					<s:ToggleSwitch
+						top="rowGeo:0"
+						left="colR:0" right="colR:0"
+						selected="@{_userState.mayRequestGeolocation}"
+						enabled="{_prmsChkr.geolocationChangeable}"
+						/>
+					<!-- File -->
+					<components:PermissionCheckStatusIcon
+						top="rowFile:0"
+						left="colL:0" right="colL:0"
+						status="{_prmsChkr.fileStatus}"
+						includeInLayout="{_bAndroid}"
+						visible="{_bAndroid}"
+						/>
+					<s:Label
+						top="rowFile:0" bottom="rowFile:0"
+						left="colM:0" right="colM:0"
+						text="{resourceManager.getString('default','perms_file_label')}"
+						maxDisplayedLines="0"
+						includeInLayout="{_bAndroid}"
+						visible="{_bAndroid}"
+						/>
+					<s:ToggleSwitch
+						top="rowFile:0"
+						left="colR:0" right="colR:0"
+						selected="@{_userState.mayRequestFile}"
+						enabled="{_prmsChkr.fileChangeable}"
+						includeInLayout="{_bAndroid}"
+						visible="{_bAndroid}"
+						/>
+					<!-- margin -->
+					<s:Spacer
+						top="rowFilegap:0" bottom="rowFilegap:0"
+						height="{_sessionMgr.guiGap}"
+						/>
+				</s:Group>
+			</s:Scroller>
+		</s:Group>
+		<!-- Buttons -->
+		<s:HGroup
+			gap="{_sessionMgr.guiGap}"
+			>
+			<s:Button
+				id="btnDone"
+				styleName="done"
+				label="{resourceManager.getString('default','continue_btn_label')}"
+				click="_Continue()"
+				/>
+		</s:HGroup>
+	</s:VGroup>
+	<!--
+	<components:NavBackArrow
+		/>
+	-->
+</s:SkinnableContainer>

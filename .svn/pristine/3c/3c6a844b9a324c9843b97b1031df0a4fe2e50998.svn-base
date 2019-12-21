@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sView"
+	alpha.disabled=".4"
+	creationComplete="_CreationCompleted()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayList;
+			
+			import components.ThinCallout;
+			
+			import controllers.SessionManager;
+			
+			import icons.IconArrowDown;
+			
+			import vo.ArduinoModes;
+			import vo.ListDataItem;
+			import vo.UserState;
+			
+			private var _cam:Camera;
+			[Bindable]
+			public function get camera():Camera
+			{
+				return _cam;
+			}
+			public function set camera(value:Camera):void
+			{
+				_cam = value;
+				if ( _cam.position == 'back' )
+				{
+					_bDevFacesBack = true;
+				}
+				else if ( _cam.position == 'front' )
+				{
+					_bDevFacesBack = false;
+				}
+				// if is unknown, don't change deviceFacesBack
+			}
+			
+			[Bindable]
+			private var _alCameras:ArrayList;
+			
+			[Bindable]
+			private var _alArduinoModes:ArrayList;
+			
+			[Bindable]
+			private var _alCapsStores:ArrayList;
+			
+			[Bindable]
+			private var _bDevFacesBack:Boolean;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			[Bindable]
+			private var _iCapsStoreIdx:int = 1;
+			
+			[Bindable]
+			private var _iPhoneBatMin:int;
+			
+			[Bindable]
+			private var _ldiArduinoMode:ListDataItem;
+			
+			[Bindable]
+			private var _ldiArduinoModeTypical:ListDataItem;
+			
+			private var _sessionMgr:SessionManager = SessionManager.instance;
+			
+			private function _CameraItemLabel ( item:Object ) : String
+			{
+				var cam:Camera = item as Camera;
+				return resourceManager.getString ( 'default', 'camera_list_item_' + cam.position, [ cam.name ] );
+			}
+			
+			private function _CreationCompleted ( ) : void
+			{
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+				
+				var userState:UserState = _sessionMgr.userState;
+				var uModeId:uint = userState.arduinoModeId;
+				// arduino connection modes
+				var aModeIds:Array = ArduinoModes.MODES;
+				var iLim:int = aModeIds.length;
+				var i:int;
+				var i_uId:uint;
+				var i_ldi:ListDataItem;
+				var i_iLblLen:int;
+				var iLenMax:int = 0;
+				var iLenMaxIdx:int = -1;
+				var aModes:Array = [];
+				for ( i = 0; i < iLim; i++ )
+				{
+					i_uId = aModeIds [ i ];
+					i_ldi = new ListDataItem ( i_uId, resourceManager.getString ( 'default', 'arduino_mode_' + i_uId ) );
+					aModes.push ( i_ldi );
+					i_iLblLen = i_ldi.label.length;
+					if ( i_iLblLen > iLenMax )
+					{
+						iLenMax = i_iLblLen;
+						iLenMaxIdx = i;
+					}
+					if ( i_uId == uModeId )
+					{
+						_ldiArduinoMode = i_ldi; // current selection
+					}
+				}
+				if ( iLenMaxIdx >= 0 )
+				{
+					_ldiArduinoModeTypical = aModes [ iLenMaxIdx ];
+				}
+				_alArduinoModes = new ArrayList ( aModes );
+				
+				_alCapsStores = new ArrayList ( [
+					resourceManager.getString ( 'default', 'caps_store_eeprom' ),
+					resourceManager.getString ( 'default', 'caps_store_phone' )
+				] );	
+				
+				_bDevFacesBack = userState.deviceFacesBack;
+				_iCapsStoreIdx = userState.capabilitiesStorePhone ? 1 : 0;
+				_iPhoneBatMin = userState.phoneBatteryMin;
+				
+				var aCams:Array = [];
+				iLim = Camera.names.length;
+				for ( i = 0; i < iLim; i++ )
+				{
+					aCams.push ( Camera.getCamera ( i.toString() ) );
+				}
+				_alCameras = new ArrayList ( aCams );
+				camera = aCams [ ( userState.cameraIndex < iLim ) ? userState.cameraIndex : 0 ];
+			}
+			
+			private function _Done ( ) : void
+			{
+				var oParams:Object = {
+					'arduinoModeId': _ldiArduinoMode.id,
+						'capabilitiesStorePhone': ( _iCapsStoreIdx > 0 ),
+						'phoneBatteryMin': _iPhoneBatMin,
+						'deviceFacesBack': _bDevFacesBack,
+						'camera': _cam
+				};
+				_sessionMgr.phoneConfigDone ( oParams );
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="4"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		id="lblHead"
+		styleName="textHead"
+		text="{resourceManager.getString('default','phone_config_title')}"
+		/>
+	<s:Group
+		height="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="0xffffff" alpha="0.1"
+					/>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0xffffff" alpha="0.2" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:Scroller
+			left="8" right="8"
+			top="8" bottom="8"
+			>
+			<s:VGroup
+				gap="4"
+				horizontalAlign="contentJustify"
+				>
+				<s:Label
+					id="lblArduino"
+					styleName="textSubhead"
+					text="{resourceManager.getString('default','phone_arduino_conn_label')}"
+					/>
+				<s:CalloutButton
+					id="cbArduino"
+					icon="{IconArrowDown}"
+					label="{_ldiArduinoMode.label}"
+					dropDown="{_cfDropDown}"
+					>
+					<s:List
+						id="liArduino"
+						dataProvider="{_alArduinoModes}"
+						labelField="label"
+						requireSelection="true"
+						selectedItem="@{_ldiArduinoMode}"
+						typicalItem="{_ldiArduinoModeTypical}"
+						click="{cbArduino.closeDropDown()}"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:CalloutButton>
+				<s:Label
+					id="lblCapsStore"
+					styleName="textSubhead"
+					paddingTop="12"
+					text="{resourceManager.getString('default','phone_caps_store_label')}"
+					/>
+				<s:CalloutButton
+					id="cbCapsStore"
+					icon="{IconArrowDown}"
+					label="{_alCapsStores.getItemAt(_iCapsStoreIdx)}"
+					dropDown="{_cfDropDown}"
+					enabled="false"
+					>
+					<s:List
+						id="liCapsStore"
+						dataProvider="{_alCapsStores}"
+						requireSelection="true"
+						selectedIndex="@{_iCapsStoreIdx}"
+						click="{cbCapsStore.closeDropDown()}"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:CalloutButton>
+				<s:Label
+					id="lblCamera"
+					styleName="textSubhead"
+					paddingTop="12"
+					text="{resourceManager.getString('default','phone_camera_label')}"
+					/>
+				<s:CalloutButton
+					id="cbCamera"
+					icon="{IconArrowDown}"
+					label="{_CameraItemLabel(camera)}"
+					dropDown="{_cfDropDown}"
+					>
+					<s:List
+						id="liCamera"
+						dataProvider="{_alCameras}"
+						labelFunction="_CameraItemLabel"
+						requireSelection="true"
+						selectedItem="@{camera}"
+						click="{cbCamera.closeDropDown()}"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:CalloutButton>
+				<s:Label
+					id="lblFace"
+					styleName="textSubhead"
+					paddingTop="12"
+					text="{resourceManager.getString('default','phone_face_toggle_label')}"
+					/>
+				<s:ToggleSwitch
+					id="btnFace"
+					selected="@{_bDevFacesBack}"
+					/>
+				<s:Label
+					id="lblBatLow"
+					styleName="textSubhead"
+					paddingTop="12"
+					text="{resourceManager.getString('default','phone_battery_min_label')}"
+					/>
+				<s:HSlider
+					id="slPhnBat"
+					width="200"
+					maximum="90"
+					minimum="10"
+					stepSize="1"
+					snapInterval="1"
+					dataTipPrecision="0"
+					value="@{_iPhoneBatMin}"
+					/>
+			</s:VGroup>
+		</s:Scroller>
+	</s:Group>
+	<s:Button
+		id="btnDone"
+		styleName="done"
+		label="{resourceManager.getString('default','done_btn_label')}"
+		click="_Done()"
+		/>
+</s:SkinnableContainer>

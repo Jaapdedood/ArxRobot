@@ -1,0 +1,54 @@
+package skins
+{
+	import mx.core.DPIClassification;
+	import mx.core.FlexGlobals;
+	
+	import spark.components.Application;
+	import spark.skins.mobile.supportClasses.CalloutArrow;
+	
+	public class ThinCalloutArrow extends CalloutArrow
+	{
+		public function ThinCalloutArrow (
+			borderThickness:Number,
+			borderColor:uint
+		)
+		{
+			super();
+			this.borderThickness = borderThickness;
+			this.borderColor = borderColor;
+			useBackgroundGradient = false;
+			
+			var applicationDPI:Number = Application(FlexGlobals.topLevelApplication).applicationDPI;
+			// Copy DPI-specific values from CalloutSkin
+			switch (applicationDPI)
+			{
+				case DPIClassification.DPI_640:
+				{
+					gap = 48;
+					break;
+				}
+				case DPIClassification.DPI_480:
+				{
+					gap = 32;
+					break;
+				}
+				case DPIClassification.DPI_320:
+				{
+					gap = 24;
+					break;
+				}
+				case DPIClassification.DPI_240:
+				{
+					gap = 16;
+					break;
+				}
+				default:
+				{
+					// default DPI_160
+					gap = 8;
+					break;
+				}
+			}
+		}
+	}
+}

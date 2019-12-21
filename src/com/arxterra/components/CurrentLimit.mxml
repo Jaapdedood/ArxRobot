@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:components="com.arxterra.components.*"
+	creationComplete="_Init()"
+	addedToStage="_Init()"
+	removedFromStage="_RemovedFromStage()"
+	gap="{_nGap}"
+	padding="{_nGap}"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.icons.IconArrowLeft;
+			import com.arxterra.icons.IconArrowRight;
+			import com.arxterra.icons.IconReset;
+			
+			import mx.utils.StringUtil;
+			
+			private static const _STEP:int = 1;
+			
+			private var _bNudged:Boolean = false;
+			private var _bInputOn:Boolean = false;
+			
+			private var _iInitStep:int = 0;
+			// private var _iPollMsecs:int = 500;
+			
+			[Bindable]
+			private var _nGap:Number;
+			
+			[Bindable]
+			private var _nSliderHt:Number;
+			
+			private var _iStepsVal:int = 0;
+			private var _iStepsValLast:int = 0;
+			
+			private var _sDispPtn:String;
+			
+			[Bindable]
+			private var _sDispVal:String;
+			
+			// private var _tmrPoll:Timer;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private var _vuDispVals:Vector.<uint>;
+			
+			private function _Init ( ) : void
+			{
+				var nTrim:Number;
+				if ( _iInitStep < 1 )
+				{
+					_sessionMgr = SessionManager.instance;
+					_nGap = _sessionMgr.guiGap;
+					_nSliderHt = _sessionMgr.guiDpiMult * 36;
+					// _iPollMsecs = MotionManager.instance.pollMsecs;
+					_sDispPtn = resourceManager.getString ( 'default', 'current_limit_ma' );
+					if ( !_vuDispVals )
+					{
+						// will not use element 0, but will directly address 1 through 128
+						_vuDispVals = new Vector.<uint> ( 129 ); // initializes all elements to zero
+					}
+				}
+				else if ( _iInitStep < 2 )
+				{
+					if ( sldrLim )
+					{
+						_iStepsValLast = _iStepsVal = _sessionMgr.userState.motorCurrentLimitStep;
+						sldrLim.value = ( 128 - _iStepsVal ) / 127.0;
+						_DisplayUpdate ( );
+					}
+				}
+				_iInitStep++;
+			}
+			
+			private function _RemovedFromStage ( ) : void
+			{
+				_Input ( false );
+			}
+			
+			private function _DisplayUpdate ( ) : void
+			{
+				var uDisp:uint = _vuDispVals [ _iStepsVal ];
+				if ( uDisp < 1 )
+				{
+					// first use, so need to calculate from current limit steps to mA formula
+					uDisp = Math.round ( 23950 / Math.pow ( 100.0 * _iStepsVal / 128, 0.977 ) );
+					_vuDispVals [ _iStepsVal ] = uDisp;
+				}
+				_sDispVal = StringUtil.substitute ( _sDispPtn, uDisp );
+			}
+			
+			private function _Input ( value:Boolean ) : void
+			{
+				if ( value )
+				{
+					if ( !_bInputOn )
+					{
+						_bInputOn = true;
+						/*
+						_tmrPoll = new Timer ( _iPollMsecs, 0 );
+						_tmrPoll.addEventListener ( TimerEvent.TIMER, _LimitStepsValueStore );
+						_tmrPoll.start ( );
+						*/
+					}
+				}
+				else
+				{
+					if ( _bInputOn )
+					{
+						_bInputOn = false;
+						/*
+						_tmrPoll.stop ( );
+						_tmrPoll.removeEventListener ( TimerEvent.TIMER, _LimitStepsValueStore );
+						_tmrPoll = null;
+						*/
+					}
+				}
+			}
+			
+			private function _NudgeLeftPress ( ) : void
+			{
+				_bNudged = false;
+				if ( _iStepsVal < 128 )
+				{
+					_Input ( true );
+				}
+			}
+			
+			private function _NudgeLeftRelease ( ) : void
+			{
+				if ( !_bInputOn )
+				{
+					return; // return
+				}
+				if ( !_bNudged )
+				{
+					_NudgeLeftUpdate ( );
+				}
+				_Input ( false );
+				_ValueStore ( );
+			}
+			
+			private function _NudgeLeftUpdate ( ) : void
+			{
+				var iVal:int	;
+				if ( !_bInputOn )
+				{
+					return; // return
+				}
+				if ( _iStepsVal >= 128 )
+				{
+					_Input ( false );
+					return; // return
+				}
+				_bNudged = true;
+				iVal = _iStepsVal + _STEP;
+				if ( iVal > 128 )
+				{
+					iVal = 128;
+				}
+				_iStepsVal = iVal;
+				// slider range is 0 to 1
+				// current limit step range is 128 (at left) to 1 (at right)
+				sldrLim.value = ( 128 - _iStepsVal ) / 127.0;
+				_DisplayUpdate ( );
+			}
+			
+			private function _NudgeRightPress ( ) : void
+			{
+				_bNudged = false;
+				if ( _iStepsVal > 1 )
+				{
+					_Input ( true );
+				}
+			}
+			
+			private function _NudgeRightRelease ( ) : void
+			{
+				if ( !_bInputOn )
+				{
+					return; // return
+				}
+				if ( !_bNudged )
+				{
+					_NudgeRightUpdate ( );
+				}
+				_Input ( false );
+				_ValueStore ( );
+			}
+			
+			private function _NudgeRightUpdate ( ) : void
+			{
+				var iVal:int;
+				if ( !_bInputOn )
+				{
+					return; // return
+				}
+				if ( _iStepsVal <= 1 )
+				{
+					_Input ( false );
+					return; // return
+				}
+				_bNudged = true;
+				iVal = _iStepsVal - _STEP;
+				if ( iVal < 1 )
+				{
+					iVal = 1;
+				}
+				_iStepsVal = iVal;
+				// slider range is 0 to 1
+				// current limit step range is 128 (at left) to 1 (at right)
+				sldrLim.value = ( 128 - _iStepsVal ) / 127.0;
+				_DisplayUpdate ( );
+			}
+			
+			private function _Reset ( ) : void
+			{
+				var uDef:uint = _sessionMgr.userState.motorCurrentLimitDefault;
+				if ( uDef < 1 )
+				{
+					// default not yet initialized from MCU
+					return;
+				}
+				if ( _iStepsVal != uDef )
+				{
+					_iStepsVal = uDef;
+					sldrLim.value = ( 128 - _iStepsVal ) / 127.0;
+					_DisplayUpdate ( );
+					_ValueStore ( );
+				}
+			}
+			
+			private function _SliderPress ( ) : void
+			{
+				_Input ( true );
+				_SliderUpdate ( );
+			}
+			
+			private function _SliderRelease ( ) : void
+			{
+				_Input ( false );
+				_SliderUpdate ( );
+				_ValueStore ( );
+			}
+			
+			private function _SliderUpdate ( ) : void
+			{
+				// slider range is 0 to 1
+				// current limit step range is 128 (at left) to 1 (at right)
+				_iStepsVal = 128 - Math.round ( sldrLim.value * 127 );
+				_DisplayUpdate ( );
+			}
+			
+			private function _ValueStore ( /*event:TimerEvent = null*/ ) : void
+			{
+				if ( _iStepsValLast != _iStepsVal )
+				{
+					_iStepsValLast = _iStepsVal;
+					_sessionMgr.motorCurrentLimitRequest ( _iStepsVal );
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group
+		width="100%"
+		>
+		<s:Label
+			styleName="textConfigItem"
+			text="{resourceManager.getString('default','current_limit_label')}"
+			left="0"
+			verticalCenter="0"
+			textAlign="left"
+			width="{gpBtns.x}"
+			maxDisplayedLines="0"
+			/>
+		<s:HGroup
+			id="gpBtns"
+			horizontalCenter="0"
+			verticalCenter="0"
+			paddingLeft="{_nGap}"
+			paddingRight="{_nGap}"
+			gap="0"
+			verticalAlign="contentJustify"
+			>
+			<s:Button
+				id="btnNudgeL"
+				styleName="barLeft"
+				icon="{IconArrowLeft}"
+				mouseDown="_NudgeLeftPress()"
+				mouseUp="_NudgeLeftRelease()"
+				buttonDown="_NudgeLeftUpdate()"
+				autoRepeat="true"
+				repeatDelay="400"
+				repeatInterval="100"
+				/>
+			<s:Button
+				id="btnReset"
+				styleName="barMiddle"
+				icon="{IconReset}"
+				click="_Reset()"
+				/>
+			<s:Button
+				id="btnNudgeR"
+				styleName="barRight"
+				icon="{IconArrowRight}"
+				mouseDown="_NudgeRightPress()"
+				mouseUp="_NudgeRightRelease()"
+				buttonDown="_NudgeRightUpdate()"
+				autoRepeat="true"
+				repeatDelay="400"
+				repeatInterval="100"
+				/>
+		</s:HGroup>
+		<s:Label
+			styleName="textConfigItem"
+			text="{_sDispVal}"
+			right="0"
+			verticalCenter="0"
+			width="{gpBtns.x}"
+			/>
+	</s:Group>
+	<components:TouchSliderH
+		id="sldrLim"
+		width="100%"
+		height="{_nSliderHt}"
+		slider_press="_SliderPress()"
+		slider_release="_SliderRelease()"
+		value_change="_SliderUpdate()"
+		/>
+</s:VGroup>

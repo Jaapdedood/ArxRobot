@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.SessionManager;
+			
+			import icons.IconModeSmRC;
+			import icons.IconModeSmRobotCS;
+			import icons.IconModeSmRobotPP;
+			
+			import vo.OpModes;
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					_sessionMgr = SessionManager.instance;
+					var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+					cf.properties = { styleName: 'thinCallout' };
+					cb.dropDown = cf;
+				}
+			}
+			
+			private function _Select ( mode:uint ) : void
+			{
+				_sessionMgr.opModeSelected ( mode );
+				cb.closeDropDown ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:CalloutButton
+		id="cb"
+		styleName="nav"
+		icon="{_sessionMgr.pilotConnector.icon}"
+		>
+		<s:VGroup
+			width="100%"
+			gap="8"
+			horizontalAlign="contentJustify"
+			>
+			<s:Label
+				styleName="textSubhead"
+				text="{resourceManager.getString('default','op_mode_label')}"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconModeSmRC}"
+				label="{resourceManager.getString('default','op_mode_rc_btn_label')}"
+				enabled="{_sessionMgr.mcuConnector.isBluetooth}"
+				click="_Select(OpModes.RC)"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconModeSmRobotCS}"
+				label="{resourceManager.getString('default','op_mode_cs_btn_label')}"
+				click="_Select(OpModes.CS)"
+				/>
+			<s:Button
+				styleName="list"
+				icon="{IconModeSmRobotPP}"
+				label="{resourceManager.getString('default','op_mode_pp_btn_label')}"
+				enabled="false"
+				click="_Select(OpModes.PP)"
+				/>
+		</s:VGroup>
+	</s:CalloutButton>
+	
+</s:Group>

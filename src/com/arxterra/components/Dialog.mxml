@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnablePopUpContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	addedToStage="_initialize()"
+	removedFromStage="_dismiss()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayList;
+			import mx.core.FlexGlobals;
+			import mx.managers.PopUpManager;
+			
+			import com.arxterra.vo.DialogData;
+			import com.arxterra.vo.DialogOption;
+			
+			public function mInitialize (
+				message:String,
+				title:String,
+				messageParams:Array = null,
+				titleParams:Array = null,
+				data:DialogData = null
+			) : void
+			{
+				var sVal:String = resourceManager.getString (
+					'default',
+					message,
+					messageParams
+				);
+				if ( !sVal )
+				{
+					_sMessage = message;
+				}
+				else
+				{
+					_sMessage = sVal;
+				}
+				sVal = resourceManager.getString (
+					'default',
+					title,
+					titleParams
+				);
+				if ( !sVal )
+				{
+					_sTitle = title;
+				}
+				else
+				{
+					_sTitle = sVal;
+				}
+				if ( !data )
+				{
+					data = new DialogData (
+						'alert',
+						new <DialogOption> [
+							new DialogOption ( 'ok', 'ok_label' )
+						],
+						0
+					);
+				}
+				_SetData ( data );
+			}
+			
+			private var _appTop:DisplayObjectContainer =
+				FlexGlobals.topLevelApplication as DisplayObjectContainer;
+			
+			[Bindable]
+			private var _nMaxWidth:Number = 300;
+			
+			[Bindable]
+			private var _alLabels:ArrayList = new ArrayList ( [ 'OK', '', '', '', '' ] );
+			
+			[Bindable]
+			private var _alActives:ArrayList = new ArrayList ( [ true, false, false, false, false ] );
+			
+			[Bindable]
+			private var _sMessage:String = 'message';
+			
+			[Bindable]
+			private var _sTitle:String = 'title';
+			
+			private var _Data:DialogData;
+
+			private function _SetData ( a_data:DialogData ) : void
+			{
+				_Data = a_data;
+				var aLabels:Array = [ '', '', '', '', '' ];
+				var aActs:Array = [ false, false, false, false, false ];
+				var iLim:int = _Data.options.length;
+				var i:int, i_do:DialogOption, i_sRsrc:String, i_sLabel:String;
+				for ( i=0; i<iLim; i++ )
+				{
+					i_do = _Data.options [ i ]
+					i_sRsrc = i_do.label;
+					i_sLabel = resourceManager.getString ( 'default', i_sRsrc, i_do.params );
+					if ( i_sLabel == null )
+					{
+						i_sLabel = i_sRsrc;
+					}
+					else
+					{
+						// return resource value, in case needed for user feedback
+						i_do.label = i_sLabel;
+					}
+					aLabels [ i ] = i_sLabel;
+					aActs [ i ] = true;
+				}
+				_alLabels = new ArrayList ( aLabels );
+				_alActives = new ArrayList ( aActs );
+			}
+			
+			protected function _dismiss ( ) : void
+			{
+				_appTop.removeEventListener ( Event.RESIZE, _Resized );
+			}
+			
+			protected function _initialize ( ) : void
+			{
+				_QueueCenter ( );
+				_appTop.addEventListener ( Event.RESIZE, _Resized );
+			}
+			
+			[Bindable]
+			private var _nScrollPadR:Number = 0;
+			private var _nScrollPadSize:Number;
+			
+			private function _Center ( ) : void
+			{
+				if ( isOpen )
+				{
+					PopUpManager.centerPopUp ( this );
+					if ( grpMsg.height < grpMsg.contentHeight )
+					{
+						if ( !_nScrollPadSize )
+						{
+							_nScrollPadSize = 2 + scrlMsg.verticalScrollBar.width;
+						}
+						_nScrollPadR = _nScrollPadSize;
+					}
+					else
+					{
+						_nScrollPadR = 0;
+					}
+				}
+			}
+			
+			private function _Close ( bCommit:Boolean = false, iIdx:int = -1 ) : void
+			{
+				if ( iIdx > -1 ) _Data.responseIndex = iIdx;
+				close ( bCommit, _Data );
+			}
+			
+			private function _QueueCenter ( ) : void
+			{
+				_nMaxWidth = 0.9 * Math.min ( _appTop.width, _appTop.height );
+				callLater ( _Center );
+			}
+			
+			private function _Resized ( event:* = null ) : void
+			{
+				if ( isOpen ) _QueueCenter ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<s:TitleWindow
+		id="titleWindow" showEffect="null" hideEffect="null"
+		title="{_sTitle}"
+		maxWidth="{_nMaxWidth}"
+		maxHeight="{_nMaxWidth}"
+		close="_Close();"
+		>
+		<s:layout>
+			<s:VerticalLayout
+				horizontalAlign="center"
+				paddingLeft="16"
+				paddingTop="16"
+				paddingRight="16"
+				paddingBottom="16"
+				gap="24"
+				/>
+		</s:layout>
+		<s:Scroller
+			id="scrlMsg"
+			width="100%"
+			height="100%"
+			>
+			<s:Group
+				id="grpMsg"
+				>
+				<s:Label
+					id="labMsg"
+					text="{_sMessage}"
+					width="100%"
+					paddingRight="{_nScrollPadR}"
+					/>
+			</s:Group>
+		</s:Scroller>
+		<s:HGroup
+			gap="16"
+			horizontalAlign="center"
+			verticalAlign="middle"
+			>
+			<s:Button
+				id="btn0"
+				label="{_alLabels.getItemAt(0)}"
+				click="_Close(true,0)"
+				visible="{_alActives.getItemAt(0)}"
+				includeInLayout="{_alActives.getItemAt(0)}"
+				/>
+			<s:Button
+				id="btn1"
+				label="{_alLabels.getItemAt(1)}"
+				click="_Close(true,1)"
+				visible="{_alActives.getItemAt(1)}"
+				includeInLayout="{_alActives.getItemAt(1)}"
+				/>
+			<s:Button
+				id="btn2"
+				label="{_alLabels.getItemAt(2)}"
+				click="_Close(true,2)"
+				visible="{_alActives.getItemAt(2)}"
+				includeInLayout="{_alActives.getItemAt(2)}"
+				/>
+			<s:Button
+				id="btn3"
+				label="{_alLabels.getItemAt(3)}"
+				click="_Close(true,3)"
+				visible="{_alActives.getItemAt(3)}"
+				includeInLayout="{_alActives.getItemAt(3)}"
+				/>
+			<s:Button
+				id="btn4"
+				label="{_alLabels.getItemAt(4)}"
+				click="_Close(true,4)"
+				visible="{_alActives.getItemAt(4)}"
+				includeInLayout="{_alActives.getItemAt(4)}"
+				/>
+		</s:HGroup>
+	</s:TitleWindow>
+</s:SkinnablePopUpContainer>

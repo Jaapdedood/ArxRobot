@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	mouseChildren="false"
+	mouseDown="_MouseDown()"
+	mouseUp="_MouseUp()"
+	mouseOut="_MouseUp()"
+	>
+	<fx:Script>
+		<![CDATA[
+			
+			import org.osmf.layout.HorizontalAlign;
+			import org.osmf.layout.VerticalAlign;
+			
+			import spark.events.PopUpEvent;
+			
+			public var resourceNameOrText:String = '';
+			public var resourceParams:Array = [];
+			
+			[Inspectable (defaultValue="left", enumeration="center,left,right")]
+			public var buttonPinHorizontal:String = HorizontalAlign.LEFT;
+			[Inspectable (defaultValue="top", enumeration="bottom,middle,top")]
+			public var buttonPinVertical:String = VerticalAlign.TOP;
+			
+			[Inspectable (defaultValue="right", enumeration="center,left,right")]
+			public var popupPinHorizontal:String = HorizontalAlign.RIGHT;
+			[Inspectable (defaultValue="bottom", enumeration="bottom,middle,top")]
+			public var popupPinVertical:String = VerticalAlign.BOTTOM;
+			
+			public var tipOffsetDistance:int = 12;
+			
+			private var _Tip:Tip;
+			
+			private function _MouseDown ( ) : void
+			{
+				if ( !_TipDismiss ( ) )
+				{
+					_TipShow ( );
+				}
+			}
+			
+			private function _MouseUp ( ) : void
+			{
+				_TipDismiss ( )
+			}
+			
+			private function _TipClosed ( event:PopUpEvent ) : void
+			{
+				_TipDismiss ( );
+			}
+			
+			private function _TipDismiss ( ) : Boolean
+			{
+				if ( _Tip == null )
+					return false;
+				
+				_Tip.removeEventListener ( PopUpEvent.CLOSE, _TipClosed );
+				_Tip.close ( );
+				_Tip = null;
+				return true;
+			}
+			
+			private function _TipShow ( ) : void
+			{
+				_Tip = new Tip ( );
+				_Tip.addEventListener ( PopUpEvent.CLOSE, _TipClosed );
+				_Tip.mInitialize (
+					resourceNameOrText,
+					resourceParams,
+					new <String> [ popupPinHorizontal, popupPinVertical ],
+					new <String> [ buttonPinHorizontal, buttonPinVertical ],
+					tipOffsetDistance
+				);
+				_Tip.open ( this );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<!-- hit area -->
+	<s:Rect
+		left="0" right="0"
+		top="0" bottom="0"
+		>
+		<s:fill>
+			<s:SolidColor alpha="0" />
+		</s:fill>
+	</s:Rect>
+	<s:Group>
+		<!-- bg -->
+		<s:Ellipse
+			left="2" right="2"
+			top="2" bottom="2"
+			>
+			<s:fill>
+				<s:RadialGradient
+					>
+					<s:GradientEntry
+						color="0xcccc00"
+						/>
+					<s:GradientEntry
+						color="0xcccc00" alpha="0.6"
+						/>
+				</s:RadialGradient>
+			</s:fill>
+		</s:Ellipse>
+		<!-- symbol -->
+		<s:Label
+			id="labelDisplay"
+			styleName="helpLabel"
+			text="{resourceManager.getString('default','help_symbol')}"
+			/>
+	</s:Group>
+</s:Group>

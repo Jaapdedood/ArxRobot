@@ -1,0 +1,161 @@
+package utils
+{
+	import mx.binding.utils.BindingUtils;
+	import mx.binding.utils.ChangeWatcher;
+	
+	import controllers.SessionManager;
+	
+	import icons.IconModeSelect;
+	
+	import interfaces.IControlConnector;
+	
+	import vo.MessageData;
+	
+	/**
+	 * ControlConnector base class. Treat as abstract class
+	 * and do not instantiate directly. Must be extended by
+	 * subclasses specific to the operational modes.
+	 */	
+	[Bindable]
+	public class ControlConnector extends NonUIComponentBase implements IControlConnector
+	{
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		public function get icon ( ) : Object
+		{
+			return IconModeSelect;
+		}
+		
+		
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		/**
+		 * @copy ControlConnector
+		 */
+		public function ControlConnector ( )
+		{
+			super ( );
+			init ( );
+		}
+		
+		/**
+		 * Overrides <b>must</b> call super.dismiss().
+		 */
+		override public function dismiss ( ) : void
+		{
+			if ( _cwDebug )
+			{
+				_cwDebug.unwatch ( );
+			}
+			_sessionMgr = null;
+			_roomVarsQueued = null;
+			_userVarsQueued = null;
+			super.dismiss ( );
+		}
+		
+		/**
+		 * Called automatically during instantiation,
+		 * but may also be called manually to reactivate
+		 * if object was previously dismissed.
+		 * Overrides <b>must</b> call super.init().
+		 */
+		public function init ( ) : void
+		{
+			_roomVarsQueued = {};
+			_userVarsQueued = {};
+			_sessionMgr = SessionManager.instance;
+			_cwDebug = BindingUtils.bindSetter ( _debugChanged, _sessionMgr, 'debugOn' );
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		/**
+		 * Treat as abstract method. Subclass must override to implement
+		 * appropriately depending upon the operational mode.
+		 */
+		public function avReceiverClear ( ) : void
+		{
+		}
+		
+		/**
+		 * Treat as abstract method. Subclass must override to implement
+		 * appropriately depending upon the operational mode.
+		 */
+		public function avReceiverSubscribe ( ) : void
+		{
+		}
+		
+		/**
+		 * Treat as abstract method. Subclass must override to implement
+		 * appropriately depending upon the operational mode.
+		 */
+		public function avSenderClear ( ) : Boolean
+		{
+			return false;
+		}
+		
+		/**
+		 * Treat as abstract method. Subclass must override to implement
+		 * appropriately depending upon the operational mode.
+		 */
+		public function avSenderPublish ( ) : void
+		{
+		}
+		
+		/**
+		 * Treat as abstract method. Subclass must override to implement
+		 * appropriately depending upon the operational mode.
+		 */
+		public function roomVarsQueue ( vars:Vector.<MessageData>, immediate:Boolean = false ) : void
+		{
+		}
+		
+		/**
+		 * Overrides should include call to super
+		 */
+		public function sleep ( ) : void
+		{
+			_sleeping = true;
+		}
+		
+		/**
+		 * Treat as abstract method. Subclass must override to implement
+		 * appropriately depending upon the operational mode.
+		 */
+		public function userVarsQueue ( vars:Vector.<MessageData>, immediate:Boolean = false ) : void
+		{
+		}
+		
+		/**
+		 * Overrides should include call to super
+		 */
+		public function wake ( ) : void
+		{
+			_sleeping = false;
+		}
+		
+		
+		// PROTECTED PROPERTIES
+		
+		protected var _sessionMgr:SessionManager;
+		protected var _sleeping:Boolean = false;
+		protected var _roomVarsQueued:Object;
+		protected var _userVarsQueued:Object;
+		
+		
+		// PROTECTED METHODS
+		
+		/**
+		 * Subclass may override to respond to changes in debug
+		 */
+		protected function _debugChanged ( value:Boolean ) : void
+		{
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _cwDebug:ChangeWatcher;
+	}
+}

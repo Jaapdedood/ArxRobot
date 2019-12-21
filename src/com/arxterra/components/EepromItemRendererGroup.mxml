@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	autoDrawBackground="false"
+	width="100%"
+	dataChange="_DataChanged()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.vo.McuEeprom;
+			
+			[Bindable]
+			private var _eep:McuEeprom;
+			
+			private function _DataChanged ( ) : void
+			{
+				if ( data == null )
+				{
+					return;
+				}
+				
+				_eep = data as McuEeprom;
+			}
+		]]>
+	</fx:Script>
+	<s:Rect
+		left="0" right="0"
+		top="0" bottom="0"
+		>
+		<s:fill>
+			<s:SolidColor color="0x999999" />
+		</s:fill>
+	</s:Rect>
+	<s:Label
+		styleName="textConfigGroup"
+		width="100%"
+		maxDisplayedLines="1"
+		text="{resourceManager.getString('default',_eep.resource)}"
+		/>
+</s:ItemRenderer>

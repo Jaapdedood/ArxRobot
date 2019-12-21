@@ -1,0 +1,35 @@
+package vo
+{
+	public class ArduinoModes
+	{
+		// CONSTANTS
+		
+		/**
+		 * Connect mode BLUETOOTH
+		 */
+		public static const BLUETOOTH:uint = 0;
+		/**
+		 * Connect mode USB_ADB
+		 */
+		public static const USB_ADB:uint = 1;
+		/**
+		 * Connect mode USB_HOST
+		 */
+		public static const USB_HOST:uint = 2;
+		
+		public static const MODES:Array = [ BLUETOOTH, USB_ADB, USB_HOST ];
+		
+		// PUBLIC METHODS
+		
+		public function ArduinoModes()
+		{
+		}
+		
+		public static function ValidateMode ( value:uint ) : uint
+		{
+			if ( MODES.indexOf ( value ) < 0 )
+				return USB_ADB;
+			return value;
+		}
+	}
+}

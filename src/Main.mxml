@@ -1,0 +1,884 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ArxRobot Main.mxml -->
+<s:Application
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	xmlns:layouts="com.arxterra.layouts.*"
+	xmlns:views="com.arxterra.views.*"
+	backgroundColor="0x222222"
+	frameRate="6"
+	splashScreenImage="@Embed('com/arxterra/assets/splash.png')"
+	splashScreenScaleMode="letterbox"
+	currentState="{_sessionMgr.appViewState}"
+	applicationComplete="_ApplicationCompleted()"
+	>
+	<fx:Style source="com/arxterra/css/MainStyles.css" />
+	<fx:Metadata>
+		[ResourceBundle("default")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.DialogManager;
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.events.DebugByteArrayEvent;
+			import com.arxterra.events.DebugEventEx;
+			import com.arxterra.events.DialogEvent;
+			import com.arxterra.utils.HexStringUtil;
+			import com.arxterra.utils.NonUIComponentBase;
+			
+			/*
+			[ ] Enable handoff from pilot to copilot.
+			[ ] Extend declination utility to use own calculations if web service not available.
+			
+			[ ] Add p2p op mode.
+			[ ] Show direction indicator(s) when custom commands area is scrollable in RC mode.
+			
+			[ ] Communications for which we want to be able to adjust the delay between sending batches:
+			[ ] - Updating SmartFoxServer user variables and room variables on an adjustable timer delay.
+			[ ] - Queuing commands to be sent from ArxRobot to MCU, and servicing the queue on an adjustable timer delay, instead of sending them the instant they are received.
+			
+			[ ] Additional client-server features that need toggle controls for testing:
+			[/] - Our watchdog timer ping-pong latency monitoring (automatically disabled when motionCapable config is false, but also need manual control?)
+			
+			[ ] Implement all needed custom command and telemetry widgets in RC Mode.
+			
+			[ ] Change properties in SessionManager, CameraManager and PilotConnectorCS that will now depend upon UserState MediaConfigs and InsetConfigs.
+			[ ] Move camera-related config options to media config view.
+			[ ] Change camera callout to media config view.
+			[ ] Add config options to toggle whether to use camera and microphone.
+			
+			[ ] Provide storage of multiple robot profiles (capabilities, bluetooth address, custom comtel, etc).
+			
+			?????????
+			[ ] Create sensor config wizard in Community Mode to have user...
+			[ ] - lock display orientation in position desired
+			[ ] - move phone through range of rotations to trigger its internal calibration
+			[ ] - position bot on level surface and facing true north
+			[ ] - with phone on bot, and with pan/tilt (if applicable and works by moving phone) in home position
+			[ ] - press "Save" to capture reference position
+			[ ] This is persisted as UserState.deviceOrientationBasis.
+			?????????
+			
+			[ ] Add BUTTON and SERVO to custom command and telemetry data types
+			
+			v Alpha 0.1.221 2019-12-16
+			[x] BleProtocolSpec and BleManager changed to test peripheral names by regular expression.
+			
+			v Alpha 10.1.220 2019-10-10 to 12-05
+			[x] Added distriqt Permissions ANE to help deal with Android permissions.
+			[x] Changed permissions code to use the ANE when OS is Android.
+			[x] Converted PermissionsChecker to PermissionsCheckerBase.
+			[x] Created PermissionsCheckerIOS and PermissionsCheckerAndroid as its subclasses.
+			[x] Added long press to Action Bar tray toggle button to manually open PermissionsView.
+			
+			##### FAILED #####
+			v Alpha 10.1.219 2019-10-09
+			[x] For Android 64-bit...
+			[x] - Add 10 to major version number.
+			[x] - Customize Launch -> Add Parameter -arch armv8 after -target option.
+			##################
+			
+			v Alpha 0.1.219 2019-09-26 to 10-09
+			[x] Change startup sequence to enable compliance with new permissions schemata.
+			[x] Ask for all permissions up front, even though this is discouraged by Android and iOS documentation.
+			[x] Expose setting to toggle BLE autoselect, off by default.
+			[x] When BLE autoselect is off, open BLE config view immediately when scanning starts.
+			[x] Default BLE config view filter to Show All Detected.
+			
+			v Alpha 0.1.218 2019-09-19 to 24
+			[x] Exported iOS release build with new provisioning profile because of added testing devices.
+			[x] Added LaunchScreen.storyboardc file and referenced it in iPhone info additions UILaunchStoryboardName to provide iOS launch images.
+			[x] Added Assets.car file to provide app icons for iOS >= 11.
+			[x] Updated SDK to AIR 33 Harman to prepare for 64-bit Android.
+			
+			v Alpha 0.1.217 2019-07-31 to 09-14
+			[x] Updated ANEs.
+			[x] Changed compiler to use latest AIR 32 SDK.
+			[x] Added command ID 0x1D CURRENT_LIMIT and telemetry ID 0x1D CURRENT_LIMIT_ID.
+			[x] Added Current Limit component similar to SteeringTrim for user to adjust.
+			[x] MCU is to send default current limit upon connection (in response to COMM_SETUP).
+			[x] Sending user-adjusted current limit to MCU in response and when changed.
+			[x] Persisting Current Limit steps value and default in UserState.
+			[x] Relaying values to ArxControl.
+			
+			v Alpha 0.1.216 2019-05-17
+			[x] Exported iOS release build with new provisioning profile because of added testing device.
+			
+			v Alpha 0.1.215 2019-05-08
+			[x] Added Device (Phone) Mount Angle (EEPROM addr 0x054, ID "dma") to Robot Capabilities schema (v. 11).
+			
+			v Alpha 0.1.214 2019-04-14
+			[x] Finished implementation of ultrasonic ranger minimum distance configuration.
+			[x] Fixed bug preventing SAFE_ROVER command from being sent to MCU upon setting emergency flag.
+			
+			v Alpha 0.1.211-213 2019-04-11
+			[x] Fixed some problems with requesting permissions on iOS >= 10.
+			[x] Added try-catch blocks to detect runtime exception thrown when another permission request is in progress.
+			[x] Added utils.PermissionsChecker to handle request queue and set timer in case of no response.
+			[x] Added iPhone InfoAdditions NSCameraUsageDescription and NSMicrophoneUsageDescription.
+			
+			v Alpha 0.1.209-210 2019-04-06
+			[x] Completed unfinished CustomCommandManager persist and restore backup logic.
+			[x] Added Info menu with links to Privacy and User Data policies, plus Bug Report mailto.
+			[x] On startup, now restore a persisted rotation lock setting (currently Android only).
+			
+			v Alpha 0.1.207-208 2019-03-20
+			[x] Exported iOS release build with new provisioning profile because of added testing device.
+			
+			v Alpha 0.1.206 2019-03-16
+			[x] Clear PilotConnectorCS watchdog timer when leave room, so avoid spurious emergency state.
+			[x] Exported iOS release build with new provisioning profile because of added testing device.
+			
+			v Alpha 0.1.205
+			[x] Device orientation updates now limited to 1500ms interval.
+			[x] Changed timing of sending SmartFoxServer room variables:
+			[x] - Initial batch now sent immediately upon robot join instead of next timer event.
+			[x] - Update timer interval decreased from 6000ms to 5000ms.
+			
+			v Alpha 0.1.204
+			[x] Changed behavior of the McuConnector, so pings are sent only when necessary.
+			
+			v Alpha 0.1.203
+			[x] Added individual custom entities to variables batched after going online for Community Mode.
+			
+			v Alpha 0.1.202
+			[x] Removed the long-deprecated MCU connection option Android as USB Host.
+			[x] Updated Bluetooth LE code for requesting authorization.
+			
+			v Alpha 0.1.199-201
+			[x] Updated code for requesting Geolocation, Camera and Microphone permissions.
+			[x] Further streamlining of Bluetooth LE peripheral discovery.
+			
+			v Alpha 0.1.198
+			[x] BleManager now prioritizes discovery on peripherals that report the name(s) we expect.
+			
+			v Alpha 0.1.197
+			[x] BleManager now deferring _VcBpaRefresh to allow BleConfigView filter callout button time to close and update.
+			[x] CS op mode changes.
+			[x] - Added SettingsMenuCS on ActionBar.
+			[x] - Added ConnectMenuCS on ActionBar.
+			[x] - Push viewState login_config_cs if lack minimum login parameters.
+			[x] - No longer auto-connect upon entering mode. Wait for user to choose Go Online.
+			[x] - Auto-display Go Online button when have valid login parameters.
+			
+			v Alpha 0.1.196
+			[x] Changed NonUIComponentBase _callLater design.
+			[x] - Now using separate setTimeout for each delayed call, so delay is more consistant.
+			[x] - Now subclass can adjust the delay value, such as BleBase using 100ms instead of the default 20ms.
+			
+			v Alpha 0.1.195
+			[x] Fixed enter key not dismissing soft keyboard on some text input fields.
+			
+			v Alpha 0.1.193-194
+			[x] Updated iOS distribution certificate and provisioning profile.
+			[x] Updated Distriqt ANEs to current versions.
+			[x] BlePeripheralAgent now postpones instantiating exec objects and discovery queue until first call for discovery.
+			[x] Fixed bug in BlePeripheralAgent that could cause it to jump the discovery queue if rescanned.
+			[x] Added Test Now button to BleAgentItemRenderer.
+			
+			v Alpha 0.1.189-192
+			[x] Further debugging and refinement of Bluetooth LE management.
+			
+			v Alpha 0.1.188
+			[x] Updated SDK to Apache Flex 4.16.1 AIR 32 SWF 43.
+			
+			v Alpha 0.1.187
+			[x] Now defaulting to pause Bluetooth LE analysis of additional peripherals once connected to a compatible device.
+			[x] Added "Greedy Discovery" mode toggle in Bluetooth LE configuration view, in case user wants to override this new default 'lazy' discovery mode.
+			[x] To minimize initial workload, now querying only one Bluetooth LE peripheral at a time in order of discovery.
+			
+			v Alpha 0.1.183-186
+			[x] Exported iOS release build with new provisioning profile because of added testing device.
+			
+			v Alpha 0.1.182
+			[x] Exported iOS release build with new provisioning profile because certificate expired.
+			
+			v Alpha 0.1.181
+			[x] Exported iOS release build with new provisioning profile because of added testing device.
+			
+			v Alpha 0.1.179-180
+			[x] Finished implementation of McuWatchdogModes.OFF.
+			
+			v Alpha 0.1.176-178
+			[x] Exported iOS release build with new provisioning profile because of added testing device.
+			
+			v Alpha 0.1.173-175
+			[x] Changed battery labels and messages for consistency among Arxterra applications.
+			[x] Repositioned some icons for better portrait mode fit in ActionBar and ActionBarMenuTray.
+			[x] Minor bug fixes.
+			
+			v Alpha 0.1.171-172
+			[x] Added configurable minimum safe charge percent thresholds for clean and dirty batteries to eeprom.json.
+			[x] Added clean and dirty battery gauge widgets with low charge alert state visible in ActionBar.
+			
+			v Alpha 0.1.160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170
+			[x] Exported iOS release build with new provisioning profile because of added testing device(s).
+			
+			v Alpha 0.1.159
+			[x] Exported iOS release build with new provisioning profile because of added testing device.
+			[x] RC tank mode sync button state now defaults to true.
+			
+			v Alpha 0.1.158
+			[x] Added NSLocationWhenInUseUsageDescription key to iOS info additions to fix problem with iOS 9.3.
+			[x] Updated SDK to Apache Flex 4.15 AIR 23 SWF 34.
+			
+			v Alpha 0.1.157
+			[x] Exported iOS release build with new provisioning profile because of added testing device.
+			[x] Switched iOS sdk path to /Applications/Apache Flex/iPhoneOS9.3.sdk (downloaded from distriqt)
+			    to replace path broken by new macOS 10.12 (Sierra) and XCode 8.0 installations.
+			[x] Created vo/InsetConfig.as class, whose instances are to contain Robot and Pilot (temporarily) visual inset display settings.
+			[x] Created vo/MediaConfig.as class, whose instances are to contain Robot and Pilot media streaming settings.
+			[x] Replaced Core and AndroidSupport ANEs with new versions.
+			[x] BleManager call bleConfigSuccess on SessionManager when all BLE protocol specs have connected, so can close config view if open.
+			
+			v Alpha 0.1.156
+			[x] For iOS removed Bluetooth LE call to enableWithUI.
+			[x] Added httpsPort to vo/SfsPreset.as and views/ConnectCsView.mxml.
+			
+			v Alpha 0.1.155
+			[x] Added call to batchVarsReportQueue after Capabilities settings changes if already in Community mode.
+			
+			v Alpha 0.1.150-154
+			[x] Added rounding to nearest step to SteeringTrim value, to match Control Panel functionality.
+			[x] Fixed bug in PilotConnectorCS handling of SteeringTrim message from Control Panel.
+			[x] Improved performance of SteeringTrim display value calculation.
+			[x] Added nudge buttons to SteeringTrim component.
+			
+			v Alpha 0.1.148-149
+			[x] Improved Bluetooth LE peripheral device auto-selection logic.
+			[x] Now restore previous RC tank mode sync button state when return from other views.
+			[x] Fixed sizing and scrolling of watchdog modes menu.
+			
+			v Alpha 0.1.147
+			[x] Created vo:McuWatchdogModes and replaced old mcu PING_INTERVAL logic with new WATCHDOG_SETUP mode IDs.
+			[x] Added steering trim, persisting between sessions and adjustable from all pilot modes.
+			[x] Refactored for more robust handling of Bluetooth LE.
+			[x] Replaced array and vector push statements with bracket syntax assignmments where feasible, to improve performance.
+			[x] Replaced array and vector splice statements with insertAt or removeAt where feasible, to improve performance.
+			[x] Replaced BluetoothLE ANE with new release version 1.0.
+			[x] Replaced Core and AndroidSupport ANEs with new versions.
+			[x] Updated SDK to Apache Flex 4.15 AIR 22 SWF 33.
+			
+			v Alpha 0.1.144-146
+			[x] Replaced BluetoothLE ANE with new version (release candidate) and tested.
+			[x] Added Core and AndroidSupport ANEs that are newly required basic distriqt ANEs.
+			
+			v Alpha 0.1.137-143
+			[x] Tested new BluetoothLE ANE with beta support for Android.
+			[x] Fixed layout problem in OpModesMenu component.
+			[x] Fixed error wherein camera object is null in PhoneConfigView or during startup on some Android devices.
+			[x] Added bluetooth-le to iPhone InfoAdditions UIRequiredDeviceCapabilities in manifest file.
+			[x] Added <uses-feature android:name="android.hardware.bluetooth_le" android:required="false"/> to android manifestAdditions in manifest file.
+			[x] Added support checks to the ConfigureForDevice static method of McuConnectModes.
+			
+			v Alpha 0.1.132-136
+			[x] Added help labels to OpModesMenu.
+			[x] Made Bluetooth and BLE buttons and config screens more consistent.
+			[x] Made item renderers for Bluetooth and BLE config device lists.
+			
+			v Alpha 0.1.123-131
+			[x] Improved font and widget size adjustment for different device DPIs.
+			
+			v Alpha 0.1.112-122
+			[x] Added platform (iOS or Android) to app name and version string
+			[x] Enabled iTunes file sharing for iOS (UIFileSharingEnabled key added to iPhone InfoAdditions in manifest).
+			[x] Added configurable left and right motor polarity switches.
+			[x] Further streamlined startup:
+			[x] - BLE autoconnection: if first run, attempt first compatible device detected, else attempt previously used device (if any), else display config view.
+			[x] - Storing last-used Op Mode in UserState.
+			[x] - Defaulting to last-used Op Mode. On first run, defaulting to RC Mode.
+			[x] Moved op mode menu button from ActionBarMenuTray to ActionBar.
+			[x] Completely hid "coming attractions" rather than just disabling/dimming them:
+			[x] - Hid Peer-to-Peer op mode.
+			[x] - Hid Position Sensors control mode.
+			
+			v Alpha 0.1.108-111
+			[x] Add extra space at end of tips as workaround for text and callout sizing bug.
+			[x] Trim end spaces from custom avatar url.
+			[x] LoginCsView optional toggle default to open when developer mode on.
+			
+			v Alpha 0.1.105-107
+			[x] Fixed bug with watchdog when motionEnabled false.
+			[x] - testCfgWatchDogsAllow now defaults to match motionEnabled.
+			[x] - Exposed testCfgWatchDogsAllow switch in TestConfigView.
+			[x] Decreased user variable queue service delay from 500ms to 250ms in PilotConnectorCS.
+			
+			v Alpha 0.1.96-104
+			[x] Updated SDK to Apache Flex 4.15 AIR 21 SWF 32.
+			[x] Debug phone battery updates.
+			[x] Add camera view click message handling.
+			[x] Add capabilities option for motion, since telemetry-only use cases won't need motor controls.
+			[x] Add (phone-stored only for now; tackle EEPROM version later) capabilities version migration, to preserve user's previous settings.
+			[x] Fix problems with McuConnector classes' responses to communication glitches. Change connect/disconnect to something less drastic.
+			[x] Add FLOW_STATE and FLOW_STREAM flags to custom command and config view.
+			[x] Add stream data handling with 4-byte timing stamps to custom command.
+			[x] Add maxSafe and minSafe alert threshold properties to custom command and config view.
+			[x] Set speedEnabled (spde) based upon shaft encoder enabled (sne) for now.
+			
+			v Alpha 0.1.94-95
+			[x] Moved RobotCamInfo callout from ActionBarMenuTray to ActionBar.
+			[x] Added button to RobotCamInfo for shortcut to Phone Config view.
+			
+			v Alpha 0.1.87-92
+			[x] Debug camera feed flipping.
+			[x] Debug ConnectCsView and PilotConnectorCS.
+			[x] Now sets camera feed flip horizontal to true automatically if user selects front camera on iOS.
+			
+			v Alpha 0.1.82-86
+			[x] Added config-only modes for ConnectCsView and LoginCsView.
+			[x] Debug ConnectCsView and PilotConnectorCS.
+			[x] Added clone method to SfsPreset.
+			[x] When expertMode is on, PilotConnectorCS now opens ConnectCsView rather than attempting to auto-connect.
+			
+			v Alpha 0.1.80-81
+			[x] Added delay to wait for busy indicator to show before switching to a view that is slow to load.
+			[x] Improved validation of Robot and Pilot names.
+			[x] Added option to flip (or un-mirror, as in the case of iOS front camera) camera feed.
+			[x] Sending cvfh and cvfv user variables for flip h and flip v.
+			[x] Improved queuing of avSenderPublish in PilotConnectorCS class.
+			
+			v Alpha 0.1.77-79
+			[x] Improved notification when device does not support Bluetooth LE.
+			[x] Improved Bluetooth LE connection process reporting.
+			
+			v Alpha 0.1.76
+			[x] Improved handling of iOS native status bar.
+			
+			v Alpha 0.1.75
+			[x] Removed trace statement from _DebugOut
+			[x] Added compiler argument -includes=mx.utils.LegacyMobileThemeOverride.
+			
+			v Alpha 0.1.74
+			[x] Updated SDK to Apache Flex 4.15 AIR 20 SWF 31.
+			[x] Added BluetoothLE ANE and bluetooth-central iOS UIBackgroundMode to manifest file.
+			[x] Added class McuConnectorBLE.
+			[x] Added BleConfigView.mxml
+			
+			v Alpha 0.1.73
+			[x] Added test config toggle to trace raw data incoming from MCU.
+			
+			v Alpha 0.1.72
+			[x] Added some Waypoint-related pilot message debug traces to PilotConnectorCS class.
+			[x] Decreased opacity of some views to make underlying debug trace visible.
+			[x] Increased efficiency of move and custom command messaging in RC mode.
+			[x] Increased efficiency of telemetry packet validation code.
+			[x] Client-server features that need toggle controls for testing:
+			[x] - Video/audio feed
+			[x] - Geolocation
+			[x] - Magnetic declination
+			[x] - Phone battery monitoring
+			[x] - Device orientation sensor fusion monitoring, which combines data from magnetometer, accelerometer and gyroscope and thus could be taxing the Android a fair bit
+			[x] - SmartFox's lag monitoring
+			[x] - Emergency flags and the associated emergency stops they trigger
+			
+			v Alpha 0.1.71
+			Fixed height of OpModeSelectView layout.
+			Updated SDK to Apache Flex 4.14 AIR 16 SWF 27.
+			Switched from Gyroscope ANE to DeviceMotion ANE.
+			Switched from Euler angles to quaternions.
+			Fixed rotational configuration issues.
+			v Alpha 0.1.70
+			Added custom command op mode flags, to designate which op modes use it.
+			Added custom command widgets and telemetry feedback to RC mode display.
+			v Alpha 0.1.69
+			Eeprom schema version 7.
+			Previous version saved as eeprom_6 for future use in auto-updating eeprom.
+			Fixed Bluetooth autoconnect issue.
+			Fixed Bluetooth first run config issue.
+			Added eeprom 'ccpd' and 'cctd' indicating whether camera pans/tilts by moving device.
+			Moved deviceFacesBack setting from UserState to eeprom 'dfb'.
+			Refactored/renamed "ControlConnector" to "PilotConnector".
+			Refactored/renamed "Arduino" and variants to "Mcu".
+			v Alpha 0.1.68
+			Added RC mode (using Bluetooth) with simple multitouch tank drive controls.
+			Added joystick control option to RC mode.
+			Added right vs left hand and 1 vs 2 hand preferences to RC mode.
+			Added controlMode and handPref to UserState for persistence.
+			v Alpha 0.1.67
+			Continued overhaul of user interface.
+			Refactored configuration views.
+			Abstracted messaging to allow for other control connectors besides SmartFox.
+			- Created IControlConnector interface and ControlConnector utility base class.
+			- Created subclasses ControlConnectorCS, ControlConnectorRC and ControlConnectorPP.
+			- Refactored SmartFox functionality into ControlConnectorCS class.
+			Refactored waypoint functionality into WaypointManager singleton class.
+			Refactored camera configuration functionality into CameraManager singleton class.
+			Refactored most of remaining Main functionality into SessionManager singleton class.
+			UserState now has Bluetooth as the default Arduino connection mode.
+			Added toggles to show/hide advanced details in SFS Connect and Login views.
+			Removed linear startup sequence.
+			Added GUI elements for
+			- Selecting op mode.
+			- Locking and unlocking screen rotation.
+			- Opening configuration views.
+			Added status display for messages such as "Ready for pilot to board"
+			v Alpha 0.1.66
+			Continued overhaul of user interface.
+			v Alpha 0.1.65
+			Report battery level on each battery ANE event, even if unchanged.
+			Started overhaul of user interface.
+			Enabled portrait orientations.
+			v Alpha 0.1.64
+			Updated to Apache Flex 4.13 AIR 15 SWF 26.
+			Bug fixes for Camera Info display.
+			v Alpha 0.1.63
+			Added logic to send Arduino updates of GPS and Heading according configured intervals.
+			Added Waypoint Nav GPS and Heading minimum update intervals to eeprom schema.
+			v Alpha 0.1.62
+			Enabled viewing of debug text area without debug mode active.
+			Removed excess Bluetooth debug traces.
+			v Alpha 0.1.61
+			Added processing and buffering of waypoint list append (wpla) and replace (wplr) messages from Control Panel
+			Added waypoint coordinates format options to eeprom schema
+			When waypoint navigation enabled
+			- Relay heading updates to Arduino
+			- Relay GPS updates to Arduino
+			v Alpha 0.1.60
+			Improved ArduinoCommand serialization
+			Added new ArduinoCommand subclasses CurrentCoordinates and WaypointCoordinates
+			Added maintenance of waypoints list
+			Added handling of waypoint navigation messages
+			Added Idle Ping watchdog message to ArduinoConnector class
+			Refactored iArduinoConnector interface's public method send as sendCommand
+			Added to iArduinoConnector interface the public method sendCommandId and public getter method for isConnected
+			v Alpha 0.1.59
+			Persisted Arduino Bluetooth address to attempt automatic reconnection at startup.
+			Added telemetry packet decoding to ArduinoConnector class.
+			Added packet wrapper to Arduino commands.
+			Changed Bluetooth callout to view, to work around sizing artifacts.
+			Changed states and state groups to allow multiple "active" states.
+			v Alpha 0.1.58
+			Changed Bluetooth architecture to have Arduino as listener (slave, servant, server, service provider), Phone as connector (master, client, service consumer).
+			Changed Bluetooth button action to open callout containing:
+			- Scan toggle switch
+			- List of detected devices listening for Bluetooth SPP connections
+			- Buttons to Connect, Disconnect and open System Bluetooth Settings
+			v Alpha 0.1.55-57
+			Debugging Bluetooth functionality.
+			v Alpha 0.1.54
+			Added Bluetooth button to GUI when in Bluetooth mode.
+			Created class ArduinoConnectorBluetooth as subclass of ArduinoConnector.
+			Refactored ArduinoConnectorSocket and ArduinoConnectorPrimavera as subclasses of ArduinoConnector.
+			Created ArduinoConnector base class to implement IArduinoConnector.
+			v Alpha 0.1.53
+			Refactored old Main code for sending and receiving Arduino data so now programming to interface IArduinoConnector.
+			Created class ArduinoConnectorPrimavera implementing IArduinoConnector.
+			Refactored class ServerSocketArduino as ArduinoConnectorSocket implementing IArduinoConnector.
+			Created interface IArduinoConnector.
+			Added Bluetooth to Arduino connection options list.
+			Added Android Bluetooth capabilities and ANE to manifest.
+			v Alpha 0.1.52
+			Updated SDK to Flex 4.12.1 AIR 13.0 FP 13.0
+			v Alpha 0.1.51
+			Updated sfs-presets.json to use subdomain names instead of IP addresses.
+			v Alpha 0.1.50
+			Saved the updated sfs-presets.json!
+			v Alpha 0.1.49
+			Updated sfs-presets.json to new server IP address.
+			Fixed sfs-presets parsing code to avoid error if no localization resource exists for preset name.
+			Fixed ConnectView _PresetItemLabel function.
+			v Alpha 0.1.48
+			Implement settings files backup and restore on SDCard storage on Android.
+			Automatically sleep robot when configuring custom commands.
+			v Alpha 0.1.47
+			Added help to CustomConfigView command list controls
+			v Alpha 0.1.46
+			Minor fixes to CustomConfigView.mxml and CustomCommandManager.as.
+			v Alpha 0.1.45
+			Began adding JSON import/export of command configuration, but not complete.
+			v Alpha 0.1.44
+			Custom command configuration layout is now adequate.
+			v Alpha 0.1.37-43
+			Reworking layout to fit smaller screens.
+			v Alpha 0.1.36
+			Custom command type no longer changeable once created.
+			Debugging Command [+] button.
+			v Alpha 0.1.35
+			Added HEADING type to custom commmands.
+			Made Command [+] button a callout so user can choose type.
+			v Alpha 0.1.29-34
+			Continued debugging custom controls configuration.
+			v Alpha 0.1.28
+			Added send custom controls configuration to SFS User Variable
+			Initial debugging custom controls configuration.
+			v Alpha 0.1.27
+			Add custom controls Configuration View.
+			Add custom controls messaging.
+			Removed version 2.6 options from sfs-presets.json.
+			v Alpha 0.1.26
+			Added motor stop to _EmergencyFlagsSet to compensate for incorrect implementation of Arduino safe command.
+			v Alpha 0.1.25
+			EEPROM Storage option disabled until reliably functional.
+			v Alpha 0.1.24
+			Implemented storing capabilities in App Storage.
+			Added config/sfs-presets.json in place of sfs-config.xml.
+			Added vo/SfsPreset class.
+			Added ConnectView and related code in Main.
+			v Alpha 0.1.23
+			Improved styling of HelpLabel.
+			v Alpha 0.1.22
+			User can now choose between storing capabilities in Arduino EEPROM or App Storage.
+			Fixed default assets directory behavior.
+			Added contextual help to LoginView.
+			v Alpha 0.1.21
+			Display app version on Robot screen.
+			v Alpha 0.1.20
+			Added app version label user variable.
+			v Alpha 0.1.19
+			Added emergency flagging for ultrasonic range below threshold.
+			Improved handling of dropped pilot.
+			Improved cleanup at exit.
+			v Alpha 0.1.18
+			Cleared latency flag when pilot is discovered to have dropped out of room.
+			v Alpha 0.1.17
+			Added more validation to Robot login name.
+			Listening for user exit room events, so can check whether pilot is still in room.
+			v Alpha 0.1.16
+			Declination utility now functional as long as web service available.
+			Changed DebugEvent class to DebugEventEx to avoid conflict with DebugEvent class of ANE.
+			v Alpha 0.1.15
+			Added sender name validation to _SfsPrivateMessageReceived.
+			Latency emergency state now not set if pilot no longer aboard.
+			v Alpha 0.1.14
+			If connected when exiting on Android, now log out and disconnect first.
+			Handled EmergencyAcknowledge message from Pilot.
+			Changed EmergencyCodes class to EmergencyFlags.
+			Added FlagsUtil class.
+			Changed EMS report from PrivateMessage to UserVariable.
+			Added _uEmFlags to store the various emergency state flags that can be set.
+			Removed unnecessary persistence settings when updating global room variables.
+			v Alpha 0.1.13
+			Debugging global room variable issues
+			v Alpha 0.1.12
+			Declination util debugging
+			v Alpha 0.1.11
+			v Alpha 0.1.10
+			Fixed gps room var send only when changed significantly
+			v Alpha 0.1.9
+			Merged.
+			v Alpha Branch 0.1.8
+			Changed sfs-config: zone = Arx
+			Ready to merge back to trunk
+			v Alpha Branch 0.1.7
+			Build for Android
+			v Alpha Branch 0.1.6
+			Added allowUserCountChange to roomEvents.
+			Added updating of gps room variable at approximately 1 second intervals (assuming it has changed).
+			v Alpha Branch 0.1.5
+			Added text input field for Robot avatar assets directory.
+			Added assets directory room variable initialization.
+			v Alpha Branch 0.1.1 to 0.1.4
+			Added text input fields for Robot name and permitted Pilot names to LoginView.
+			Added room creation.
+			Added room variable initialization.
+			v Alpha Branch 0.1.0 branched
+			Changed sfs-config: zone = ArxDevel, useBlueBox = true.
+			v Alpha 0.0.67 ready to branch for architecture change
+			*/
+			
+			/*
+			[Bindable]
+			private var _camMgr:CameraManager;
+			*/
+			
+			private var _reLine0:RegExp = /^.*[\n\r]/;
+			private var _reNewLines:RegExp = /[\n\r]/g;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			// app startup event order (of those we typically listen for):
+			//   initialize
+			//   creationComplete
+			//   applicationComplete
+			private function _ApplicationCompleted ( ) : void
+			{
+				NonUIComponentBase.eventRelay = this;
+				
+				// get DialogManager (singleton) instance
+				var dialogMgr:DialogManager = DialogManager.getInstance ( );
+				
+				// events from objects in display list, using capture phase
+				//    debug
+				addEventListener ( DebugEventEx.DEBUG_OUT, _DebugOutReceived, true );
+				addEventListener ( DebugByteArrayEvent.DEBUG_BYTE_ARRAY, _DebugByteArrayReceived, true );
+				//    route dialog events to DialogManager
+				addEventListener ( DialogEvent.ALERT, dialogMgr.mAlertEventHandler, true );
+				addEventListener ( DialogEvent.DIALOG, dialogMgr.mDialogEventHandler, true );
+				
+				// events from subclasses of NonUIComponentBase, using this as eventRelay
+				//    debug
+				addEventListener ( DebugEventEx.DEBUG_OUT, _DebugOutReceived );
+				addEventListener ( DebugByteArrayEvent.DEBUG_BYTE_ARRAY, _DebugByteArrayReceived );
+				//    route dialog events to DialogManager
+				addEventListener ( DialogEvent.ALERT, dialogMgr.mAlertEventHandler );
+				addEventListener ( DialogEvent.DIALOG, dialogMgr.mDialogEventHandler );
+				
+				NativeApplication.nativeApplication.addEventListener ( DebugEventEx.DEBUG_OUT, _DebugOutReceived );
+				NativeApplication.nativeApplication.addEventListener ( DebugByteArrayEvent.DEBUG_BYTE_ARRAY, _DebugByteArrayReceived );
+				NativeApplication.nativeApplication.addEventListener ( DialogEvent.ALERT, dialogMgr.mAlertEventHandler );
+				NativeApplication.nativeApplication.addEventListener ( DialogEvent.DIALOG, dialogMgr.mDialogEventHandler );
+				
+				// _camMgr = CameraManager.instance;
+				_sessionMgr = SessionManager.instance;
+				_sessionMgr.initialize ( this );
+				
+				// ##### TESTING
+				/*
+				var sOut:String = 'Multitouch:';
+				sOut += '\n  supportsTouchEvents: ' + Multitouch.supportsTouchEvents;
+				sOut += '\n  maxTouchPoints: ' + Multitouch.maxTouchPoints;
+				sOut += '\n  supportsGestureEvents: ' + Multitouch.supportsGestureEvents;
+				sOut += '\n  supportedGestures: ' + Multitouch.supportedGestures;
+				sOut += '\n  inputMode: ' + Multitouch.inputMode;
+				sOut += '\n  mapTouchToMouse: ' + Multitouch.mapTouchToMouse;
+				_DebugOut ( sOut );
+				*/
+				// #############
+			}
+			
+			private function _DebugByteArrayReceived ( event:DebugByteArrayEvent ) : void
+			{
+				if ( _sessionMgr.debugOn )
+				{
+					var sHex:String = HexStringUtil.HexStringFromByteArray ( event.bytes );
+					var sMsg:String = resourceManager.getString ( 'default', event.messageResource, [ sHex ] );
+					if ( !sMsg )
+					{
+						sMsg = event.messageResource + ': ' + sHex;
+					}
+					_DebugOut ( sMsg );
+				}
+			}
+			
+			private function _DebugClear ( ) : void
+			{
+				taDebug.text= '';
+			}
+			
+			/**
+			 * @param message Message to display
+			 * @param isResource Indicates that the message string is to be passed to
+			 * resourceManager.getString()
+			 * @param resourceParams Parameters (if any) to pass to resourceManager.getString()
+			 * if isResource is true
+			 * @param alertOk If debug mode is off, display an Alert
+			 * @param end String (if any) to add at end of debug output
+			 * (defaults to new line character)
+			 */
+			private function _DebugOut (
+				message:String = '',
+				isResource:Boolean = false,
+				resourceParams:Array = null,
+				alertOk:Boolean = false,
+				end:String = '\n'
+			) : void
+			{
+				var sMsg:String;
+				if ( _sessionMgr.debugOn )
+				{
+					if ( isResource )
+					{
+						sMsg = resourceManager.getString ( 'default', message, resourceParams );
+						if ( !sMsg )
+						{
+							sMsg = message;
+						}
+					}
+					else
+					{
+						sMsg = message;
+					}
+					// limit line count
+					var s:String = taDebug.text;
+					var iOver:int = s.match ( _reNewLines ).length - 39;
+					if ( iOver > 0 )
+					{
+						for ( var i:int=0; i<iOver; i++ )
+						{
+							s = s.replace ( _reLine0, '' );
+						}
+						taDebug.text = s;
+					}
+					taDebug.appendText ( '-- ' + sMsg + end );
+					// ##### TESTING #####
+					if ( Capabilities.isDebugger )
+					{
+						trace ( sMsg );
+					}
+					// ###################
+				}
+				else if ( alertOk )
+				{
+					dispatchEvent (
+						new DialogEvent (
+							DialogEvent.ALERT,
+							message,
+							'',
+							resourceParams
+						)
+					);
+				}
+			}
+			
+			private function _DebugOutReceived ( event:DebugEventEx ) : void
+			{
+				_DebugOut (
+					event.message,
+					event.isResource,
+					event.resourceParams,
+					event.alertOk,
+					event.end
+				);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="home" />
+		<s:State name="home_cs" />
+		<s:State name="home_pp" />
+		<s:State name="home_rc" />
+		<s:State name="ble_config" />
+		<s:State name="bluetooth_config" />
+		<s:State name="connect_config_cs" stateGroups="connect_cs" />
+		<s:State name="connect_prompt_cs" stateGroups="connect_cs" />
+		<s:State name="custom_config" />
+		<s:State name="eeprom_config" />
+		<s:State name="login_config_cs" stateGroups="login_cs" />
+		<s:State name="login_prompt_cs" stateGroups="login_cs" />
+		<s:State name="mode_prompt" />
+		<s:State name="permissions" />
+		<s:State name="phone_config" />
+		<s:State name="test_config" />
+	</s:states>
+	<mx:UIComponent
+		id="uicVideo"
+		left="0" right="0"
+		top="0" bottom="0"
+		creationComplete="SessionManager.instance.videoPod=uicVideo"
+		/>
+	<s:TextArea
+		id="taDebug"
+		left="4" right="4"
+		top="{actBar.height + 4}" bottom="{statBar.height + 4}"
+		visible="{_sessionMgr.debugVisible}"
+		includeInLayout="{_sessionMgr.debugVisible}"
+		editable="false"
+		selectable="false"
+		/>
+	<components:StatusBar
+		id="statBar"
+		bottom="0"
+		width="{width}"
+		/>
+	<views:HomeRC
+		id="vwHomeRC"
+		includeIn="home_rc"
+		itemDestructionPolicy="auto"
+		x="0" y="{actBar.height}"
+		width="{width}" height="{height-actBar.height-statBar.height-_sessionMgr.osStatusBarHeight}"
+		/>
+	<views:OpModeSelectView
+		id="vwMode"
+		includeIn="mode_prompt"
+		itemDestructionPolicy="auto"
+		x="0" y="{actBar.height}"
+		width="{width}" height="{height-actBar.height-statBar.height-_sessionMgr.osStatusBarHeight}"
+		/>
+	<components:ActionBarMenuTray
+		id="abmt"
+		y="{actBar.height}"
+		width="{width}"
+		visible="{_sessionMgr.actionMenuOn}"
+		includeInLayout="{_sessionMgr.actionMenuOn}"
+		enabled="{!_sessionMgr.isBusy}"
+		debug_clear="_DebugClear()"
+		triggerButton="{actBar.trayTriggerButton}"
+		/>
+	<components:ActionBar
+		id="actBar"
+		width="{width}"
+		enabled="{!_sessionMgr.isBusy}"
+		/>
+	<views:PermissionsView
+		id="vwPerms"
+		includeIn="permissions"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<views:PhoneConfigView
+		id="vwPhoneConfig"
+		includeIn="phone_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<views:TestConfigView
+		id="vwTestConfig"
+		includeIn="test_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<views:EepromConfigView
+		id="vwEeprom"
+		includeIn="eeprom_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<views:CustomConfigView
+		id="vwCustom"
+		includeIn="custom_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<views:LightView
+		id="vwLight"
+		visible="{_sessionMgr.lightOn}"
+		includeInLayout="{_sessionMgr.lightOn}"
+		/>
+	<views:ConnectCsView
+		id="vwConnectCS"
+		includeIn="connect_cs"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<views:LoginCsView
+		id="vwSfsLogin"
+		includeIn="login_cs"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<views:BluetoothConfigView
+		id="vwBluetooth"
+		includeIn="bluetooth_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<views:BleConfigView
+		id="vwBLE"
+		includeIn="ble_config"
+		itemDestructionPolicy="auto"
+		left="2" right="2"
+		top="2" bottom="2"
+		/>
+	<s:BusyIndicator
+		id="bi"
+		horizontalCenter="0"
+		verticalCenter="0"
+		visible="{_sessionMgr.isBusy}"
+		includeInLayout="{_sessionMgr.isBusy}"
+		show="_sessionMgr.busyIndicatorReady()"
+		/>
+</s:Application>

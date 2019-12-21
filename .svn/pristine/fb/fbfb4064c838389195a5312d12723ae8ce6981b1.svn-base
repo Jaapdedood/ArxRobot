@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	alpha.disabled=".4"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="done", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			
+			import spark.components.gridClasses.GridColumn;
+			
+			import events.UtilityEvent;
+			
+			import vo.ArduinoEeprom;
+			
+			[Bindable]
+			public var eepromsCollection:ArrayCollection;
+			
+			[Bindable]
+			private var _eepTypical:ArduinoEeprom = new ArduinoEeprom ( 0, 1, 'typical', 'bool', true, false, 'typical' );
+			
+			private function _Done ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.DONE ) );
+			}
+			
+			private function _ItemLabel ( item:Object, column:GridColumn ) : String
+			{
+				return resourceManager.getString ( 'default', ( item as ArduinoEeprom ).resource );
+			}
+			
+			private function _ItemRenderer ( item:Object ) : IFactory
+			{
+				return ( item as ArduinoEeprom ).itemRenderer;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		styleName="textHead"
+		text="{resourceManager.getString('default','config_eeprom_title')}"
+		/>
+	<s:Group
+		height="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0x666666" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:Scroller
+			left="2" right="2"
+			top="2" bottom="2"
+			>
+			<s:DataGroup
+				id="dgEeps"
+				width="100%"
+				dataProvider="{eepromsCollection}"
+				itemRendererFunction="_ItemRenderer"
+				typicalItem="{_eepTypical}"
+				>
+				<s:layout>
+					<s:VerticalLayout
+						gap="0"
+						paddingLeft="4" paddingRight="4"
+						paddingTop="4" paddingBottom="4"
+						horizontalAlign="left"
+						useVirtualLayout="false"
+						variableRowHeight="true"
+						/>
+				</s:layout>
+			</s:DataGroup>
+		</s:Scroller>
+	</s:Group>
+	<s:Button
+		id="btnDone"
+		label="{resourceManager.getString('default','done_btn_label')}"
+		click="_Done()"
+		/>
+</s:SkinnableContainer>

@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ValueIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	width="32" height="48"
+	scaleX="1.2" scaleY="1.2"
+	>
+	<s:Rect
+		x="4" y="8"
+		width="24" height="36"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{symbolColor}" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		x="4" y="{8 + 36 * (1 - iconValue)}"
+		width="24" height="{36 * iconValue}"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="0xff6622" />
+		</s:fill>
+	</s:Rect>
+	<s:Path
+		winding="nonZero"
+		data="M28 8 28 44 4 44 4 8 28 8ZM22 0 10 0 10 4 0 4C0 4 0 48 0 48L32 48 32 4 22 4 22 0 22 0Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="18.5098" y="28.8154" winding="nonZero"
+		data="M4.45898 6.48535 5.91016 1.06348 1.94238 0 0 7.18555 4.45898 6.48535Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="12.627" y="16" winding="nonZero"
+		data="M11.9287 13.3789 13.373 7.98145 5.39062 0 0 1.45361 1.05811 5.42383 7.84473 3.58936 9.78906 5.5332 7.96191 12.3135 11.9287 13.3789Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="6" y="17.5903" winding="nonZero"
+		data="M7.17578 3.96533 6.11279 0 0.699219 1.45898 0 5.90479 7.17578 3.96533Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="10.3882" y="22.8008" winding="nonZero"
+		data="M8.80518 7.69043 1.11523 0 0 4.12402 4.68018 8.80469 8.80518 7.69043Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="11.8188" y="20.2241" winding="nonZero"
+		data="M7.70264 9.96436 9.98291 1.50244 8.47998 0 0 2.26221 7.70264 9.96436Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+</icons:ValueIconBase>

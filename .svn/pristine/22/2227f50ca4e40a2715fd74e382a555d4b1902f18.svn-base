@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	minWidth="0" minHeight="0">
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[HostComponent("spark.components.SkinnableContainer")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:BasicLayout />
+	</s:layout>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<!-- mask -->
+	<s:Group left="0" top="0" right="0" bottom="0" id="msk" >
+		<s:Rect
+			left="0" top="0" right="0" bottom="0"
+			topLeftRadiusX="7" topLeftRadiusY="7"
+			bottomRightRadiusX="7" bottomRightRadiusY="7">
+			<s:fill>
+				<s:SolidColor alpha="0"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<!-- Background -->
+	<s:Rect
+		blendMode="hardlight"
+		left="0" top="0" right="0" bottom="0"
+		topLeftRadiusX="7" topLeftRadiusY="7"
+		bottomRightRadiusX="7" bottomRightRadiusY="7">
+		<s:fill>
+			<s:LinearGradient
+				rotation="90">
+				<s:GradientEntry
+					color="0x848484" />
+				<s:GradientEntry
+					color="0x7b7b7b" />
+			</s:LinearGradient>
+			<!--
+			<s:SolidColor
+			color="0x7d7d7d" />
+			-->
+		</s:fill>
+		<s:filters>
+			<s:BevelFilter
+				angle="225"
+				distance="2"
+				highlightColor="0x000000"
+				highlightAlpha="1"
+				shadowColor="0xffffff"
+				shadowAlpha=".15"
+				quality="1"
+				blurX="1"
+				blurY="1"
+				/>
+		</s:filters>
+	</s:Rect>
+	
+	<!-- Content area -->
+	<s:Group
+		id="contentGroup"
+		mask="{msk}"
+		left="5" top="5" right="5" bottom="5">
+		<s:layout>
+			<s:BasicLayout />
+		</s:layout>
+	</s:Group>
+	
+</s:SparkSkin>

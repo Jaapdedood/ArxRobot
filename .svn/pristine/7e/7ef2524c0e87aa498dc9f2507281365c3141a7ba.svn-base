@@ -1,0 +1,10 @@
+package interfaces
+{
+	import flash.utils.ByteArray;
+
+	public interface IArduinoConnector
+	{
+		function dismiss():void;
+		function send(bytes:ByteArray):Boolean;
+	}
+}

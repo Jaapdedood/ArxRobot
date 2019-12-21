@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="icons.*"
+	>
+	<s:Path
+		winding="nonZero"
+		data="M9.28564 24 9.28564 13.6113 0.866211 18.2617 0 16.5264 8.19092 12 0 7.47363 0.866211 5.7373 9.28564 10.3896 9.28564 0 20.9995 7.1377 12.1987 12 20.9995 16.8613 9.28564 24ZM11.1499 13.6348 11.1499 20.5977 17.1401 16.9473 11.1499 13.6348ZM11.1499
+		3.40234 11.1499 10.3652 17.1401 7.05371 11.1499 3.40234Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+</icons:ColorizedIconBase>

@@ -1,0 +1,362 @@
+package utils
+{
+	import com.distriqt.extension.bluetooth.Bluetooth;
+	
+	import flash.utils.ByteArray;
+	import com.distriqt.extension.bluetooth.events.BluetoothEvent;
+	import com.distriqt.extension.bluetooth.events.BluetoothConnectionEvent;
+	import com.distriqt.extension.bluetooth.events.BluetoothDeviceEvent;
+	import com.distriqt.extension.bluetooth.BluetoothDevice;
+	
+	[Bindable]
+	public class ArduinoConnectorBluetooth extends ArduinoConnector
+	{
+		// STATIC CONSTANTS AND PROPERTIES
+		
+		private static const DISTRIQT_ANE_DEV_KEY:String = '1e89e8495fb41930f708d5bb2a0da10c1ea466e6eL6aPB6BwQNi6DcovNC3t/qvq8TDoDKzMEZBQYtH3OIXtHAqpuDY7epxHUVQoB96hYCMzrCaD76HISnpXvMuxA==';
+		// private static const BT_UUID:String = 'fa87c0d0-afac-11de-8a39-0800200c9a66'; // ID used in distriqt example
+		private static const BT_UUID:String = '00001101-0000-1000-8000-00805f9b34fb'; // standard serial port service ID
+		private static const BT_SECURE:Boolean = true;
+		
+		private static var __instance:ArduinoConnectorBluetooth;
+		
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		/**
+		 * singleton instance of ArduinoConnectorBluetooth
+		 */
+		public static function get instance ( ) : ArduinoConnectorBluetooth
+		{
+			if ( !__instance )
+			{
+				__instance = new ArduinoConnectorBluetooth ( new SingletonEnforcer() );
+			}
+			return __instance;
+		}
+		
+		/**
+		 * Singleton: use static property <em>instance</em> to access singleton instance.
+		 */
+		public function ArduinoConnectorBluetooth ( enforcer:SingletonEnforcer )
+		{
+			super();
+		}
+
+		/*
+		BluetoothConnectionEvent -- properties:  uuid:String, device:BluetoothDevice, message:String
+		CONNECTION_CLOSE_ERROR
+		CONNECTION_CONNECT_ERROR
+		CONNECTION_CONNECT_FAILED
+		CONNECTION_CONNECTED
+		CONNECTION_CONNECTING
+		CONNECTION_DISCONNECT_ERROR
+		CONNECTION_DISCONNECTED
+		CONNECTION_LISTEN_ERROR
+		CONNECTION_LISTENING
+		CONNECTION_RECEIVED_BYTES
+		CONNECTION_REMOTE
+		CONNECTION_WRITE_ERROR
+		CONNECTION_WRITE_SUCCESS
+		
+		BluetoothDeviceEvent -- properties:  device:BluetoothDevice = null
+		DEVICE_BONDED
+		DEVICE_BONDING
+		DEVICE_DISCONNECT_REQUESTED
+		DEVICE_DISCONNECTED
+		DEVICE_FOUND
+		
+		BluetoothEvent -- properties:  data:String
+		NOT_SUPPORTED
+		SCAN_FINISHED
+		SCAN_MODE_CHANGED
+		SCAN_STARTED
+		STATE_CHANGED
+		
+		*/
+		
+		override public function dismiss ( ) : void
+		{
+			if ( _btService )
+			{
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_CLOSE_ERROR, _ConnErrClose );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_CONNECT_ERROR, _ConnErrConnect );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_CONNECT_FAILED, _ConnFailed );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_CONNECTED, _ConnConnected );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_CONNECTING, _ConnStatus );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_DISCONNECT_ERROR, _ConnStatus );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_DISCONNECTED, _ConnDisconnected );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_LISTEN_ERROR, _ConnStatus );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_LISTENING, _ConnStatus );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_RECEIVED_BYTES, _ConnBytesReceived );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_REMOTE, _ConnRemote );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_WRITE_ERROR, _ConnStatus );
+				_btService.removeEventListener ( BluetoothConnectionEvent.CONNECTION_WRITE_SUCCESS, _ConnStatus );
+				_btService.removeEventListener ( BluetoothDeviceEvent.DEVICE_BONDED, _DevStatus );
+				_btService.removeEventListener ( BluetoothDeviceEvent.DEVICE_BONDING, _DevStatus );
+				_btService.removeEventListener ( BluetoothDeviceEvent.DEVICE_DISCONNECT_REQUESTED, _DevStatus );
+				_btService.removeEventListener ( BluetoothDeviceEvent.DEVICE_DISCONNECTED, _DevStatus );
+				_btService.removeEventListener ( BluetoothDeviceEvent.DEVICE_FOUND, _DevStatus );
+				_btService.removeEventListener ( BluetoothEvent.NOT_SUPPORTED, _Status );
+				_btService.removeEventListener ( BluetoothEvent.SCAN_FINISHED, _Status );
+				_btService.removeEventListener ( BluetoothEvent.SCAN_MODE_CHANGED, _Status );
+				_btService.removeEventListener ( BluetoothEvent.SCAN_STARTED, _Status );
+				_btService.removeEventListener ( BluetoothEvent.STATE_CHANGED, _Status );
+				if ( _bEnabled )
+				{
+					try
+					{
+						_btService.close ( BT_UUID, BT_SECURE );
+						if ( _bDisabledAtStart )
+						{
+							// politely return device to its original state
+							_btService.disable ( );
+						}
+					}
+					catch ( err:Error )
+					{
+						debugOut ( 'error_bt_dismiss', true, [ err.message ] );
+					}
+				}
+				_btService = null;
+			}
+			super.dismiss ( );
+		}
+		
+		override public function init ( ) : void
+		{
+			super.init ( );
+			isBluetooth = true;
+			_bDisabledAtStart = false; // default to false
+			_bEnabled = false; // default to false
+			_bConnected = false;
+			try
+			{
+				Bluetooth.init ( DISTRIQT_ANE_DEV_KEY );
+				if ( !Bluetooth.isSupported )
+				{
+					debugOut ( 'error_bt_support', true );
+				}
+				else
+				{
+					_btService = Bluetooth.service;
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_CLOSE_ERROR, _ConnErrClose );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_CONNECT_ERROR, _ConnErrConnect );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_CONNECT_FAILED, _ConnFailed );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_CONNECTED, _ConnConnected );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_CONNECTING, _ConnStatus );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_DISCONNECT_ERROR, _ConnStatus );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_DISCONNECTED, _ConnDisconnected );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_LISTEN_ERROR, _ConnStatus );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_LISTENING, _ConnStatus );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_RECEIVED_BYTES, _ConnBytesReceived );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_REMOTE, _ConnRemote );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_WRITE_ERROR, _ConnStatus );
+					_btService.addEventListener ( BluetoothConnectionEvent.CONNECTION_WRITE_SUCCESS, _ConnStatus );
+					_btService.addEventListener ( BluetoothDeviceEvent.DEVICE_BONDED, _DevStatus );
+					_btService.addEventListener ( BluetoothDeviceEvent.DEVICE_BONDING, _DevStatus );
+					_btService.addEventListener ( BluetoothDeviceEvent.DEVICE_DISCONNECT_REQUESTED, _DevStatus );
+					_btService.addEventListener ( BluetoothDeviceEvent.DEVICE_DISCONNECTED, _DevStatus );
+					_btService.addEventListener ( BluetoothDeviceEvent.DEVICE_FOUND, _DevStatus );
+					_btService.addEventListener ( BluetoothEvent.NOT_SUPPORTED, _Status );
+					_btService.addEventListener ( BluetoothEvent.SCAN_FINISHED, _Status );
+					_btService.addEventListener ( BluetoothEvent.SCAN_MODE_CHANGED, _Status );
+					_btService.addEventListener ( BluetoothEvent.SCAN_STARTED, _Status );
+					_btService.addEventListener ( BluetoothEvent.STATE_CHANGED, _Status );
+					_CheckState ( true );
+				}
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_bt_init', true, [ err.message ] );
+			}
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		override public function send ( bytes:ByteArray ) : Boolean
+		{
+			if ( _bConnected )
+			{
+				bytes.position = 0;
+				try
+				{
+					_bConnected = _btService.writeBytes ( BT_UUID, bytes );
+				}
+				catch ( err:Error )
+				{
+					debugOut ( 'error_bt_send', true, [ err.message ] );
+				}
+			}
+			return _bConnected;
+		}
+		
+		/**
+		 * @param seconds Length of time to remain in discoverable mode
+		 */		
+		public function setDeviceDiscoverable ( seconds:int = 30 ) : void
+		{
+			if ( isDiscoverable )
+				return; // return
+			
+			if ( _btService )
+			{
+				try
+				{
+					_btService.setDeviceDiscoverable ( true, seconds );
+				}
+				catch ( err:Error )
+				{
+					debugOut ( 'error_bt_set_discover', true, [ err.message ] );
+				}
+			}
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _bConnected:Boolean = false;
+		private var _bEnabled:Boolean = false;
+		private var _bDisabledAtStart:Boolean = false;
+		// private var _bListening:Boolean = false;
+		private var _btService:Bluetooth; // reference to singleton instance of Bluetooth ANE
+		
+		
+		// PRIVATE METHODS GENERAL
+		
+		private function _CheckState ( firstTime:Boolean = false ) : void
+		{
+			if ( _bEnabled )
+			{
+				isDiscoverable = _btService.isDiscoverable ( );
+				return; // return
+			}
+			
+			_bEnabled = _btService.isEnabled ( );
+			if ( _bEnabled )
+			{
+				// start listening
+				try
+				{
+					if ( !_btService.listen ( BT_UUID, BT_SECURE ) )
+					{
+						debugOut ( 'status_bt_listen_failed', true );
+					}
+				}
+				catch ( err:Error )
+				{
+					debugOut ( 'error_bt_conn_listen', true, [ err.message ] );
+				}
+			}
+			else if ( firstTime )
+			{
+				_bDisabledAtStart = true;
+				// ask user to enable
+				_btService.enableWithUI ( );
+			}
+		}
+		
+		
+		// PRIVATE METHODS EVENT HANDLERS
+		
+		private function _ConnBytesReceived ( event:BluetoothConnectionEvent ) : void
+		{
+			var ba:ByteArray;
+			try
+			{
+				ba = _btService.readBytes ( BT_UUID );
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_bt_receive', true, [ err.message ] );
+			}
+			if ( ba == null )
+			{
+				debugOut ( 'error_bt_receive_null', true );
+			}
+			else
+			{
+				_bConnected = true;
+				dataQueuePush ( ba );
+			}
+		}
+		
+		private function _ConnConnected ( event:BluetoothConnectionEvent ) : void
+		{
+			_bConnected = true;
+			debugOut ( 'status_bt_conn_connected', true );
+		}
+		
+		private function _ConnDisconnected ( event:BluetoothConnectionEvent ) : void
+		{
+			_bConnected = false;
+			debugOut ( 'status_bt_conn_disconnected', true );
+		}
+		
+		private function _ConnErrClose ( event:BluetoothConnectionEvent ) : void
+		{
+			_bConnected = false;
+			debugOut ( 'error_bt_conn_close', true, [ event.message ] );
+		}
+		
+		private function _ConnErrConnect ( event:BluetoothConnectionEvent ) : void
+		{
+			_bConnected = false;
+			debugOut ( 'error_bt_conn_connect', true, [ event.message ] );
+		}
+		
+		private function _ConnFailed ( event:BluetoothConnectionEvent ) : void
+		{
+			_bConnected = false;
+			debugOut ( 'status_bt_conn_failed', true );
+		}
+		
+		/*
+		private function _ConnListenError ( event:BluetoothConnectionEvent ) : void
+		{
+			_bListening = false;
+			debugOut ( 'error_bt_conn_listen', true, [ event.message ] );
+		}
+		
+		private function _ConnListening ( event:BluetoothConnectionEvent ) : void
+		{
+			_bListening = true;
+			debugOut ( 'status_bt_conn_listening', true );
+		}
+		*/
+		
+		private function _ConnRemote ( event:BluetoothConnectionEvent ) : void
+		{
+			_bConnected = true;
+			debugOut ( 'status_bt_conn_remote', true );
+		}
+		
+		private function _ConnStatus ( event:BluetoothConnectionEvent ) : void
+		{
+			// catch-all for various connection status events
+			debugOut ( 'status_bt_conn_misc', true, [ event.type, event.message ] );
+		}
+		
+		private function _DevStatus ( event:BluetoothDeviceEvent ) : void
+		{
+			// catch-all for various device status events
+			var sName:String = '';
+			var sState:String = '';
+			var dev:BluetoothDevice = event.device;
+			if ( dev )
+			{
+				sName = dev.deviceName;
+				sState = dev.state;
+			}
+			debugOut ( 'status_bt_device_misc', true, [ event.type, sName, sState ] );
+		}
+		
+		private function _Status ( event:BluetoothEvent ) : void
+		{
+			// catch-all for various status events
+			debugOut ( 'status_bt_misc', true, [ event.type, event.data ] );
+			_CheckState ( );
+		}
+	}
+}
+class SingletonEnforcer {}

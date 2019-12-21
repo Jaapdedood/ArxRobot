@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:CalloutButton
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	styleName="nav"
+	icon="{_sessionMgr.pilotConnector.isConnected?IconLink1:IconLink0}"
+	includeInLayout="{_sessionMgr.opMode==OpModes.CS}"
+	visible="{_sessionMgr.opMode==OpModes.CS}"
+	enabled="{(_sessionMgr.appViewState!='permissions_cs')}"
+	close="_Closed()"
+	label="{_AutoOpenBinder(_sessionMgr.pilotConnector.hasValidLogin)}"
+	horizontalPosition="start"
+	verticalPosition="after"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.icons.IconLink0;
+			import com.arxterra.icons.IconLink1;
+			import com.arxterra.utils.PilotConnectorCS;
+			import com.arxterra.vo.OpModes;
+			
+			private var _bInited:Boolean = false;
+			private var _fCall:Function;
+			
+			/*
+			[Bindable]
+			private var _prmsChkr:PermissionsChecker;
+			*/
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			
+			// just a convenient way to watch boolean to determine
+			// when logging in is possible, since we don't actually need a label
+			private function _AutoOpenBinder ( value:Boolean ) : String
+			{
+				_CanLogin ( value );
+				return '';
+			}
+			
+			private function _CanLogin ( value:Boolean ) : void
+			{
+				if ( visible && enabled && value )
+				{
+					if ( !isDropDownOpen )
+					{
+						openDropDown ( );
+					}
+				}
+			}
+			
+			private function _Closed ( ) : void
+			{
+				if ( _fCall != null )
+				{
+					callLater ( _fCall );
+					_fCall = null;
+				}
+			}
+			
+			private function _ConnectToggle ( ) : void
+			{
+				( _sessionMgr.pilotConnector as PilotConnectorCS ).connectToggle ( );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					_sessionMgr = SessionManager.instance;
+					// _prmsChkr = PermissionsChecker.instance;
+					var cf:ClassFactory = new ClassFactory ( com.arxterra.components.ThinCallout );
+					cf.properties = { styleName: 'thinCallout' };
+					dropDown = cf;
+				}
+			}
+			
+			private function _MenuCall ( funct:Function ) : void
+			{
+				_fCall = funct;
+				closeDropDown ( );
+			}
+			
+			private function _ToggleBtnLabel ( conn:Boolean ) : String
+			{
+				if ( conn )
+				{
+					return resourceManager.getString ( 'default', 'sfs_stop_btn_label' );
+				}
+				return resourceManager.getString ( 'default', 'sfs_start_btn_label' );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:Scroller
+		width="100%"
+		height="100%"
+		>
+		<s:VGroup
+			width="100%"
+			gap="8"
+			horizontalAlign="contentJustify"
+			>
+			<s:Button
+				label="{_ToggleBtnLabel(_sessionMgr.pilotConnector.isConnected)}"
+				click="_MenuCall(_ConnectToggle)"
+				enabled="{!_sessionMgr.pilotConnector.isPending}"
+				/>
+		</s:VGroup>
+	</s:Scroller>
+	
+</s:CalloutButton>

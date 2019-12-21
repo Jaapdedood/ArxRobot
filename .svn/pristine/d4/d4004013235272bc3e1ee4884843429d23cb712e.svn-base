@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	addedToStage="_AddedToStage()"
+	creationComplete="_CreationComplete()"
+	removedFromStage="_RemovedFromStage()"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="monitor_full_toggle", type="events.UtilityEvent")]
+		[Event(name="monitor_toggle", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import events.DebugEventEx;
+			
+			import icons.IconArrowDown;
+			
+			import components.ThinCallout;
+			
+			import events.UtilityEvent;
+			
+			[Bindable]
+			public var camera:Camera;
+			
+			[Bindable]
+			public var monitorLiveCast:Boolean;
+			
+			[Bindable]
+			public var monitorLiveCastFull:Boolean;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			private var _bInited:Boolean = false;
+			private var _timer:Timer;
+			
+			private function _AddedToStage ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _Closed ( ) : void
+			{
+				if ( _timer )
+				{
+					_timer.removeEventListener ( TimerEvent.TIMER, _PollStats );
+					_timer.stop();
+					_timer = null;
+				}
+			}
+			
+			private function _CreationComplete ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( _bInited )
+				{
+					_bInited = false;
+				}
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+					cf.properties = { styleName: 'thinCallout' };
+					_cfDropDown = cf;
+				}
+			}
+			
+			private function _MonitorFullToggle ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.MONITOR_FULL_TOGGLE ) );
+			}
+			
+			private function _MonitorToggle ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.MONITOR_TOGGLE ) );
+			}
+			
+			private function _Opened ( ) : void
+			{
+				_timer = new Timer ( 2000, 0 );
+				_timer.addEventListener ( TimerEvent.TIMER, _PollStats );
+				_timer.start();
+				callLater ( _PollStats );
+			}
+			
+			private function _PollStats ( event:TimerEvent = null ) : void
+			{
+				lblWdDisp.text = camera.width.toString();
+				lblHtDisp.text = camera.height.toString();
+				lblFpsDisp.text = camera.currentFPS.toFixed(1);
+				// dispatchEvent ( new DebugEventEx ( DebugEventEx.DEBUG_OUT, 'RoverCamInfo._PollStats' ) ); 
+			}
+			
+			private function _RemovedFromStage ( ) : void
+			{
+				_Dismiss ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:CalloutButton
+		id="cbCamInfo"
+		icon="{IconArrowDown}"
+		label="{resourceManager.getString('default','camera_label')}"
+		dropDown="{_cfDropDown}"
+		open="_Opened()"
+		close="_Closed()"
+		horizontalPosition="after"
+		verticalPosition="start"
+		>
+		<s:TileGroup
+			horizontalGap="16"
+			verticalGap="16"
+			verticalAlign="middle"
+			>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:ToggleSwitch
+					id="swchMonitor"
+					change="_MonitorToggle()"
+					selected="{monitorLiveCast}"
+					/>
+				<s:Label
+					id="lblMonitor"
+					text="{resourceManager.getString('default','camera_display_label')}"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:ToggleSwitch
+					id="swchFull"
+					change="_MonitorFullToggle()"
+					selected="{monitorLiveCastFull}"
+					/>
+				<s:Label
+					id="lblFull"
+					text="{resourceManager.getString('default','camera_full_label')}"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:Label
+					id="lblWdDisp"
+					styleName="textHead"
+					/>
+				<s:Label
+					id="lblWd"
+					text="{resourceManager.getString('default','camera_width_label')}"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:Label
+					id="lblHtDisp"
+					styleName="textHead"
+					/>
+				<s:Label
+					id="lblHt"
+					text="{resourceManager.getString('default','camera_height_label')}"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:Label
+					id="lblFpsDisp"
+					styleName="textHead"
+					/>
+				<s:Label
+					id="lblFps"
+					text="{resourceManager.getString('default','camera_fps_label')}"
+					/>
+			</s:VGroup>
+		</s:TileGroup>	
+	</s:CalloutButton>
+	
+</s:Group>

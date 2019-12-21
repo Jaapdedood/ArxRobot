@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	gap="8"
+	horizontalAlign="left"
+	creationComplete="_Initialized()"
+	removedFromStage="_Dismissed()"
+	>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.smartfoxserver.v2.SmartFox;
+			import com.smartfoxserver.v2.entities.variables.SFSUserVariable;
+			import com.smartfoxserver.v2.requests.SetUserVariablesRequest;
+			
+			import vo.AccData;
+			import vo.Gps;
+			import vo.RoverTelemetry;
+			
+			[Bindable]
+			private var _bLiveDrag:Boolean = false;
+			
+			public var sfs:SmartFox;
+			
+			[Bindable]
+			private var _telemetry:RoverTelemetry;
+			
+			[Bindable]
+			private var _gps:Gps;
+			
+			[Bindable]
+			private var _acc:AccData;
+			
+
+			private function _Dismissed ( ) : void
+			{
+				
+			}
+			
+			private function _Initialized ( ) : void
+			{
+				_telemetry = new RoverTelemetry ( );
+				_gps = new Gps ( );
+				_acc = new AccData ( );
+				_gps.sfs = this.sfs;
+				_acc.sfs = this.sfs;
+
+			}
+			
+			private function _SendUserVars ( vars:Array ) : void
+			{
+				sfs.send ( new SetUserVariablesRequest ( vars ) );
+			}
+			
+			private function _TelemetryUpdate ( event:Event = null ) : void
+			{
+				_SendUserVars ( [ new SFSUserVariable ( 'RoverTelemetry', _telemetry.toSFSObject() ) ] );
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:Label
+		id="lblTmTest"
+		styleName="textSubhead"
+		maxDisplayedLines="0"
+		text="{resourceManager.getString('default','telemetry_test_label')}"
+		/>
+	
+	<s:VGroup
+		id="gpTm2a"
+		gap="2"
+		horizontalAlign="center"
+		>
+		<s:HSlider
+			id="sldrHeading"
+			width="361"
+			minimum="0"
+			maximum="360"
+			liveDragging="{_bLiveDrag}"
+			value="@{_telemetry.heading}"
+			change="_TelemetryUpdate(event)"
+			/>
+		<comp:HelpLabel
+			id="lblHeading"
+			text="{resourceManager.getString('default','heading_label')}"
+			resourceNameOrText="heading_tip"
+			/>
+		<s:Spacer height="16" />
+		<s:HSlider
+			id="sldrPitch"
+			width="361"
+			minimum="0"
+			maximum="360"
+			liveDragging="{_bLiveDrag}"
+			value="@{_telemetry.pitch}"
+			change="_TelemetryUpdate(event)"
+			/>
+		<comp:HelpLabel
+			id="lblPitch"
+			text="{resourceManager.getString('default','pitch_label')}"
+			resourceNameOrText="pitch_tip"
+			/>
+		<s:Spacer height="16" />
+		<s:HSlider
+			id="sldrRoll"
+			width="361"
+			minimum="0"
+			maximum="360"
+			liveDragging="{_bLiveDrag}"
+			value="@{_telemetry.roll}"
+			change="_TelemetryUpdate(event)"
+			/>
+		<comp:HelpLabel
+			id="lblRoll"
+			text="{resourceManager.getString('default','roll_label')}"
+			resourceNameOrText="roll_tip"
+			/>
+		<s:Spacer height="16" />
+		<s:HGroup
+			id="gpTm2b"
+			gap="8"
+			verticalAlign="top"
+			>
+			<s:VGroup
+				id="gpSpeed"
+				gap="2"
+				horizontalAlign="center"
+				>
+				<s:HSlider
+					id="sldrSpeed"
+					width="101"
+					minimum="0"
+					maximum="100"
+					liveDragging="{_bLiveDrag}"
+					value="@{_telemetry.speed}"
+					change="_TelemetryUpdate(event)"
+					/>
+				<comp:HelpLabel
+					id="lblSpeed"
+					text="{resourceManager.getString('default','speed_label')}"
+					resourceNameOrText="speed_tip"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				id="gpBattery"
+				gap="2"
+				horizontalAlign="center"
+				>
+				<s:HSlider
+					id="sldrBattery"
+					width="101"
+					minimum="0"
+					maximum="100"
+					liveDragging="{_bLiveDrag}"
+					value="@{_telemetry.battery}"
+					change="_TelemetryUpdate(event)"
+					/>
+				<comp:HelpLabel
+					id="lblBattery"
+					text="{resourceManager.getString('default','battery_label')}"
+					resourceNameOrText="battery_tip"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				id="gpLiveDrag"
+				gap="2"
+				horizontalAlign="center"
+				>
+				<s:ToggleSwitch
+					id="swchLiveDrag"
+					selected="@{_bLiveDrag}"
+					/>
+				<comp:HelpLabel
+					id="lblLiveDrag"
+					text="{resourceManager.getString('default','livedrag_label')}"
+					resourceNameOrText="livedrag_tip"
+					/>
+			</s:VGroup>
+		</s:HGroup>
+	</s:VGroup>
+	
+</s:VGroup>

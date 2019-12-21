@@ -1,0 +1,66 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	import com.smartfoxserver.v2.entities.data.SFSObject;
+	
+	import flash.utils.ByteArray;
+	
+	import away3d.core.math.Quaternion;
+	
+	import interfaces.IPilotMessageSerialize;
+	
+	/**
+	 * Wrapper for <b>away3d.core.math.Quaternion</b>
+	 * to provide serialization/deserialization for messaging.
+	 */
+	public class QuaternionArx implements IPilotMessageSerialize
+	{
+		/**
+		 * @copy away3d.core.math.Quaternion
+		 */
+		public var quaternion:Quaternion;
+		
+		/**
+		 * Creates a new QuaternionArx object, which wraps <b>away3d.core.math.Quaternion</b>
+		 * to provide serialization/deserialization for messaging.
+		 * Use <b>quaternion</b> property for direct access to the
+		 * Quaternion object inside this wrapper.
+		 * @param x The x value of the quaternion.
+		 * @param y The y value of the quaternion.
+		 * @param z The z value of the quaternion.
+		 * @param w The w value of the quaternion.
+		 */
+		public function QuaternionArx ( x:Number=0, y:Number=0, z:Number=0, w:Number=1 )
+		{
+			quaternion = new Quaternion ( x, y, z, w );
+		}
+		
+		public static function NewFromByteArray ( ba:ByteArray ) : QuaternionArx
+		{
+			ba.position = 0;
+			return new QuaternionArx ( ba.readDouble(), ba.readDouble(), ba.readDouble(), ba.readDouble() );
+		}
+		
+		public static function NewFromSFSObject ( sfso:ISFSObject ) : QuaternionArx
+		{
+			return NewFromByteArray ( sfso.getByteArray ( 'b' ) );
+		}
+		
+		public function toByteArray ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeDouble(quaternion.x);
+			ba.writeDouble(quaternion.y);
+			ba.writeDouble(quaternion.z);
+			ba.writeDouble(quaternion.w);
+			return ba;
+		}
+		
+		public function toSFSObject ( ) : ISFSObject
+		{
+			var sfso:ISFSObject = new SFSObject ( );
+			sfso.putByteArray ( 'b', toByteArray ( ) );
+			return sfso;
+		}
+	}
+}

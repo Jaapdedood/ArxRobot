@@ -1,0 +1,36 @@
+package events
+{
+	import flash.events.Event;
+
+	public class UtilityEvent extends Event
+	{
+		// event constants
+		public static const UTILITY:String = 'utility';
+		public static const DONE:String = 'done';
+		public static const LOGIN:String = 'login';
+		public static const MONITOR_FULL_TOGGLE:String = 'monitor_full_toggle';
+		public static const MONITOR_TOGGLE:String = 'monitor_toggle';
+		public static const TAB_NAV:String = 'tab_nav';
+		
+		// event properties
+		public var params:Object = {};
+		
+		// constructor
+		public function UtilityEvent ( type:String, params:Object = null, bubbles:Boolean = false, cancelable:Boolean = false )
+		{
+			super ( type, bubbles, cancelable );
+			this.params = params || {};
+		}
+		
+		// overrides
+		public override function clone ( ) : Event
+		{
+			return new UtilityEvent ( type, this.params, bubbles, cancelable );
+		}
+		
+		public override function toString ( ) : String
+		{
+			return formatToString ( 'UtilityEvent', 'type', 'params', 'bubbles', 'cancelable' );
+		}
+	}
+}

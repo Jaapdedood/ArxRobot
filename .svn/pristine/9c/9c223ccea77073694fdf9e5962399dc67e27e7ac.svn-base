@@ -1,0 +1,362 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	import com.smartfoxserver.v2.entities.data.SFSObject;
+	
+	import flash.utils.ByteArray;
+	import flash.utils.IDataInput;
+	import flash.utils.IDataOutput;
+	import flash.utils.IExternalizable;
+	
+	import interfaces.IControlMessageSerialize;
+	
+	import utils.HexStringUtil;
+
+	/**
+	 * Note: Implements IExternalizable.
+	 */
+	public class MessageByteArray implements IExternalizable, IControlMessageSerialize
+	{
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		public function get boolean ( ) : Boolean
+		{
+			if ( !_ReadyToReadValue ( 1 ) )
+				return false;
+			return _messageBytes.readBoolean ( );
+		}
+		public function set boolean ( val:Boolean ) : void
+		{
+			if ( _ReadyToWriteValue ( ) )
+				_messageBytes.writeBoolean ( val );
+		}
+		
+		public function getBooleanAt ( position:uint ) : Boolean
+		{
+			if ( !_ReadyToReadValue ( 1, position ) )
+				return false;
+			return _messageBytes.readBoolean ( );
+		}
+		public function setBooleanAt ( val:Boolean, position:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( position ) )
+				_messageBytes.writeBoolean ( val );
+		}
+		
+		public function get byte ( ) : int
+		{
+			if ( !_ReadyToReadValue ( 1 ) )
+				return 0;
+			return _messageBytes.readByte ( );
+		}
+		public function set byte ( val:int ) : void
+		{
+			if ( _ReadyToWriteValue ( ) )
+				_messageBytes.writeByte ( val );
+		}
+		
+		public function getByteAt ( position:uint ) : int
+		{
+			if ( !_ReadyToReadValue ( 1, position ) )
+				return 0;
+			return _messageBytes.readByte ( );
+		}
+		public function setByteAt ( val:int, position:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( position ) )
+				_messageBytes.writeByte ( val );
+		}
+		
+		public function get double ( ) : Number
+		{
+			if ( !_ReadyToReadValue ( 8 ) )
+				return NaN;
+			return _messageBytes.readDouble ( );
+		}
+		public function set double ( value:Number ) : void
+		{
+			if ( _ReadyToWriteValue ( ) )
+				_messageBytes.writeDouble ( value );
+		}
+		
+		public function getDoubleAt ( position:uint ) : Number
+		{
+			if ( !_ReadyToReadValue ( 8, position ) )
+				return NaN;
+			return _messageBytes.readDouble ( );
+		}
+		public function setDoubleAt ( value:Number, position:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( position ) )
+				_messageBytes.writeDouble ( value );
+		}
+		
+		public function get float ( ) : Number
+		{
+			if ( !_ReadyToReadValue ( 4 ) )
+				return NaN;
+			return _messageBytes.readFloat ( );
+		}
+		public function set float ( value:Number ) : void
+		{
+			if ( _ReadyToWriteValue ( ) )
+				_messageBytes.writeFloat ( value );
+		}
+		
+		public function getFloatAt ( position:uint ) : Number
+		{
+			if ( !_ReadyToReadValue ( 4, position ) )
+				return NaN;
+			return _messageBytes.readFloat ( );
+		}
+		public function setFloatAt ( value:Number, position:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( position ) )
+				_messageBytes.writeFloat ( value );
+		}
+		
+		/**
+		 * Entire ByteArray to be sent or received
+		 * including messageId and any additional data bytes
+		 */
+		public function get messageBytes ( ) : ByteArray
+		{
+			return _messageBytesClone ( );
+		}
+		public function set messageBytes ( val:ByteArray ) : void
+		{
+			_messageString = '';
+			_messageBytes = val;
+		}
+		
+		/**
+		 * Message identifier byte
+		 */
+		public function get messageId ( ) : uint
+		{
+			if ( _messageBytes.length < 1 )
+				return 0; // return
+			
+			return _messageBytes [ 0 ];
+		}
+		public function set messageId ( val:uint ) : void
+		{
+			_messageString = '';
+			_messageBytes [ 0 ] = val;
+		}
+		
+		/**
+		 * Message identifier byte as hex string
+		 */
+		public function get messageIdHex ( ) : String
+		{
+			var s:String = messageId.toString ( 16 ).toUpperCase ( );
+			while ( s.length < 2 )
+			{
+				s = '0' + s;
+			}
+			return '0x' + s;
+		}
+		
+		/**
+		 * Message identifier byte as hex (dec) string
+		 */
+		public function get messageIdHexDec ( ) : String
+		{
+			var uId:uint = messageId;
+			var s:String = uId.toString ( 16 ).toUpperCase ( );
+			while ( s.length < 2 )
+			{
+				s = '0' + s;
+			}
+			return '0x' + s + ' (' + uId.toString() + ')';
+		}
+		
+		public function get messageString ( ) : String
+		{
+			if ( _messageString.length < 1 )
+			{
+				// need to repopulate string
+				_messageString = HexStringUtil.HexStringFromByteArray ( _messageBytes );
+			}
+			return _messageString;
+		}
+		
+		public function get short ( ) : int
+		{
+			if ( !_ReadyToReadValue ( 2 ) )
+				return 0;
+			return _messageBytes.readShort ( );
+		}
+		public function set short ( val:int ) : void
+		{
+			if ( _ReadyToWriteValue ( ) )
+				_messageBytes.writeShort ( val );
+		}
+		
+		public function getShortAt ( position:uint ) : int
+		{
+			if ( !_ReadyToReadValue ( 2, position ) )
+				return 0;
+			return _messageBytes.readShort ( );
+		}
+		public function setShortAt ( val:int, position:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( position ) )
+				_messageBytes.writeShort ( val );
+		}
+		
+		public function get unsignedByte ( ) : uint
+		{
+			if ( !_ReadyToReadValue ( 1 ) )
+				return 0;
+			return _messageBytes.readUnsignedByte ( );
+		}
+		public function set unsignedByte ( val:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( ) )
+				_messageBytes.writeByte ( val );
+		}
+		
+		public function getUnsignedByteAt ( position:uint ) : uint
+		{
+			if ( !_ReadyToReadValue ( 1, position ) )
+				return 0;
+			return _messageBytes.readUnsignedByte ( );
+		}
+		public function setUnsignedByteAt ( val:uint, position:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( position ) )
+				_messageBytes.writeByte ( val );
+		}
+		
+		public function get unsignedShort ( ) : uint
+		{
+			if ( !_ReadyToReadValue ( 2 ) )
+				return 0;
+			return _messageBytes.readUnsignedShort ( );
+		}
+		public function set unsignedShort ( val:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( ) )
+				_messageBytes.writeShort ( val );
+		}
+		
+		public function getUnsignedShortAt ( position:uint ) : uint
+		{
+			if ( !_ReadyToReadValue ( 2, position ) )
+				return 0;
+			return _messageBytes.readUnsignedShort ( );
+		}
+		public function setUnsignedShortAt ( val:uint, position:uint ) : void
+		{
+			if ( _ReadyToWriteValue ( position ) )
+				_messageBytes.writeShort ( val );
+		}
+		
+		
+		// CONSTRUCTOR AND SERIALIZATION/DESERIALIZATION
+		
+		/**
+		 * If do not have bytes, call static method <strong>NewFromSFSObject</strong>
+		 * @param bytes
+		 */		
+		public function MessageByteArray ( bytes:ByteArray = null )
+		{
+			if ( bytes != null )
+				_messageBytes = bytes;
+		}
+		
+		public function readExternal ( input:IDataInput ) : void
+		{
+			_messageBytes = input.readObject ( );
+		}
+		
+		public function writeExternal ( output:IDataOutput ) : void
+		{
+			output.writeObject ( _messageBytes );
+		}
+		
+		/**
+		 * @return SFSObject containing message byte array
+		 */
+		public function toSFSObject ( ) : ISFSObject
+		{
+			var sfso:ISFSObject = new SFSObject ( );
+			sfso.putByteArray ( 'b', _messageBytes );
+			return sfso;
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		public function writeValueBytes ( byteArray:ByteArray, byteCount:uint ) : Boolean
+		{
+			if ( byteArray.bytesAvailable < byteCount )
+				return false; // return
+			
+			if ( _messageBytes.length > 0 )
+			{
+				_messageString = '';
+				byteArray.readBytes ( _messageBytes, 1, byteCount );
+			}
+			
+			return true;
+		}
+		
+		
+		// PUBLIC STATIC METHODS
+		
+		public static function NewFromSFSObject ( sfso:ISFSObject ) : MessageByteArray
+		{
+			return new MessageByteArray ( sfso.getByteArray ( 'b' ) );
+		}
+		
+		
+		// PROTECTED PROPERTIES AND GET/SET METHOD GROUPS
+		
+		protected var _messageBytes:ByteArray = new ByteArray ( );
+		protected var _messageString:String = '';
+		
+		
+		// PROTECTED METHODS
+		
+		protected function _messageBytesClone ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeBytes ( _messageBytes );
+			return ba;
+		}
+		
+		protected function _messageStringClear ( ) : void
+		{
+			_messageString = '';
+		}
+		
+		
+		// PRIVATE METHODS
+		
+		// validates whether enough bytes are available, and sets position for read
+		private function _ReadyToReadValue ( dataLength:uint, position:uint = 1 ) : Boolean
+		{
+			if ( _messageBytes.length >= position + dataLength )
+			{
+				_messageBytes.position = position;
+				return true;
+			}
+			
+			return false;
+		}
+		
+		private function _ReadyToWriteValue ( position:uint = 1 ) : Boolean
+		{
+			if ( _messageBytes.length < position )
+				return false;
+			
+			_messageString = '';
+			_messageBytes.position = position;
+			return true;
+		}
+		
+	}
+}

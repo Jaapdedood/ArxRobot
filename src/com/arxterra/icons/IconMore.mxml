@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	width="13" height="13"
+	scaleX="2.5" scaleY="2.5"
+	>
+	<!-- size -->
+	<s:Rect
+		width="13" height="13"
+		>
+		<s:fill>
+			<s:SolidColor alpha="0" />
+		</s:fill>
+	</s:Rect>
+	<s:Ellipse
+		y="5"
+		width="3" height="3"
+		>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="{symbolColor}" weight="1" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Ellipse>
+	<s:Ellipse
+		x="5" y="5"
+		width="3" height="3"
+		>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="{symbolColor}" weight="1" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Ellipse>
+	<s:Ellipse
+		x="10" y="5"
+		width="3" height="3"
+		>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="{symbolColor}" weight="1" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Ellipse>
+</icons:ColorizedIconBase>

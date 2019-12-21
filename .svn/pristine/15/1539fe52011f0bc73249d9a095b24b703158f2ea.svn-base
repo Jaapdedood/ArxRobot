@@ -1,0 +1,134 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	
+	import flash.utils.ByteArray;
+	
+	/**
+	 * Used with Move message to transmit requested left and right motor settings.
+	 * Note: Superclass implements IExternalizable.
+	 */		
+	public class MoveProps extends ArduinoCommand
+	{
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		public function get isMoving ( ) : Boolean
+		{
+			return ( isMovingLeft || isMovingRight );
+		}
+		
+		public function get isMovingLeft ( ) : Boolean
+		{
+			return ( _commandBytes [ 1 ] < 3 );
+		}
+		
+		public function get isMovingRight ( ) : Boolean
+		{
+			return ( _commandBytes [ 3 ] < 3 );
+		}
+		
+		//   These should be validated elsewhere before assignment,
+		//   so there should be no need to validate again here within setters.
+		
+		/**
+		 * Left motor run state. Use MotorStates constants to supply value in range 1 to 4
+		 */
+		public function get leftRun ( ) : uint
+		{
+			return _commandBytes [ 1 ];
+		}
+		public function set leftRun ( value:uint ) : void
+		{
+			_commandStringClear ( );
+			_commandBytes [ 1 ] = value;
+		}
+		
+		/**
+		 * Left motor unscaled duty cycle 0 to 255
+		 */
+		public function get leftSpeed ( ) : uint
+		{
+			return _commandBytes [ 2 ];
+		}
+		public function set leftSpeed ( value:uint ) : void
+		{
+			_commandStringClear ( );
+			_commandBytes [ 2 ] = value;
+		}
+		
+		/**
+		 * Right motor run state. Use MotorStates constants to supply value in range 1 to 4
+		 */
+		public function get rightRun ( ) : uint
+		{
+			return _commandBytes [ 3 ];
+		}
+		public function set rightRun ( value:uint ) : void
+		{
+			_commandStringClear ( );
+			_commandBytes [ 3 ] = value;
+		}
+		
+		/**
+		 * Right motor unscaled duty cycle 0 to 255
+		 */
+		public function get rightSpeed ( ) : uint
+		{
+			return _commandBytes [ 4 ];
+		}
+		public function set rightSpeed ( value:uint ) : void
+		{
+			_commandStringClear ( );
+			_commandBytes [ 4 ] = value;
+		}
+		
+		// CONSTRUCTOR
+		
+		/**
+		 * If do not have commandBytes, call static method <strong>NewFromParameters</strong>
+		 * or <strong>NewFromSFSObject</strong>, as appropriate
+		 * @param commandBytes
+		 */
+		public function MoveProps ( commandBytes:ByteArray = null )
+		{
+			super ( commandBytes );
+		}
+		
+		// OTHER PUBLIC METHODS
+		
+		public function clone ( ) : MoveProps
+		{
+			return new MoveProps ( _commandBytesClone ( ) );
+		}
+		
+		// PUBLIC STATIC METHODS
+		
+		/**
+		 * @param leftRun Left motor run state. Use MotorStates constants to supply value in range 1 to 4
+		 * @param leftSpeed Left motor unscaled duty cycle 0 to 255
+		 * @param rightRun Right motor run state. Use MotorStates constants to supply value in range 1 to 4
+		 * @param rightSpeed Right motor unscaled duty cycle 0 to 255
+		 */
+		public static function NewFromParameters (
+			leftRun:uint = 4,
+			leftSpeed:uint = 0,
+			rightRun:uint = 4,
+			rightSpeed:uint = 0
+		) : MoveProps
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( MOVE );
+			ba.writeByte ( leftRun );
+			ba.writeByte ( leftSpeed );
+			ba.writeByte ( rightRun );
+			ba.writeByte ( rightSpeed );
+			return new MoveProps ( ba );
+		}
+		
+		public static function NewFromSFSObject ( sfso:ISFSObject ) : MoveProps
+		{
+			return new MoveProps ( sfso.getByteArray ( 'b' ) );
+		}
+	}
+}

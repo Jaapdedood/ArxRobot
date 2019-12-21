@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="icons.*"
+	width="48" height="48"
+	>
+	<s:Path
+		y="11" winding="nonZero"
+		data="M44 4 44 22 4 22 4 4 44 4M45 0 3 0C1.34326 0 0 1.34326 0 3L0 23C0 24.6572 1.34326 26 3 26L45 26C46.6572 26 48 24.6572 48 23L48 3C48 1.34326 46.6572 0 45 0L45 0Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="6.11621" winding="nonZero"
+		data="M35.7676 9 31.3926 0.536133 30.5186 3.43701C26.6943 1.18945 22.3604 0 17.8838 0 13.4072 0 9.07324 1.18994 5.24902 3.4375L4.37451 0.536133 0 9 9.11475 6.22656 6.62402 4.94727C10.0508 3.0166 13.9072 2 17.8838 2 21.8613 2 25.7168 3.0166 29.1436 4.94727
+		L26.6523 6.22705 35.7676 9Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="6.11621" y="39" winding="nonZero"
+		data="M35.7676 0 31.3926 8.46387 30.5186 5.5625C26.6943 7.81055 22.3604 9 17.8838 9 13.4072 9 9.07324 7.81055 5.24902 5.5625L4.37451 8.46387 0 0 9.11475 2.77344 6.62402 4.05273C10.0508 5.9834 13.9072 7 17.8838 7 21.8613 7 25.7168 5.9834 29.1436 4.05273
+		L26.6523 2.77344 35.7676 0Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+</icons:ColorizedIconBase>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	alpha.disabled=".4"
+	creationComplete="_Initialized()"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="configure", type="flash.events.Event")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.smartfoxserver.v2.entities.SFSRoom;
+			
+			import mx.collections.ArrayList;
+			
+			import assets.icons.IconArrowUp;
+			
+			import components.ThinCallout;
+			
+			import skins.ToggleSwitchCustomSkin;
+			
+			[Bindable]
+			public var arduinoTypeIdx:int;
+			
+			[Bindable]
+			public var arduinoTypesList:ArrayList;
+			
+			[Bindable]
+			public var camera:Camera;
+			
+			[Bindable]
+			public var cameraCanPan:Boolean;
+			
+			[Bindable]
+			public var cameraCanTilt:Boolean;
+			
+			[Bindable]
+			public var camerasList:ArrayList;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			private function _Initialized ( ) : void
+			{
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+			}
+			
+			private function _Configure ( ) : void
+			{
+				dispatchEvent ( new Event ( 'configure' ) );
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center" />
+	</s:layout>
+	
+	<s:Label
+		id="lblArduino"
+		styleName="textSubhead"
+		text="Select Arduino Connection Protocol"
+		width="100%"
+		/>
+	<s:CalloutButton
+		id="cbArduino"
+		styleName="sButtonLeftAlign"
+		icon="{IconArrowUp}"
+		label="{arduinoTypesList.getItemAt(arduinoTypeIdx)}"
+		dropDown="{_cfDropDown}"
+		horizontalPosition="before"
+		verticalPosition="end"
+		width="100%"
+		>
+		<s:List
+			id="liArduino"
+			dataProvider="{arduinoTypesList}"
+			requireSelection="true"
+			selectedIndex="@{arduinoTypeIdx}"
+			click="{cbArduino.closeDropDown()}"
+			>
+			<s:layout>
+				<s:VerticalLayout
+					gap="0"
+					horizontalAlign="left"
+					/>
+			</s:layout>
+		</s:List>
+	</s:CalloutButton>
+	<s:Label
+		id="lblCamera"
+		styleName="textSubhead"
+		text="Select Camera"
+		width="100%"
+		/>
+	<s:CalloutButton
+		id="cbCamera"
+		styleName="sButtonLeftAlign"
+		icon="{IconArrowUp}"
+		label="{camera.name}"
+		dropDown="{_cfDropDown}"
+		horizontalPosition="before"
+		verticalPosition="end"
+		width="100%"
+		>
+		<s:List
+			id="liCamera"
+			dataProvider="{camerasList}"
+			labelField="name"
+			requireSelection="true"
+			selectedItem="@{camera}"
+			click="{cbCamera.closeDropDown()}"
+			>
+			<s:layout>
+				<s:VerticalLayout
+					gap="0"
+					horizontalAlign="left"
+					/>
+			</s:layout>
+		</s:List>
+	</s:CalloutButton>
+	<s:Label
+		text="{resourceManager.getString('default','camera_can_pan_label')}"
+		/>
+	<comp:ToggleSwitchCustom
+		id="btnPan"
+		skinClass="{skins.ToggleSwitchCustomSkin}"
+		selectedLabel="{resourceManager.getString('default','yes_label')}"
+		unselectedLabel="{resourceManager.getString('default','no_label')}"
+		selected="@{cameraCanPan}"
+		/>
+	<s:Label
+		text="{resourceManager.getString('default','camera_can_tilt_label')}"
+		/>
+	<comp:ToggleSwitchCustom
+		id="btnTilt"
+		skinClass="{skins.ToggleSwitchCustomSkin}"
+		selectedLabel="{resourceManager.getString('default','yes_label')}"
+		unselectedLabel="{resourceManager.getString('default','no_label')}"
+		selected="@{cameraCanTilt}"
+		/>
+	<s:Button
+		id="btnConfig"
+		label="Configure"
+		click="_Configure()"
+		/>
+	
+</s:SkinnableContainer>

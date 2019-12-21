@@ -1,0 +1,352 @@
+# /locale/en_US/default.properties
+
+# GLOBAL UNITS OF MEASURE
+abbr_inch							in
+abbr_sq_inch						sq in
+abbr_cm								cm
+abbr_sq_cm							sq cm
+abbr_lb								lb
+abbr_kg								kg
+degrees								°
+degrees_c							°C
+degrees_f							°F
+abbr_ftps							ft/s
+
+# GLOBAL MISC
+add_symbol							+
+back_label							Back
+cancel_btn_label					Cancel
+clear_btn_label						Clear
+debug_btn_label						Debug Mode
+done_btn_label						Done
+edit_label							Edit
+exit_btn_label						Exit
+exit_confirm_msg					Do you want to exit?
+exit_confirm_title					Exit now?
+height_label						Height
+help_symbol							?
+name_label							Name
+next_label							Next
+no_label							No
+off_label							Off
+ok_label							OK
+on_label							On
+percent_symbol						%
+rotate_btn_label					Rotate Display 180°
+sleep_btn_label						Sleep Now
+value_label							Value
+wake_btn_label						Wake Up Now
+width_label							Width
+yes_label							Yes
+
+# ARDUINO
+arduino_mode_0						Bluetooth
+arduino_mode_1						Microbridge USB
+arduino_mode_2						Android as USB Host
+
+# CAMERA
+camera_can_pan_label				Camera Can Pan
+camera_can_tilt_label				Camera Can Tilt
+camera_display_label				Monitor
+camera_display_on_label				Monitor On
+camera_display_off_label			Monitor Off
+camera_full_label					Full Screen
+camera_full_on_label				Full Screen
+camera_full_off_label				Porthole
+camera_fps_label					Current FPS
+camera_height_label					Livecast Height
+camera_label						Camera Info
+camera_list_item_back				{0} [back facing]
+camera_list_item_front				{0} [front facing]
+camera_list_item_unknown			{0} [unknown facing]
+camera_width_label					Livecast Width
+camera_pan_left_tip					Pan Camera Left
+camera_pan_right_tip				Pan Camera Right
+camera_reset_tip					Reset Camera Position
+camera_tilt_down_tip				Tilt Camera Down
+camera_tilt_up_tip					Tilt Camera Up
+light_cancel_btn_label				Cancel Flashlight
+
+# CAPABILITIES
+caps_store_eeprom					EEPROM on Arduino
+caps_store_phone					App storage on Phone
+eeprom_label_address				EEPROM Address:
+eeprom_label_bytes					Number of Bytes:
+eeprom_label_id						ID:
+eeprom_label_max					Maximum:
+eeprom_label_min					Minimum:
+eeprom_label_step					Step Size:
+eeprom_label_type					Data Type:
+eeprom_type_bool					boolean
+eeprom_type_byte					byte
+eeprom_type_double					double
+eeprom_type_short					short
+eeprom_type_ubyte					unsigned byte
+eeprom_type_ushort					unsigned short
+eeprom_typical						Length for size of dataGroup typicalItem
+eeprom_g0mt							Metadata
+eeprom_eepv							Capabilities Schema Version:
+eeprom_g1ctp						Camera (Turret) Pan Properties
+eeprom_ccp							Pan Enabled:
+eeprom_ccph							Pan Home (°):
+eeprom_ccpx							Pan Maximum (°):
+eeprom_ccpn							Pan Minimum (°):
+eeprom_ccpr							Pan Reset (°):
+eeprom_g1ctt						Camera (Turret) Tilt Properties
+eeprom_cct							Tilt Enabled:
+eeprom_ccth							Tilt Home (°):
+eeprom_cctx							Tilt Max (°):
+eeprom_cctn							Tilt Min (°):
+eeprom_cctr							Tilt Reset (°):
+eeprom_g2sn							Shaft Encoder Telemetry Properties
+eeprom_sne							Shaft Encoder Enabled:
+eeprom_snpc							Shaft Encoder Pulse Count:
+eeprom_snwd							Shaft Encoder Wheel Diameter (cm):
+eeprom_g3us							Ultrasonic Ranger Properties
+eeprom_usle							Ultrasonic Range Left Enabled:
+eeprom_uslx							Ultrasonic Range Left Max (cm):
+eeprom_usln							Ultrasonic Range Left Min (cm):
+eeprom_usre							Ultrasonic Range Right Enabled:
+eeprom_usrx							Ultrasonic Range Right Max (cm):
+eeprom_usrn							Ultrasonic Range Right Min (cm):
+eeprom_g4btm						Internal Body Temp Properties
+eeprom_btme							Internal Body Temp Enabled:
+eeprom_btmx							Internal Body Temp Max (°C):
+eeprom_btmn							Internal Body Temp Min (°C):
+eeprom_g5bat						Battery Telemetry Properties
+eeprom_cbte							Digital Battery Charge Percent Enabled:
+eeprom_dbte							Motor Battery Charge Percent Enabled:
+eeprom_g6msc						Miscellaneous Features and Properties
+eeprom_spdx							Speed Max (cm/sec):
+eeprom_hle							Head Light Enabled:
+
+# CHAT
+chat_label							Messages
+chat_prompt							Input text
+chat_send_btn_label					Send
+chat_snapshot_filename				snapshot
+chat_snapshot_label					Snapshot
+chat_snapshot_tip					Snapshot
+chat_facebook_label					Facebook
+chat_facebook_tip					Facebook
+chat_twitter_label					Twitter
+chat_twitter_tip					Twitter
+
+# CONNECT
+connect_bluebox_rate_label			BlueBox Polling Rate
+connect_bluebox_use_label			Use BlueBox
+connect_btn_label					Connect
+connect_debug_label					Debug
+connect_host_label					Host
+connect_http_port_label				HTTP Port
+connect_port_label					Port
+connect_preset_label				Preset
+connect_preset_development			SFS Development Zone
+connect_preset_local				SFS on Local Demo Network
+connect_preset_release				SFS Release Zone
+connect_prompt						Please confirm the desired values and press Connect
+connect_udp_host_label				UDP Host
+connect_udp_port_label				UDP Port
+connect_zone_label					Zone
+
+# CUSTOM COMMANDS
+custom_cmd_btn_label				Custom
+custom_cmd_cmds_label				Commands:
+custom_cmd_export_label				Export Commands to JSON File
+custom_cmd_hdg_tip					Empty the label field to make this item a separator
+custom_cmd_id_label					Command ID:
+custom_cmd_import_label				Import Commands from JSON File
+custom_cmd_label_label				Label:
+custom_cmd_limits_label				Limits:
+custom_cmd_list_tip					[+] = ADD new item\n[-] = DELETE selected item\n[▲] = Move selected item UP\n[▼] = Move selected item DOWN\n[✎] = EDIT selected item
+custom_cmd_max_label				Maximum:
+custom_cmd_min_label				Minimum:
+custom_cmd_new_0					New Heading/Separator
+custom_cmd_new_8					New Boolean
+custom_cmd_new_16					New Select
+custom_cmd_new_32					New Byte
+custom_cmd_new_33					New Unsigned Byte
+custom_cmd_new_64					New Short
+custom_cmd_new_65					New Unsigned Short
+custom_cmd_opts_label				Options for Select Command:
+custom_cmd_props_0					Properties for Heading/Separator:
+custom_cmd_props_8					Properties for Boolean Command:
+custom_cmd_props_16					Properties for Select Command:
+custom_cmd_props_32					Properties for Byte Command:
+custom_cmd_props_33					Properties for Unsigned Byte Command:
+custom_cmd_props_64					Properties for Short Command:
+custom_cmd_props_65					Properties for Unsigned Short Command:
+custom_cmd_sep_ph					<separator>
+custom_cmd_step_label				Step:
+custom_cmd_tip_label				Tip:
+custom_cmd_type_0					Heading / Separator
+custom_cmd_type_8					Boolean
+custom_cmd_type_16					Select
+custom_cmd_type_32					Byte
+custom_cmd_type_33					Unsigned Byte
+custom_cmd_type_64					Short
+custom_cmd_type_65					Unsigned Short
+custom_cmd_val_label				Default Value:
+custom_cmd_widget_int_0				Slider
+custom_cmd_widget_int_2				Stepper
+custom_cmd_widget_label				Widget:
+custom_cmd_widget_sel_0				Radio Buttons
+custom_cmd_widget_sel_2				Select List
+custom_opt_id_label					Option ID:
+custom_opt_label_label				Option Label:
+custom_opt_new_label				New Option {0}
+custom_opt_props_label				Option Properties:
+custom_opt_tip_label				Option Tip:
+
+# DIRECTIONS
+back_label							Back
+front_label							Front
+
+# LOGIN
+login_assets_dir_label				Robot avatar assets path
+login_assets_dir_tip				Web directory where you have posted your robot avatar images, if any.  All files must be transparent PNGs, no larger than 400x400 pixels.  File names are beauty.png (for the map pop-up), front.png, iso.png, right.png and top.png.
+login_btn_label						Login
+login_pilots_label					Pilot name or names
+login_pilots_tip					Multiple pilot names are delimited by commas.  Each name may be from 3 to 32 characters, may include spaces, and may not be a reserved word.
+login_robot_label					Robot name
+login_robot_tip						Robot name may be from 3 to 32 characters, may include spaces, and may not be a reserved word.
+login_title							Login
+
+# PHONE
+phone_arduino_conn_label			Arduino Connection Protocol:
+phone_battery_min_label				Phone Battery Safe Minimum Charge %:
+phone_camera_label					Camera for Streaming Video:
+phone_caps_store_label				Store Robot Capability Settings in:
+phone_face_toggle_label				Phone Display Faces Back:
+
+# TELEMETRY
+battery_label						Battery
+battery_tip							Battery (% of full charge)
+heading_label						Heading
+heading_tip							Heading (Degrees longitudinal axis displaced from true north)
+livedrag_label						Live Dragging
+livedrag_tip						When live dragging is turned on, the slider value is committed as it changes during the drag instead of only when the drag is released
+pitch_label							Pitch
+pitch_tip							Pitch (Degrees longitudinal axis displaced from level)
+roll_label							Roll
+roll_tip							Roll (Degrees transverse axis displaced from level)
+speed_label							Speed
+speed_tip							Speed (Feet per second)
+temp_label							Body Temp
+temp_tip							Internal Body Temperature (Degrees Fahrenheit)
+telemetry_label						Telemetry
+telemetry_test_label				Telemetry Test
+ultrasonic_range_left_tip			Ultrasonic Range Left (cm)
+ultrasonic_range_right_tip			Ultrasonic Range Right (cm)
+
+# TITLES
+busy_title							Please wait...
+connect_wait_title					Connecting to server...
+custom_cmd_config_title				Custom Command Definitions
+custom_validate_title				Validating Custom Command Definitions...
+eeprom_config_new_title				Capabilities (New or Updated Schema)
+eeprom_config_title					Capabilities
+eeprom_read_title					Reading Capabilities...
+eeprom_write_title					Writing changes to Capabilities...
+eeprom_write_new_title				Writing new schema and changes to Capabilities...
+join_wait_title						Initializing entity on server...
+livecast_wait_title					Starting video/audio feed...
+login_wait_title					Logging in...
+phone_config_title					Phone Configuration
+
+# ERRORS
+error								Error
+error_accel_support					Accelerometer not supported
+error_arduino_custom_bytes			Arduino custom status received with insufficient bytes for Command ID {0}
+error_arduino_custom_cfg			Arduino custom status received for unconfigured Command ID {0}
+error_arduino_custom_suspend		Arduino custom status received for Command ID {0}, but command interpreter suspended.
+error_arduino_eeprom_response		Problem with EEPROM response from Arduino: [{0}]
+error_arduino_id					Data with unexpected ID byte received from Arduino: [{0}]
+error_av_connect					AV Connection Error: [{0}]
+error_battery_init					Problem initializing battery service: {0}
+error_battery_reg					Problem registering or unregistering for battery updates: {0}
+error_battery_support				Battery service not supported
+error_bt_conn_close					Problem during Bluetooth connection close functionality: {0}
+error_bt_conn_connect				Problem during Bluetooth connection creation: {0}
+error_bt_conn_disconnect			Problem during Bluetooth disconnect operation: {0}
+error_bt_conn_listen				Problem during Bluetooth listener creation: {0}
+error_bt_conn_write					Problem during Bluetooth write operation: {0}
+error_bt_dismiss					Problem dismissing Bluetooth service: {0}
+error_bt_init						Problem initializing Bluetooth service: {0}
+error_bt_receive					Problem receiving Bluetooth data: {0}
+error_bt_receive_null				Bluetooth data received null
+error_bt_send						Problem sending Bluetooth data: {0}
+error_bt_set_discover				Problem with setting Bluetooth device discoverability: {0}
+error_bt_support					Bluetooth service not supported
+error_compass_init					Problem initializing compass service: {0}
+error_compass_reg					Problem registering or unregistering for compass updates: {0}
+error_compass_support				Compass service not supported
+error_control_message				Unexpected message from control panel: {0}
+error_custom_dup_id					Commands must have unique IDs: [{0}]
+error_custom_file					File problem
+error_custom_file_browse			Problem calling file browser [{0}]
+error_custom_int_limits				Default value or min-max limits out of range for command [{0}]
+error_custom_sel_def				Default value does not match one of the select options for command [{0}]
+error_custom_sel_dup_opts			Select options for Command [{0}] include a duplicate ID: {1}
+error_custom_sel_limits				Select option or default value out of range for command [{0}]
+error_custom_valid					Validation problem
+error_declin_io						IO error when accessing magnetic declination service [{0}]: {1}
+error_declin_parse					Problem parsing response from magnetic declination service: {0}
+error_declin_sec					Security error when accessing magnetic declination service: {0}
+error_eeprom_cfg					Capabilities config file not found
+error_eeprom_cfg_load				Problem loading capabilities config file: {0}
+error_eeprom_item_nf				Expected capabilities item not found: {0}
+error_eeprom_read					EEPROM read failed.  Moving on, and will not attempt to write to EEPROM
+error_eeprom_write					EEPROM write failed.  Moving on...
+error_geo_init						Problem initializing geolocation service: {0}
+error_geo_support					Geolocation service not supported
+error_gyro_init						Problem initializing gyroscope service: {0}
+error_gyro_reg						Problem registering or unregistering for gyroscope updates: {0}
+error_gyro_support					Gyroscope service not supported
+error_gyro_advanced_support			Advanced gyroscope service not supported
+error_livecast_config_update		Live cast config update attempt error: {0}
+error_livecast_publish				Live cast publish attempt error: {0}
+error_livecast_stream_null			Live cast publish attempt returned null stream
+error_login							There was a login problem.
+error_login_name					User names must be no less than 3 and no greater than 32 characters in length, and cannot be reserved words.
+error_login_name_title				Name validation problem
+error_orientations					Supported orientations reported by this device [{0}] do not include the expected range
+error_pv_receive					Problem receiving PrimaveraInterface data: {0}
+error_pv_send						Problem sending PrimaveraInterface data: {0}
+error_sfs_connect					SFS connection failed: {0}
+error_sfs_connect_lost				SFS connection lost: {0}
+error_sfs_connect_timeout			SFS connection attempt timed out
+error_sfs_join						SFS join failed: {0}
+error_sfs_login						SFS login failed: {0}
+error_sfs_presets					SFS presets file not found
+error_sfs_presets_load				Problem loading SFS presets file: {0}
+error_sfs_room_creation				SFS room creation error: {0}
+error_ss_init						Problem initializing ServerSocket: {0}
+error_ss_io							ServerSocket I/O error: {0}
+error_ss_no_conn					Could not send data, because no socket client connected
+error_ss_receive					Problem receiving ServerSocket data: {0}
+error_ss_security					ServerSocket security error: {0}
+error_ss_send						Problem sending socket data: {0}
+error_userstate_restore				Problem restoring user state: {0}
+
+# STATUS
+status_bt_conn_connected			Bluetooth connection connected
+status_bt_conn_disconnected			Bluetooth connection disconnected
+status_bt_conn_failed				Bluetooth connection creation failed
+status_bt_conn_listening			Bluetooth listening connection created
+status_bt_conn_misc					Bluetooth connection status event: [{0}] {1}
+status_bt_conn_remote				Bluetooth remote client connected
+status_bt_device_misc				Bluetooth device status event: [{0}] {1} [{2}]
+status_bt_listen_failed				Bluetooth listen attempt failed
+status_bt_misc						Bluetooth status event: [{0}] {1}
+status_eeprom_update				Capabilities need to be updated to current schema
+status_gyro_support					Gyroscope advanced data is supported
+status_livecast_publish				Live cast published
+status_sfs_api						SmartFox API: {0}
+status_sfs_config					SFS configuration settings: {0}
+status_sfs_connect					SFS connected
+status_sfs_join						SFS joined: {0}
+status_sfs_login					SFS logged in: {0}
+status_ss_disconn					Socket client disconnected
+status_ss_conn						Socket client connected
+status_watchdog						Latency watchdog timer expired [{0} msec]

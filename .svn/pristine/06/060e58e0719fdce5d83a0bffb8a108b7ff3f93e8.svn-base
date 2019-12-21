@@ -1,0 +1,139 @@
+# /locale/en_US/default.properties
+
+# GLOBAL UNITS OF MEASURE
+abbr_inch							in
+abbr_sq_inch						sq in
+abbr_cm								cm
+abbr_sq_cm							sq cm
+abbr_lb								lb
+abbr_kg								kg
+degrees								°
+degrees_c							°C
+degrees_f							°F
+abbr_ftps							ft/s
+
+# GLOBAL MISC
+add_symbol							+
+back_label							Back
+clear_btn_label						Clear
+debug_btn_label						Debug Mode
+edit_label							Edit
+exit_btn_label						Exit
+exit_confirm_msg					Do you want to exit?
+exit_confirm_title					Exit now?
+height_label						Height
+help_symbol							?
+next_label							Next
+no_label							No
+off_label							Off
+ok_label							OK
+on_label							On
+percent_symbol						%
+width_label							Width
+yes_label							Yes
+
+# TITLES
+welcome_title						Welcome to Arxterra
+guest_title							Arxterra Guest
+pilot_title							Arxterra Pilot
+
+# CAMERA
+camera_can_pan_label				Camera Can Pan
+camera_can_tilt_label				Camera Can Tilt
+camera_display_label				Monitor
+camera_display_on_label				Monitor On
+camera_display_off_label			Monitor Off
+camera_full_label					Full Screen
+camera_full_on_label				Full Screen
+camera_full_off_label				Porthole
+camera_fps_label					Current FPS
+camera_height_label					Livecast Height
+camera_label						Camera Info
+camera_list_item_back				{0} [back facing]
+camera_list_item_front				{0} [front facing]
+camera_list_item_unknown			{0} [unknown facing]
+camera_width_label					Livecast Width
+camera_pan_left_tip					Pan Camera Left
+camera_pan_right_tip				Pan Camera Right
+camera_reset_tip					Reset Camera Position
+camera_tilt_down_tip				Tilt Camera Down
+camera_tilt_up_tip					Tilt Camera Up
+
+# CHAT
+chat_label							Messages
+chat_prompt							Input text
+chat_send_btn_label					Send
+chat_snapshot_filename				snapshot
+chat_snapshot_label					Snapshot
+chat_snapshot_tip					Snapshot
+chat_facebook_label					Facebook
+chat_facebook_tip					Facebook
+chat_twitter_label					Twitter
+chat_twitter_tip					Twitter
+
+# DIRECTIONS
+device_face_toggle_label			Device display screen faces the...
+back_label							Back
+front_label							Front
+
+# LOGIN
+connect_btn_label					Connect
+login_title							Login
+login_btn_label						Login
+login_owner_label					Please enter the screen name you\nwould like to use, and press Login
+login_rover_label					Please select rover name
+select_rover_label					Please select rover
+select_btn_label					Select
+
+# MAP
+map_label							Map
+
+
+# TELEMETRY
+battery_label						Battery
+battery_tip							Battery (% of full charge)
+heading_label						Heading
+heading_tip							Heading (Degrees longitudinal axis displaced from true north)
+livedrag_label						Live Dragging
+livedrag_tip						When live dragging is turned on, the slider value is committed as it changes during the drag instead of only when the drag is released
+pitch_label							Pitch
+pitch_tip							Pitch (Degrees longitudinal axis displaced from level)
+roll_label							Roll
+roll_tip							Roll (Degrees transverse axis displaced from level)
+speed_label							Speed
+speed_tip							Speed (Feet per second)
+temp_label							Body Temp
+temp_tip							Internal Body Temperature (Degrees Fahrenheit)
+telemetry_label						Telemetry
+telemetry_test_label				Telemetry Test
+ultrasonic_range_left_tip			Ultrasonic Range Left (cm)
+ultrasonic_range_right_tip			Ultrasonic Range Right (cm)
+
+# VIEWPORT
+fullscreen_tip						Toggle Full Screen Mode
+viewport_title						{0}'s View
+view_toggle_label					Switch View Sizes
+
+# ZOOM
+zoom_label							Zoom
+zoom_in_label						Zoom In
+zoom_out_label						Zoom Out
+
+# ERRORS
+error								Error
+error_accel_support					Accelerometer not supported
+error_battery_init					Problem initializing battery service: {0}
+error_battery_reg					Problem registering or unregistering for battery updates: {0}
+error_battery_support				Battery service not supported
+error_compass_init					Problem initializing compass service: {0}
+error_compass_reg					Problem registering or unregistering for compass updates: {0}
+error_compass_support				Compass service not supported
+error_connection					There was a connection problem.
+error_connection_timeout			The connection attempt timed out.
+error_geo_init						Problem initializing geolocation service: {0}
+error_geo_support					Geolocation service not supported
+error_gyro_init						Problem initializing gyroscope service: {0}
+error_gyro_reg						Problem registering or unregistering for gyroscope updates: {0}
+error_gyro_support					Gyroscope service not supported
+error_gyro_advanced_support			Advanced gyroscope service not supported
+error_login							There was a login problem.

@@ -1,0 +1,18 @@
+package vo
+{
+	public class UserState
+	{
+		public var arduinoTypeAdb:Boolean = true;
+		public var cameraAdjustForMotion:Boolean = false;
+		public var cameraConfigDefault:CameraConfig;
+		public var cameraConfigMotion:CameraConfig;
+		public var cameraIndex:int;
+		public var deviceFacesBack:Boolean = true;
+		public var robotName:String;
+		
+		public function UserState()
+		{
+			
+		}
+	}
+}

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	alpha.disabled=".4"
+	creationComplete="_CreationCompleted()"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="done", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import events.UtilityEvent;
+			
+			import mx.collections.ArrayList;
+			
+			import assets.icons.IconArrowUp;
+			
+			import components.ThinCallout;
+			
+			import skins.ToggleSwitchCustomSkin;
+			
+			[Bindable]
+			public var arduinoTypeIdx:int;
+			
+			[Bindable]
+			public var arduinoTypesList:ArrayList;
+			
+			[Bindable]
+			public var camera:Camera;
+			
+			[Bindable]
+			public var camerasList:ArrayList;
+			
+			[Bindable]
+			public var deviceFacesBack:Boolean;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			private function _Done ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.DONE ) );
+			}
+			
+			private function _CameraItemLabel ( item:Object ) : String
+			{
+				var cam:Camera = item as Camera;
+				return resourceManager.getString ( 'default', 'camera_list_item_' + cam.position, [ cam.name ] );
+			}
+			
+			private function _CreationCompleted ( ) : void
+			{
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		styleName="textHead"
+		text="{resourceManager.getString('default','config_phone_title')}"
+		/>
+	<s:Button
+		id="btnDone"
+		label="{resourceManager.getString('default','done_btn_label')}"
+		click="_Done()"
+		/>
+	<s:Scroller
+		height="100%"
+		horizontalCenter="0"
+		>
+		<s:VGroup
+			gap="6"
+			horizontalAlign="center"
+			>
+			<s:Label
+				id="lblArduino"
+				styleName="textSubhead"
+				text="Select Arduino Connection Protocol"
+				width="100%"
+				/>
+			<s:CalloutButton
+				id="cbArduino"
+				styleName="sButtonLeftAlign"
+				icon="{IconArrowUp}"
+				label="{arduinoTypesList.getItemAt(arduinoTypeIdx)}"
+				dropDown="{_cfDropDown}"
+				horizontalPosition="before"
+				verticalPosition="end"
+				width="100%"
+				>
+				<s:List
+					id="liArduino"
+					dataProvider="{arduinoTypesList}"
+					requireSelection="true"
+					selectedIndex="@{arduinoTypeIdx}"
+					click="{cbArduino.closeDropDown()}"
+					>
+					<s:layout>
+						<s:VerticalLayout
+							gap="0"
+							horizontalAlign="left"
+							/>
+					</s:layout>
+				</s:List>
+			</s:CalloutButton>
+			<s:Label
+				id="lblCamera"
+				styleName="textSubhead"
+				text="Select Camera"
+				width="100%"
+				/>
+			<s:CalloutButton
+				id="cbCamera"
+				styleName="sButtonLeftAlign"
+				icon="{IconArrowUp}"
+				label="{_CameraItemLabel(camera)}"
+				dropDown="{_cfDropDown}"
+				horizontalPosition="end"
+				verticalPosition="before"
+				width="100%"
+				>
+				<s:List
+					id="liCamera"
+					dataProvider="{camerasList}"
+					labelFunction="_CameraItemLabel"
+					requireSelection="true"
+					selectedItem="@{camera}"
+					click="{cbCamera.closeDropDown()}"
+					>
+					<s:layout>
+						<s:VerticalLayout
+							gap="0"
+							horizontalAlign="left"
+							/>
+					</s:layout>
+				</s:List>
+			</s:CalloutButton>
+			<s:Label
+				text="{resourceManager.getString('default','device_face_toggle_label')}"
+				/>
+			<comp:ToggleSwitchCustom
+				id="btnFace"
+				skinClass="{skins.ToggleSwitchCustomSkin}"
+				selectedLabel="{resourceManager.getString('default','back_label')}"
+				unselectedLabel="{resourceManager.getString('default','front_label')}"
+				selected="@{deviceFacesBack}"
+				/>
+		</s:VGroup>
+	</s:Scroller>
+</s:SkinnableContainer>

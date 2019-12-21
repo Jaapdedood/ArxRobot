@@ -1,0 +1,224 @@
+package layouts
+{
+	import mx.core.ILayoutElement;
+	
+	import spark.components.supportClasses.GroupBase;
+	import spark.layouts.supportClasses.LayoutBase;
+	
+	public class FlowLayout extends LayoutBase
+	{
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		private var _nGapH:Number = 4;
+		public function get horizontalGap():Number
+		{
+			return _nGapH;
+		}
+		public function set horizontalGap(value:Number):void
+		{
+			_nGapH = value;
+			_LayoutInvalidate ( );
+		}
+		
+		private var _nGapV:Number = 4;
+		public function get verticalGap():Number
+		{
+			return _nGapV;
+		}
+		public function set verticalGap(value:Number):void
+		{
+			_nGapV = value;
+			_LayoutInvalidate ( );
+		}
+		
+		
+		// PUBLIC METHODS
+		
+		override public function measure():void
+		{
+			var nWdTotal:Number = 0;
+			var nHtTotal:Number = 0;
+			var nX:Number = 0;
+			var nY:Number = 0;
+			var nWdMax:Number = 0;
+			var nHtMax:Number = 0;
+
+			// loop through the elements
+			var gbTarget:GroupBase = target;
+			var nWdPref:Number = gbTarget.getPreferredBoundsWidth ( );
+			var iLim:int = gbTarget.numElements;
+			var i:int;
+			var i_elem:ILayoutElement;
+			var i_nWdElem:Number;
+			var i_nHtElem:Number;
+			
+			if ( isNaN ( nWdPref ) || nWdPref < 1 )
+			{
+				for (i = 0; i < iLim; i++)
+				{
+					// get the current element, we're going to work with the
+					// ILayoutElement interface
+					i_elem = useVirtualLayout ? 
+						gbTarget.getVirtualElementAt(i) :
+						gbTarget.getElementAt(i);
+					
+					// In virtualization scenarios, the element returned could
+					// still be null. Look at the typical element instead.
+					if ( !i_elem )
+					{
+						i_elem = typicalLayoutElement;
+					}
+					
+					// Find the preferred sizes    
+					i_nWdElem = i_elem.getPreferredBoundsWidth();
+					i_nHtElem = i_elem.getPreferredBoundsHeight();
+					
+					nWdTotal += i_nWdElem;
+					nHtTotal = Math.max(nHtTotal, i_nHtElem);
+				}
+				if (iLim > 0)
+				{
+					nWdTotal += (iLim - 1) * _nGapH;
+				}
+				
+				gbTarget.measuredWidth = nWdTotal;
+				gbTarget.measuredHeight = nHtTotal;
+				
+				// Since we really can't fit the content in space any
+				// smaller than this, set the measured minimum size
+				// to be the same as the measured size.
+				// If the container is clipping and scrolling, it will
+				// ignore these limits and will still be able to 
+				// shrink below them.
+				gbTarget.measuredMinWidth = nWdTotal;
+				gbTarget.measuredMinHeight = nHtTotal; 
+			}
+			else
+			{
+				for (i = 0; i < iLim; i++)
+				{
+					// get the current element, we're going to work with the
+					// ILayoutElement interface
+					i_elem = useVirtualLayout ? 
+						gbTarget.getVirtualElementAt(i) :
+						gbTarget.getElementAt(i);
+					
+					// In virtualization scenarios, the element returned could
+					// still be null. Look at the typical element instead.
+					if ( !i_elem )
+					{
+						i_elem = typicalLayoutElement;
+					}
+					
+					// Find the preferred sizes    
+					i_nWdElem = i_elem.getPreferredBoundsWidth();
+					i_nHtElem = i_elem.getPreferredBoundsHeight();
+					
+					
+					// Would the element fit on this line, or should we move
+					// to the next line?
+					if ( nX + i_nWdElem > nWdPref )
+					{
+						// Start from the left side
+						nX = 0;
+						
+						// Move down by elementHeight, we're assuming all 
+						// elements are of equal height
+						nY += i_nHtElem + _nGapV;
+					}
+					
+					// Find maximum element extents. This is needed for
+					// the scrolling support.
+					nWdMax = Math.max(nWdMax, nX + i_nWdElem);
+					nHtMax = Math.max(nHtMax, nY + i_nHtElem);
+					
+					// Update the current position, add the gap
+					nX += i_nWdElem + _nGapH;
+					
+				}
+				
+				gbTarget.measuredWidth = nWdMax;
+				gbTarget.measuredHeight = nHtMax;
+				
+				gbTarget.measuredMinWidth = nWdMax;
+				gbTarget.measuredMinHeight = nHtMax;
+			}
+		}
+		
+		override public function updateDisplayList ( containerWidth:Number, containerHeight:Number ) : void
+		{
+			// The position for the current element
+			var nX:Number = 0;
+			var nY:Number = 0;
+			var nWdMax:Number = 0;
+			var nHtMax:Number = 0;
+			
+			// loop through the elements
+			var gbTarget:GroupBase = target;
+			var iLim:int = gbTarget.numElements;
+			var i:int;
+			var i_elem:ILayoutElement;
+			var i_nWdElem:Number;
+			var i_nHtElem:Number;
+			
+			for ( i = 0; i < iLim; i++)
+			{
+				// get the current element, we're going to work with the
+				// ILayoutElement interface
+				i_elem = useVirtualLayout ? 
+					gbTarget.getVirtualElementAt(i) :
+					gbTarget.getElementAt(i);
+				
+				// Resize the element to its preferred size by passing
+				// NaN for the width and height constraints
+				i_elem.setLayoutBoundsSize(NaN, NaN);
+				
+				// Find out the element's dimensions sizes.
+				// We do this after the element has been already resized
+				// to its preferred size.
+				i_nWdElem = i_elem.getLayoutBoundsWidth();
+				i_nHtElem = i_elem.getLayoutBoundsHeight();
+				
+				// Would the element fit on this line, or should we move
+				// to the next line?
+				if ( nX + i_nWdElem > containerWidth )
+				{
+					// Start from the left side
+					nX = 0;
+					
+					// Move down by elementHeight, we're assuming all 
+					// elements are of equal height
+					nY += i_nHtElem + _nGapV;
+				}
+				
+				// Position the element
+				i_elem.setLayoutBoundsPosition(nX, nY);
+				
+				// Find maximum element extents. This is needed for
+				// the scrolling support.
+				nWdMax = Math.max(nWdMax, nX + i_nWdElem);
+				nHtMax = Math.max(nHtMax, nY + i_nHtElem);
+				
+				// Update the current position, add the gap
+				nX += i_nWdElem + _nGapH;
+			}
+			
+			// Scrolling support - update the content size
+			gbTarget.setContentSize(nWdMax, nHtMax);
+		}
+		
+		
+		// PRIVATE METHODS
+		
+		private function _LayoutInvalidate ( ) : void
+		{
+			// invalidate the layout
+			var gbTarget:GroupBase = target;
+			if ( gbTarget )
+			{
+				gbTarget.invalidateSize();
+				gbTarget.invalidateDisplayList();
+			}
+		}
+	}
+}

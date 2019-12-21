@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	autoDrawBackground="false"
+	left="0" top="0" right="0" bottom="0"
+	dataChange="_DataChanged()"
+	>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			import spark.components.RadioButtonGroup;
+			
+			import com.arxterra.vo.CustomSelectOption;
+			
+			[Bindable]
+			public var radioButtonGroup:RadioButtonGroup;
+			
+			[Bindable]
+			private var _cso:CustomSelectOption;
+			
+			private function _DataChanged ( ) : void
+			{
+				if ( data == null )
+					return;
+				
+				_cso = data as CustomSelectOption;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+	</s:states>
+	
+	<s:RadioButton
+		id="rb"
+		group="{radioButtonGroup}"
+		value="{_cso.id}"
+		label="{_cso.label}"
+		/>
+	
+</s:ItemRenderer>

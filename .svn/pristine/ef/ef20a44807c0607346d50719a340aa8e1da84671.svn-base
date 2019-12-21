@@ -1,0 +1,4266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ArxRover Main.mxml -->
+<s:Application
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	xmlns:vw="views.*"
+	backgroundColor="0x222222"
+	frameRate="6"
+	splashScreenImage="@Embed('assets/splash.png')"
+	splashScreenScaleMode="letterbox"
+	applicationComplete="_ApplicationCompleted()"
+	>
+	<fx:Style source="css/MainStyles.css" />
+	<fx:Metadata>
+		[ResourceBundle("default")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.distriqt.extension.battery.events.BatteryEvent;
+			import com.distriqt.extension.gyroscope.events.GyroscopeEvent;
+			import com.smartfoxserver.v2.SmartFox;
+			import com.smartfoxserver.v2.core.SFSEvent;
+			import com.smartfoxserver.v2.entities.Room;
+			import com.smartfoxserver.v2.entities.SFSRoom;
+			import com.smartfoxserver.v2.entities.User;
+			import com.smartfoxserver.v2.entities.data.ISFSObject;
+			import com.smartfoxserver.v2.entities.variables.SFSRoomVariable;
+			import com.smartfoxserver.v2.entities.variables.SFSUserVariable;
+			import com.smartfoxserver.v2.redbox.events.RedBoxConnectionEvent;
+			import com.smartfoxserver.v2.requests.CreateRoomRequest;
+			import com.smartfoxserver.v2.requests.JoinRoomRequest;
+			import com.smartfoxserver.v2.requests.LoginRequest;
+			import com.smartfoxserver.v2.requests.LogoutRequest;
+			import com.smartfoxserver.v2.requests.PrivateMessageRequest;
+			import com.smartfoxserver.v2.requests.RoomEvents;
+			import com.smartfoxserver.v2.requests.RoomPermissions;
+			import com.smartfoxserver.v2.requests.RoomSettings;
+			import com.smartfoxserver.v2.requests.SetRoomVariablesRequest;
+			import com.smartfoxserver.v2.requests.SetUserVariablesRequest;
+			import com.smartfoxserver.v2.util.ConfigData;
+			
+			import flash.net.registerClassAlias;
+			import flash.sensors.Geolocation;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
+			
+			import away3d.core.math.MathConsts;
+			
+			import controllers.CustomCommandManager;
+			import controllers.DialogManager;
+			
+			import events.DebugByteArrayEvent;
+			import events.DebugEventEx;
+			import events.DialogEvent;
+			import events.TelemetryEvent;
+			import events.UtilityEvent;
+			
+			import icons.IconBluetoothCallout;
+			
+			import interfaces.IArduinoConnector;
+			
+			import utils.AVCastManagerAosa;
+			import utils.ArduinoConnector;
+			import utils.ArduinoConnectorBluetooth;
+			import utils.ArduinoConnectorPrimavera;
+			import utils.ArduinoConnectorSocket;
+			import utils.BatteryUtil;
+			import utils.HexStringUtil;
+			import utils.DeclinationUtil;
+			import utils.FlagsUtil;
+			import utils.GyroUtil;
+			import utils.NonUIComponentBase;
+			
+			import vo.ArduinoCommand;
+			import vo.ArduinoEeprom;
+			import vo.ArduinoModes;
+			import vo.CameraConfig;
+			import vo.CameraMove;
+			import vo.CustomCommandConfig;
+			import vo.DialogData;
+			import vo.DialogOption;
+			import vo.EmergencyFlags;
+			import vo.Gps;
+			import vo.ListDataItem;
+			import vo.MotorStates;
+			import vo.MoveProps;
+			import vo.Ping;
+			import vo.RoverData;
+			import vo.SfsPreset;
+			import vo.UserState;
+			
+			/*
+			[ ] Extend declination utility to use own calculations if web service not available.
+			[ ] Enable handoff from pilot to copilot.
+			
+			[ ] Enable portrait rotations.
+			[ ] Add p2p capability.
+			[ ] Add RC Bluetooth mode.
+			[ ] Deal with tiny font sizes, application DPI, etc.
+			
+			v Alpha 0.1.60
+			[ ] Rework user interface
+			
+			v Alpha 0.1.59
+			Persisted Arduino Bluetooth address to attempt automatic reconnection at startup.
+			Added telemetry packet decoding to ArduinoConnector class.
+			Added packet wrapper to Arduino commands.
+			Changed Bluetooth callout to view, to work around sizing artifacts.
+			Changed states and state groups to allow multiple "active" states.
+			v Alpha 0.1.58
+			Changed Bluetooth architecture to have Arduino as listener (slave, servant, server, service provider), Phone as connector (master, client, service consumer).
+			Changed Bluetooth button action to open callout containing:
+			- Scan toggle switch
+			- List of detected devices listening for Bluetooth SPP connections
+			- Buttons to Connect, Disconnect and open System Bluetooth Settings
+			v Alpha 0.1.55-57
+			Debugging Bluetooth functionality.
+			v Alpha 0.1.54
+			Added Bluetooth button to GUI when in Bluetooth mode.
+			Created class ArduinoConnectorBluetooth as subclass of ArduinoConnector.
+			Refactored ArduinoConnectorSocket and ArduinoConnectorPrimavera as subclasses of ArduinoConnector.
+			Created ArduinoConnector base class to implement IArduinoConnector.
+			v Alpha 0.1.53
+			Refactored old Main code for sending and receiving Arduino data so now programming to interface IArduinoConnector.
+			Created class ArduinoConnectorPrimavera implementing IArduinoConnector.
+			Refactored class ServerSocketArduino as ArduinoConnectorSocket implementing IArduinoConnector.
+			Created interface IArduinoConnector.
+			Added Bluetooth to Arduino connection options list.
+			Added Android Bluetooth capabilities and ANE to manifest.
+			v Alpha 0.1.52
+			Updated SDK to Flex 4.12.1 AIR 13.0 FP 13.0
+			v Alpha 0.1.51
+			Updated sfs-presets.json to use subdomain names instead of IP addresses.
+			v Alpha 0.1.50
+			Saved the updated sfs-presets.json!
+			v Alpha 0.1.49
+			Updated sfs-presets.json to new server IP address.
+			Fixed sfs-presets parsing code to avoid error if no localization resource exists for preset name.
+			Fixed ConnectView _PresetItemLabel function.
+			v Alpha 0.1.48
+			Implement settings files backup and restore on SDCard storage on Android.
+			Automatically sleep robot when configuring custom commands.
+			v Alpha 0.1.47
+			Added help to CustomConfigView command list controls
+			v Alpha 0.1.46
+			Minor fixes to CustomConfigView.mxml and CustomCommandManager.as.
+			v Alpha 0.1.45
+			Began adding JSON import/export of command configuration, but not complete.
+			v Alpha 0.1.44
+			Custom command configuration layout is now adequate.
+			v Alpha 0.1.37-43
+			Reworking layout to fit smaller screens.
+			v Alpha 0.1.36
+			Custom command type no longer changeable once created.
+			Debugging Command [+] button.
+			v Alpha 0.1.35
+			Added HEADING type to custom commmands.
+			Made Command [+] button a callout so user can choose type.
+			v Alpha 0.1.29-34
+			Continued debugging custom controls configuration.
+			v Alpha 0.1.28
+			Added send custom controls configuration to SFS User Variable
+			Initial debugging custom controls configuration.
+			v Alpha 0.1.27
+			Add custom controls Configuration View.
+			Add custom controls messaging.
+			Removed version 2.6 options from sfs-presets.json.
+			v Alpha 0.1.26
+			Added motor stop to _EmergencyFlagsSet to compensate for incorrect implementation of Arduino safe command.
+			v Alpha 0.1.25
+			EEPROM Storage option disabled until reliably functional.
+			v Alpha 0.1.24
+			Implemented storing capabilities in App Storage.
+			Added config/sfs-presets.json in place of sfs-config.xml.
+			Added vo/SfsPreset class.
+			Added ConnectView and related code in Main.
+			v Alpha 0.1.23
+			Improved styling of HelpLabel.
+			v Alpha 0.1.22
+			User can now choose between storing capabilities in Arduino EEPROM or App Storage.
+			Fixed default assets directory behavior.
+			Added contextual help to LoginView.
+			v Alpha 0.1.21
+			Display app version on Robot screen.
+			v Alpha 0.1.20
+			Added app version label user variable.
+			v Alpha 0.1.19
+			Added emergency flagging for ultrasonic range below threshold.
+			Improved handling of dropped pilot.
+			Improved cleanup at exit.
+			v Alpha 0.1.18
+			Cleared latency flag when pilot is discovered to have dropped out of room.
+			v Alpha 0.1.17
+			Added more validation to Robot login name.
+			Listening for user exit room events, so can check whether pilot is still in room.
+			v Alpha 0.1.16
+			Declination utility now functional as long as web service available.
+			Changed DebugEvent class to DebugEventEx to avoid conflict with DebugEvent class of ANE.
+			v Alpha 0.1.15
+			Added sender name validation to _SfsPrivateMessageReceived.
+			Latency emergency state now not set if pilot no longer aboard.
+			v Alpha 0.1.14
+			If connected when exiting on Android, now log out and disconnect first.
+			Handled EmergencyAcknowledge message from Pilot.
+			Changed EmergencyCodes class to EmergencyFlags.
+			Added FlagsUtil class.
+			Changed EMS report from PrivateMessage to UserVariable.
+			Added _uEmFlags to store the various emergency state flags that can be set.
+			Removed unnecessary persistence settings when updating global room variables.
+			v Alpha 0.1.13
+			Debugging global room variable issues
+			v Alpha 0.1.12
+			Declination util debugging
+			v Alpha 0.1.11
+			v Alpha 0.1.10
+			Fixed gps room var send only when changed significantly
+			v Alpha 0.1.9
+			Merged.
+			v Alpha Branch 0.1.8
+			Changed sfs-config: zone = Arx
+			Ready to merge back to trunk
+			v Alpha Branch 0.1.7
+			Build for Android
+			v Alpha Branch 0.1.6
+			Added allowUserCountChange to roomEvents.
+			Added updating of gps room variable at approximately 1 second intervals (assuming it has changed).
+			v Alpha Branch 0.1.5
+			Added text input field for Robot avatar assets directory.
+			Added assets directory room variable initialization.
+			v Alpha Branch 0.1.1 to 0.1.4
+			Added text input fields for Robot name and permitted Pilot names to LoginView.
+			Added room creation.
+			Added room variable initialization.
+			v Alpha Branch 0.1.0 branched
+			Changed sfs-config: zone = ArxDevel, useBlueBox = true.
+			v Alpha 0.0.67 ready to branch for architecture change
+			*/
+			
+			// CONSTANTS
+			//   timer defaults
+			//     Battery check updates a user variable as least this often when in sleep mode
+			//     (and all the time when testing with iOS).  The timer delay must be less than
+			//     the maximum user idle time (currently 1000 seconds) we have set in the
+			//     SmartFoxServer configuration for the Arx zone.
+			private const BATTERY_CHECK_MSECS:Number = 900000;
+			private const EEPROM_READ_LIMIT:Number = 1000;
+			private const EEPROM_WRITE_INTERVAL:Number = 500; // multiplied by number of bytes to be written
+			//   OS
+			private const OS_OTHER:int = 0;
+			private const OS_ANDROID:int = 1;
+			private const OS_IOS:int = 2;
+			private const OS_BLACKBERRY:int = 3;
+			//   packet IDs
+			private const COMMAND_PACKET_ID:uint =		0xA5;
+			private const TELEMETRY_PACKET_ID:uint =	0xCA;
+			//   command IDs
+			//									Data[0] =  CMD TYPE | Qual | Arguments
+			//											bit  7654321   0    Bytes    N = 1 + bytes
+			private const MOVE:uint =				0x01; // 0000000   1     4      
+			private const CAMERA_MOVE:uint =		0x02; // 0000001   0     4
+			private const CAMERA_HOME:uint =		0x04; // 0000010   0     0
+			private const CAMERA_RESET:uint =		0x05; // 0000010   1     0
+			private const READ_EEPROM:uint =		0x06; // 0000011   0     3
+			private const WRITE_EEPROM:uint =		0x07; // 0000011   1     3 + b
+			private const SAFE_ROVER:uint =			0x08; // 0000100   0     0
+			private const SLEEP:uint =				0x0A; // 0000101   0     0
+			private const WAKEUP:uint =				0x0B; // 0000101   1     0
+			private const HEADLIGHT_OFF:uint =		0x0C; // 0000110   0     0
+			private const HEADLIGHT_ON:uint =		0x0D; // 0000110   1     0
+			//   telemetry IDs
+			private const MOTOR1_CURRENT_ID:uint =	0x01; // motor 1 is left motor
+			private const MOTOR2_CURRENT_ID:uint =	0x02; // motor 2 is right motor
+			private const TEMP_SENSOR_ID:uint =		0x03; // temperature sensor
+			private const RANGE_LEFT_ID:uint =		0x04; // ultrasonic range 1 is left
+			private const RANGE_RIGHT_ID:uint =		0x05; // ultrasonic range 2 is right
+			private const CLEAN_BATTERY_ID:uint =	0x06; // Arduino battery
+			private const DIRTY_BATTERY_ID:uint =	0x07; // DC and servo motors battery 
+			private const PAN_POSITION_ID:uint =	0x08; // camera turret pan position
+			private const TILT_POSITION_ID:uint =	0x09; // camera turret tilt position
+			private const EEPROM_RESPONSE_ID:uint =	0x0A; // sent in response to EEPROM Read Command
+			private const EMERGENCY_ID:uint =		0x0B;
+			private const COMMAND_DUMP_ID:uint =	0x0D;
+			private const EXCEPTION_ID:uint =		0x0E;
+			
+			private var _OS:int;
+			
+			private var _aCameras:Array;
+			
+			// private var _acc:Accelerometer;
+			// private var _accData:AccData;
+			
+			[Bindable]
+			private var _acEeproms:ArrayCollection;
+			
+			private var _aEepromByAddr:Array;
+			
+			[Bindable]
+			private var _alArduinoModes:ArrayList;
+			
+			[Bindable]
+			private var _alCameras:ArrayList;
+			
+			[Bindable]
+			private var _alCapsStores:ArrayList;
+			
+			[Bindable]
+			private var _alConnectPresets:ArrayList;
+			[Bindable]
+			private var _arduinoBluetooth:ArduinoConnectorBluetooth;
+			[Bindable]
+			private var _arduinoConnector:IArduinoConnector;
+			
+			private var _avCastMgr:AVCastManagerAosa;
+			
+			private var _baArdComCameraHome:ByteArray;
+			private var _baArdComCameraReset:ByteArray;
+			private var _baArdComLightOff:ByteArray;
+			private var _baArdComLightOn:ByteArray;
+			private var _baArdComSafe:ByteArray;
+			private var _baArdComSleep:ByteArray;
+			private var _baArdComWake:ByteArray;
+			
+			private var _bArduinoConnected:Boolean = false;
+			private var _batteryUtil:BatteryUtil;
+			private var _bBatterySupport:Boolean = false;
+			[Bindable]
+			private var _bBluetoothInUse:Boolean = false;
+			
+			private var _bCapsStorePhone:Boolean = true;
+			
+			[Bindable]
+			private var _bDebug:Boolean = true;			
+			private var _bDeviceDefaultPortrait:Boolean = true;
+			[Bindable]
+			private var _bDeviceFacesBack:Boolean = true;
+			
+			private var _bEepromReadFail:Boolean = false;
+			private var _bExiting:Boolean = false;
+			
+			private var _bGeoSupport:Boolean = false;
+			private var _bGyroSupport:Boolean = false;
+			
+			private var _bLightEnabled:Boolean = false;
+			[Bindable]
+			private var _bLightExternal:Boolean = false;
+			[Bindable]
+			private var _bLightOn:Boolean = false;
+			[Bindable]
+			private var _bLiveCastMonFull:Boolean = true;
+			[Bindable]
+			private var _bLiveCastMonitor:Boolean = false;
+			
+			private var _bMoveIgnore:Boolean = false;
+			
+			private var _bMoving:Boolean;
+			public function get isMoving():Boolean
+			{
+				return _bMoving;
+			}
+			public function set isMoving(value:Boolean):void
+			{
+				_bMoving = value;
+				if ( _userState.cameraAdjustForMotion )
+				{
+					if ( _bMoving )
+					{
+						_cameraConfigActive = _userState.cameraConfigMotion;
+					}
+					else
+					{
+						_cameraConfigActive = _userState.cameraConfigDefault;
+					}
+					callLater ( _LiveCastConfigUpdate );
+				}
+			}
+			
+			[Bindable]
+			private var _bOsAllowsExit:Boolean = true;
+			
+			private var _bSleep:Boolean = false;
+			private var _bTurretEnabled:Boolean = false;
+			private var _bTurretPanEnabled:Boolean = false;
+			private var _bTurretTiltEnabled:Boolean = false;
+			
+			[Bindable]
+			private var _camera:Camera;
+			private var _cameraConfigActive:CameraConfig;
+			
+			[Bindable]
+			private var _connectSettings:SfsPreset;
+			
+			// connectPreset
+			private var _connectPreset:SfsPreset;
+			[Bindable]
+			public function get connectPreset():SfsPreset
+			{
+				return _connectPreset;
+			}
+			public function set connectPreset(value:SfsPreset):void
+			{
+				_connectPreset = value;
+				if ( value )
+				{
+					var cfd:ConfigData = value.configData;
+					_connectSettings.blueBoxPollingRate = cfd.blueBoxPollingRate;
+					_connectSettings.debug = cfd.debug;
+					_connectSettings.host = cfd.host;
+					_connectSettings.httpPort = cfd.httpPort;
+					_connectSettings.port = cfd.port;
+					_connectSettings.udpHost = cfd.udpHost;
+					_connectSettings.udpPort = cfd.udpPort;
+					_connectSettings.useBlueBox = cfd.useBlueBox;
+					_connectSettings.zone = cfd.zone;
+				}
+			}
+			
+			[Bindable]
+			private var _connectPresetTypical:SfsPreset;
+			private var _custCmdMgr:CustomCommandManager;
+			
+			private var _declinationUtil:DeclinationUtil;
+			private var _dialogMgr:DialogManager;
+			private var _dirSets:File;
+			private var _dirSetsBkp:File;
+			
+			private var _fGpsRoomVarUpdate:Function = _NoOp;
+			private var _fProgCall:Function = _NoOp;
+			
+			private var _geo:Geolocation;
+			private var _gps:Gps;
+			
+			private var _iAppHt:int;
+			private var _iAppWd:int;
+			
+			[Bindable]
+			private var _iBatteryPctMin:int;
+			[Bindable]
+			private var _iCapsStoreIdx:int = 1;
+			[Bindable]
+			private var _iChatHt:int = 200;
+			[Bindable]
+			private var _iChatWd:int = 160;
+			
+			private var _iDcMin:int = 100;
+			private var _iDcTop:int = 212;
+			private var _iPilotUserId:int = 0;
+			private var _iSfsLagRT:int = 200; // will update to latest average from SmartFox's lag monitoring
+			private var _iTurretPanHome:int = 0;
+			private var _iTurretPanNet:int = 0;
+			private var _iTurretPanReset:int = 0;
+			private var _iTurretTiltHome:int = 0;
+			private var _iTurretTiltNet:int = 0;
+			private var _iTurretTiltReset:int = 0;
+			private var _iUltraSonicThreshold:int = 40;
+			private var _iVideoActualHt:int;
+			private var _iVideoActualWd:int;
+			
+			[Bindable]
+			private var _iVideoMonLeft:int = 0;
+			[Bindable]
+			private var _iVideoMonTop:int = 0;
+			[Bindable]
+			private var _iVideoMonWd:int = 800;
+			[Bindable]
+			private var _iVideoMonHt:int = 480;
+			
+			private var _iVideoMonFullHt:int;
+			private var _iVideoMonFullWd:int;
+			private var _iVideoMonPortWd:int;
+			[Bindable]
+			private var _iVideoMonPortHt:int;
+			
+			[Bindable]
+			private var _ldiArduinoMode:ListDataItem;
+			
+			private var _m3dPrevious:Matrix3D = new Matrix3D ( );
+			private var _moveProps:MoveProps; // stores most recent request
+			
+			private var _nBatteryPct:Number = 0;
+			private var _nDcScale:Number = 112/255;
+			private var _nDeviceAspectRatio:Number;
+			private var _nFloatDifNeg:Number = -0.1;
+			private var _nFloatDifPos:Number = 0.1;
+			private var _nGpsDifNeg:Number = -0.000001;
+			private var _nGpsDifPos:Number = 0.000001; // 0.000001 = about 4 inches at the equator
+			private var _nHeading:Number = 0;
+			private var _nHeadingRaw:Number = 0;
+			private var _nLastRoomGpsTime:Number = 0;
+			private var _nPhoneCompassOffset:Number = 270;
+			private var _nPhoneOrientationOffset:Number = 0;
+			private var _nPhoneOrientationSign:Number = 1;
+			private var _nPitch:Number = 0;
+			private var _nPitchRaw:Number = 0;
+			private var _nPitchSign:Number = 1;
+			private var _nRoll:Number = 0;
+			private var _nRollRaw:Number = 0;
+			private var _nRollSign:Number = -1;
+			private var _nVideoPortFract:Number = 0.4; // adjust this as our GUI dictates
+			private var _nsLiveCast:NetStream;
+			
+			// _qAdjust is derived from _qDeviceMount, magnetic declination, and net turret pan and tilt
+			// _qDeviceSensors is derived from gyroscope advanced data (yaw, pitch and roll)
+			// and then rotated by _qAdjust to arrive at _qReported
+			/*
+			private var _qAdjust:Quaternion = new Quaternion ( );
+			private var _qDeviceMount:Quaternion = new Quaternion ( );
+			private var _qDeviceSensors:Quaternion = new Quaternion ( );
+			private var _qReported:Quaternion = new Quaternion ( );
+			*/
+			
+			private var _oEepromById:Object;
+			[Bindable]
+			private var _oRobot:SFSRoom;
+			private var _oUserVarsToSend:Object = {};
+			
+			// private var _pvArduino:PrimaveraInterface;
+			
+			private var _reLine0:RegExp = /^.*[\n\r]/;
+			private var _reNewLines:RegExp = /[\n\r]/g;
+			
+			private var _roverData:RoverData;
+			
+			[Bindable]
+			private var _sAppVersion:String;
+			
+			[Bindable]
+			private var _sConnectPrompt:String;
+			
+			[Bindable]
+			private var _sEepromConfigCaptRsrc:String;
+			[Bindable]
+			private var _sEepromWriteCaptRsrc:String;
+			
+			[Bindable]
+			private var _sf:SmartFox;
+			private var _sCfgDoneState:String;
+			private var _sOrient0:String = ''; // default orientation at startup
+			private var _sOrient180:String = ''; // orientation 180° from _sOrient0
+			private var _sOrientStage:String = ''; // current orientation
+			
+			[Bindable]
+			private var _sPilotNames:String = '';
+			[Bindable]
+			private var _sRobotAssetsDir:String = '';
+			[Bindable]
+			private var _sRobotName:String = '';
+			
+			private var _sRobotPass:String;
+			
+			// private var _ssArduino:ArduinoServerSocket;
+			
+			private var _tmrBattery:Timer; // battery check watchdog
+			private var _tmrConnect:Timer; // connection timeout
+			private var _tmrDog:Timer; // watch dog timer
+			private var _tmrEepromReadWait:Timer // EEPROM read time limit
+			private var _tmrEepromWrite:Timer; // EEPROM batch write interval timer
+			private var _tmrFps:Timer; // camera FPS polling
+			private var _tmrUserVars:Timer; // send queued user variables
+			
+			private var _uArduinoModeId:uint = 1;
+			private var _uEmFlags:uint = 0;
+			private var _userState:UserState;
+			
+			private var _video:Video;
+			private var _vsEepromIdsToCheck:Vector.<String>;
+			private var _vsPilots:Vector.<String>;
+			private var _vsPilotsQueue:Vector.<String> = new <String> [];
+			
+			// app startup event order (of those we typically listen for):
+			//   initialize
+			//   creationComplete
+			//   applicationComplete
+			private function _ApplicationCompleted ( ) : void
+			{
+				NonUIComponentBase.eventRelay = this;
+				
+				// keep fully awake, until create ANE for Android PARTIAL_WAKE_LOCK
+				NativeApplication.nativeApplication.systemIdleMode = SystemIdleMode.KEEP_AWAKE;
+				
+				_iAppHt = height;
+				_iAppWd = width;
+				
+				var sVer:String = Capabilities.version.substr ( 0, 3 );
+				switch ( sVer )
+				{
+					case ( 'IOS' ):
+						_OS = OS_IOS;
+						break;
+					case ( 'AND' ):
+						_OS = OS_ANDROID;
+						break;
+					case ( 'QNX' ):
+						_OS = OS_BLACKBERRY;
+						break;
+					default:
+						_OS = OS_OTHER;
+						break;
+				}
+				// NativeApplication.nativeApplication.exit() should work on anything except iOS
+				_bOsAllowsExit = ( _OS != OS_IOS );
+				if ( _OS == OS_ANDROID )
+					_nRollSign = -_nRollSign;
+				
+				var appXml:XML = NativeApplication.nativeApplication.applicationDescriptor;
+				var ns:Namespace = appXml.namespace();
+				_sAppVersion = appXml.ns::filename[0] + ' (' + appXml.ns::versionLabel[0] + ')';
+				
+				// Our app manifest specifies <aspectRatio>landscape</aspectRatio>,
+				// so the stage should be at one of its landscape options by this time.
+				// We will take that to be _sOrient0.  If _sOrient0 is ROTATED_LEFT
+				// or ROTATED_RIGHT, we will assume that the device's default
+				// aspect ratio is portrait and its sensor outputs have the X and Y
+				// axes aligned accordingly.
+				_sOrientStage = _sOrient0 = stage.orientation;
+				var vOrs:Vector.<String> = stage.supportedOrientations;
+				switch ( _sOrient0 )
+				{
+					case StageOrientation.ROTATED_LEFT:
+						_sOrient180 = StageOrientation.ROTATED_RIGHT;
+						break;
+					case StageOrientation.ROTATED_RIGHT:
+						_sOrient180 = StageOrientation.ROTATED_LEFT;
+						break;
+					case StageOrientation.DEFAULT:
+						_sOrient180 = StageOrientation.UPSIDE_DOWN;
+						_bDeviceDefaultPortrait = false;
+						break;
+					default:
+						_sOrient180 = StageOrientation.DEFAULT;
+						_bDeviceDefaultPortrait = false;
+						break;
+				}
+				if ( vOrs.length < 2 || vOrs.indexOf ( _sOrient180 ) < 0 || _sOrient0 == StageOrientation.UNKNOWN )
+				{
+					// we have a problem
+					_DebugOut ( 'error_orientations', true, [ vOrs.join ( ', ' ) ] );
+				}
+				
+				_aEepromByAddr = [];
+				_vsEepromIdsToCheck = new <String> [];
+				_oEepromById = {};
+				
+				_alCapsStores = new ArrayList ( [
+					resourceManager.getString ( 'default', 'caps_store_eeprom' ),
+					resourceManager.getString ( 'default', 'caps_store_phone' )
+				] );
+				
+				var baComStart:ByteArray = new ByteArray ( );
+				baComStart.writeByte ( ArduinoConnector.COMMAND_PACKET_ID ); // start ID for command packets
+				baComStart.writeByte ( 1 ); // payload length, which is only 1 here, since each of these consists of just a single command ID byte with no arguments
+				var iCheckSumStart:int = ArduinoConnector.COMMAND_PACKET_ID ^ 1;
+				_baArdComCameraHome = new ByteArray ( );
+				_baArdComCameraHome.writeBytes ( baComStart );
+				_baArdComCameraHome.writeByte ( ArduinoCommand.CAMERA_HOME );
+				_baArdComCameraHome.writeByte ( iCheckSumStart ^ ArduinoCommand.CAMERA_HOME );
+				_baArdComCameraReset = new ByteArray ( );
+				_baArdComCameraReset.writeBytes ( baComStart );
+				_baArdComCameraReset.writeByte ( ArduinoCommand.CAMERA_RESET );
+				_baArdComCameraReset.writeByte ( iCheckSumStart ^ ArduinoCommand.CAMERA_RESET );
+				_baArdComSafe = new ByteArray ( );
+				_baArdComSafe.writeBytes ( baComStart );
+				_baArdComSafe.writeByte ( ArduinoCommand.SAFE_ROVER );
+				_baArdComSafe.writeByte ( iCheckSumStart ^ ArduinoCommand.SAFE_ROVER );
+				_baArdComSleep = new ByteArray ( );
+				_baArdComSleep.writeBytes ( baComStart );
+				_baArdComSleep.writeByte ( ArduinoCommand.SLEEP );
+				_baArdComSleep.writeByte ( iCheckSumStart ^ ArduinoCommand.SLEEP );
+				_baArdComWake = new ByteArray ( );
+				_baArdComWake.writeBytes ( baComStart );
+				_baArdComWake.writeByte ( ArduinoCommand.WAKEUP );
+				_baArdComWake.writeByte ( iCheckSumStart ^ ArduinoCommand.WAKEUP );
+				
+				_iChatHt = Math.max ( 200, _iAppHt * 0.6 );
+				
+				_nDeviceAspectRatio = 1.0 * _iAppHt / _iAppWd;
+				
+				// get DialogManager (singleton) instance
+				_dialogMgr = DialogManager.getInstance ( );
+				
+				// events from objects in display list, using capture phase
+				//    debug
+				addEventListener ( DebugEventEx.DEBUG_OUT, _DebugOutReceived, true );
+				addEventListener ( DebugByteArrayEvent.DEBUG_BYTE_ARRAY, _DebugByteArrayReceived, true );
+				//    route dialog events to DialogManager
+				addEventListener ( DialogEvent.ALERT, _dialogMgr.mAlertEventHandler, true );
+				addEventListener ( DialogEvent.DIALOG, _dialogMgr.mDialogEventHandler, true );
+				
+				// events from subclasses of NonUIComponentBase, using this as eventRelay
+				//    debug
+				addEventListener ( DebugEventEx.DEBUG_OUT, _DebugOutReceived );
+				addEventListener ( DebugByteArrayEvent.DEBUG_BYTE_ARRAY, _DebugByteArrayReceived );
+				//    route dialog events to DialogManager
+				addEventListener ( DialogEvent.ALERT, _dialogMgr.mAlertEventHandler );
+				addEventListener ( DialogEvent.DIALOG, _dialogMgr.mDialogEventHandler );
+				
+				
+				_moveProps = MoveProps.newFromParameters ( );
+				
+				_tmrConnect = new Timer ( 10000, 1 );
+				_tmrConnect.addEventListener ( TimerEvent.TIMER, _SfsConnectTimeout );
+				
+				_tmrFps = new Timer ( 2000, 0 );
+				_tmrFps.addEventListener ( TimerEvent.TIMER, _CameraFpsPoll );
+				
+				// default watch dog to 2.1 secs, then adjust when get current value from ping
+				_tmrDog = new Timer ( 2100, 1 );
+				_tmrDog.addEventListener ( TimerEvent.TIMER, _WatchDogBark );
+				
+				_tmrEepromReadWait = new Timer ( EEPROM_READ_LIMIT, 1 );
+				_tmrEepromReadWait.addEventListener ( TimerEvent.TIMER, _EepromReadTimedOut );
+				
+				_tmrEepromWrite = new Timer ( EEPROM_WRITE_INTERVAL, 0 );
+				_tmrEepromWrite.addEventListener ( TimerEvent.TIMER, _EepromsWrite );
+				
+				_tmrUserVars = new Timer ( 100, 1 );
+				_tmrUserVars.addEventListener ( TimerEvent.TIMER, _UserVarsQueuedSend );
+				
+				// instantiate roverData value object
+				_roverData = new RoverData();
+				
+				_LocalFilesInitialize ( );
+				
+				// arduino connection modes
+				var i_uId:uint;
+				var i_ldi:ListDataItem;
+				var aModes:Array = [];
+				for each ( i_uId in ArduinoModes.MODES )
+				{
+					i_ldi = new ListDataItem ( i_uId, resourceManager.getString ( 'default', 'arduino_mode_' + i_uId ) );
+					aModes.push ( i_ldi );
+					if ( i_uId == _uArduinoModeId )
+					{
+						_ldiArduinoMode = i_ldi; // current selection
+					}
+				}
+				_alArduinoModes = new ArrayList ( aModes );
+				
+				// var aCamNames:Array = Camera.names;
+				_aCameras = [];
+				var iLim:int = Camera.names.length;
+				var iCamIdx:int = 0;
+				var i_cam:Camera;
+				for ( var i:int = 0; i < iLim; i++ )
+				{
+					i_cam = Camera.getCamera ( String ( i ) );
+					if ( i_cam.position == CameraPosition.BACK )
+						iCamIdx = i;
+					_aCameras.push ( i_cam );
+				}
+				_alCameras = new ArrayList ( _aCameras );
+				if ( _userState.cameraIndex > -1 && _userState.cameraIndex < iLim )
+				{
+					iCamIdx = _userState.cameraIndex;
+				}
+				else
+				{
+					_userState.cameraIndex = iCamIdx;
+				}
+				_camera = _aCameras [ iCamIdx ];
+				
+				// instantiate SmartFox client class
+				_sf = new SmartFox ( true );
+				// SmartFox event listeners
+				// _sf.addEventListener ( SFSEvent.CONFIG_LOAD_FAILURE, _SfsConfigLoadFailure );
+				// _sf.addEventListener ( SFSEvent.CONFIG_LOAD_SUCCESS, _SfsConfigLoadSuccess );
+				_sf.addEventListener ( SFSEvent.CONNECTION, _SfsConnection );
+				_sf.addEventListener ( SFSEvent.CONNECTION_LOST, _SfsConnectionLost );
+				_sf.addEventListener ( SFSEvent.PING_PONG, _SfsLagMonitorUpdate );
+				_sf.addEventListener ( SFSEvent.LOGIN_ERROR, _SfsLoginFailure );
+				_sf.addEventListener ( SFSEvent.LOGIN, _SfsLoginSuccess );
+				_sf.addEventListener ( SFSEvent.LOGOUT, _SfsLogoutDone );
+				_sf.addEventListener ( SFSEvent.PRIVATE_MESSAGE, _SfsPrivateMessageReceived );
+				_sf.addEventListener ( SFSEvent.ROOM_CREATION_ERROR, _SfsRoomCreationError );
+				_sf.addEventListener ( SFSEvent.ROOM_JOIN, _SfsJoinSuccess );
+				_sf.addEventListener ( SFSEvent.ROOM_JOIN_ERROR, _SfsJoinFailure );
+				_sf.addEventListener ( SFSEvent.USER_COUNT_CHANGE, _SfsUserCountChanged );
+				_sf.addEventListener ( SFSEvent.USER_ENTER_ROOM, _SfsUserEnteredRoom );
+				_sf.addEventListener ( SFSEvent.USER_EXIT_ROOM, _SfsUserExitedRoom );
+				
+				_DebugOut ( 'status_sfs_api', true, [ _sf.version ] );
+				
+				callLater ( _CustomInit );
+			}
+			
+			private function _ApplicationConfigure ( ) : void
+			{
+				var bChange:Boolean = false;
+				// USB Microbridge vs USB Android as host vs Bluetooth
+				_uArduinoModeId = ArduinoModes.ValidateMode ( _ldiArduinoMode.id );
+				if ( _uArduinoModeId != _userState.arduinoModeId )
+				{
+					bChange = true;
+					_userState.arduinoModeId = _uArduinoModeId;
+				}
+				_bCapsStorePhone = ( _iCapsStoreIdx > 0 );
+				if ( _bCapsStorePhone != _userState.capabilitiesStorePhone )
+				{
+					bChange = true;
+					_userState.capabilitiesStorePhone = _bCapsStorePhone;
+				}
+				if ( _camera.index != _userState.cameraIndex )
+				{
+					// user changed camera from default
+					bChange = true;
+					_userState.cameraIndex = _camera.index;
+				}
+				if ( _bDeviceFacesBack != _userState.deviceFacesBack )
+				{
+					bChange = true;
+					_userState.deviceFacesBack = _bDeviceFacesBack;
+				}
+				if ( _iBatteryPctMin != _userState.phoneBatteryMin )
+				{
+					bChange = true;
+					_userState.phoneBatteryMin = _iBatteryPctMin;
+				}
+				// anything in _userState changed?
+				if ( bChange )
+				{
+					callLater ( _UserStatePersist );
+				}
+				/*
+				if (_sRobotAssetsDir == '' )
+				{
+					// nothing custom has been saved from previous session, so use our defaults
+					_sRobotAssetsDir = _bArduinoTypeAdb ? 'pathfinder' : 'rosco';
+				}
+				*/
+				if ( _uArduinoModeId == ArduinoModes.USB_ADB )
+				{
+					// USB adb
+					// instantiate server socket to communicate with Arduino
+					_arduinoConnector = ArduinoConnectorSocket.instance;
+				}
+				else if ( _uArduinoModeId == ArduinoModes.USB_HOST )
+				{
+					// USB Android as host
+					// instantiate Primavera ANE to communicate with Arduino
+					_arduinoConnector = ArduinoConnectorPrimavera.instance;
+				}
+				else
+				{
+					// Bluetooth
+					_arduinoConnector = ArduinoConnectorBluetooth.instance;
+					_arduinoBluetooth = ArduinoConnectorBluetooth.instance;
+					_arduinoBluetooth.addEventListener ( UtilityEvent.BLUETOOTH_CONFIG, _BluetoothConfigEvent );
+					_arduinoBluetooth.addEventListener ( UtilityEvent.BLUETOOTH_CONNECTED, _BluetoothConnected );
+					if ( _userState.bluetoothAddress.length > 0 )
+					{
+						_arduinoBluetooth.setAutoConnectionAddress ( _userState.bluetoothAddress );
+					}
+					_bBluetoothInUse = true;
+				}
+				_arduinoConnector.addEventListener ( TelemetryEvent.PACKET_PAYLOADS, _ArduinoDataReceived );
+				
+				if ( _bDeviceFacesBack )
+				{
+					_nPhoneCompassOffset = 90;
+					_nPitchSign = -_nPitchSign;
+					_nRollSign = -_nRollSign;
+				}
+				else
+				{
+					_bLightEnabled = true;
+				}
+				
+				// Magnetic Declination
+				_declinationUtil = DeclinationUtil.instance;
+				_declinationUtil.addEventListener ( UtilityEvent.DECLINATION, _DeclinationUpdated );
+				
+				// Gyroscope
+				var gyro:GyroUtil = GyroUtil.instance;
+				if ( gyro.isSupported )
+				{
+					if ( gyro.isAdvancedDataSupported )
+					{
+						_DebugOut ( 'status_gyro_support', true );
+						gyro.service.addEventListener ( GyroscopeEvent.UPDATE, _GyroUpdatedAdvanced );
+						_bGyroSupport = true;
+						gyro.register ( );
+					}
+					else
+					{
+						_DebugOut ( 'error_gyro_advanced_support', true );
+					}
+				}
+				
+				_OrientationDeviceMountUpdate ( _sOrientStage );
+				stage.addEventListener ( StageOrientationEvent.ORIENTATION_CHANGE, _StageOrientChanged );
+				
+				// instantiate Gps value object
+				_gps = new Gps ( );
+				if ( Geolocation.isSupported )
+				{
+					try
+					{
+						_geo = new Geolocation();
+						// register to receive location updates
+						_geo.addEventListener ( GeolocationEvent.UPDATE, _GeolocationUpdated );
+						_geo.setRequestedUpdateInterval ( 1000 );
+						_bGeoSupport = true;
+					}
+					catch(err:Error)
+					{
+						_DebugOut ( 'error_geo_init', true, [ err.message ] );
+					}
+					// Flex is not able to detect if the location is coming from
+					// the wifi, network, or the GPS. We would need an ANE to
+					// detect if it is specifically the GPS that is turned on.
+				}
+				else
+				{
+					_DebugOut ( 'error_geo_support', true );
+				}
+				
+				// Battery
+				_batteryUtil = BatteryUtil.instance;
+				if ( _batteryUtil.isSupported )
+				{
+					_bBatterySupport = true;
+					_batteryUtil.service.addEventListener ( BatteryEvent.BATTERY_INFO, _BatteryUpdated );
+					if ( _OS == OS_IOS )
+					{
+						_tmrBattery = new Timer ( BATTERY_CHECK_MSECS, 0 );
+						_tmrBattery.addEventListener ( TimerEvent.TIMER, _BatteryCheckIOS );
+						_tmrBattery.start ( );
+					}
+					_batteryUtil.register();
+				}
+				
+				currentState = 'eeprom_read';
+				callLater ( _LocalEepromConfigLoadQueue );
+			}
+			
+			private function _ArduinoDataReceived ( event:TelemetryEvent ) : void
+			{
+				var vbaIn:Vector.<ByteArray> = event.payloads;
+				
+				// we're getting something, so evidently the Arduino is connected
+				_bArduinoConnected = true;
+				
+				// NOTE: ByteArray automatically changes its position property to the index immediately after the latest read or write operation.
+				//       The bytesAvailable property contains the number of bytes left between the current position and the end.
+				var bytes:ByteArray;
+				var bytesOut:ByteArray;
+				var aVarsToSend:Array = [];
+				var bTurretChange:Boolean = false;
+				var bRangeChange:Boolean = false;
+				var bValid:Boolean;
+				var ccc:CustomCommandConfig;
+				var iDatum:int;
+				var iLoops:int = 0;
+				var nDatum:Number;
+				var sId:String;
+				var uDatum:uint;
+				var uId:uint;
+				var uLen:uint;
+				var eep:ArduinoEeprom;
+				
+				while ( vbaIn.length > 0 )
+				{
+					/*
+					if ( ++iLoops > 50 )
+					{
+						_DebugOut ( 'Arduino data loop limit exceeded' );
+						break;
+					}
+					*/
+					bytes = vbaIn.shift ( );
+					bytes.position = 0;
+					uId = bytes.readUnsignedByte ( );
+					switch ( uId )
+					{
+						case MOTOR1_CURRENT_ID:
+							// motor 1 current
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( MOTOR1_CURRENT_ID, 1 ) ] );
+							}
+							else
+							{
+								uDatum = bytes.readUnsignedShort ( ) * 34;
+								if ( uDatum != _roverData.motor1Current )
+								{
+									// aData.push ( new SFSUserVariable ( 'TBD', uDatum ) );
+									_roverData.motor1Current = uDatum;
+								}
+							}
+							break;
+						case MOTOR2_CURRENT_ID:
+							// motor 2 current
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( MOTOR2_CURRENT_ID, 1 ) ] );
+							}
+							else
+							{
+								uDatum = bytes.readUnsignedShort ( ) * 34;
+								if ( uDatum != _roverData.motor2Current )
+								{
+									// aData.push ( new SFSUserVariable ( 'TBD', uDatum ) );
+									_roverData.motor2Current = uDatum;
+								}
+							}
+							break;
+						case TEMP_SENSOR_ID:
+							// temperature
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( TEMP_SENSOR_ID, 1 ) ] );
+							}
+							else
+							{
+								iDatum = bytes.readShort ( );
+								if ( iDatum != _roverData.temperature )
+								{
+									aVarsToSend.push ( new SFSUserVariable ( 'btm', iDatum ) );
+									_roverData.temperature = iDatum;
+								}
+							}
+							break;
+						case RANGE_LEFT_ID:
+							// ultrasonic ranger left
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( RANGE_LEFT_ID, 1 ) ] );
+							}
+							else
+							{
+								iDatum = bytes.readShort ( );
+								if ( iDatum != _roverData.usRangeLeft )
+								{
+									aVarsToSend.push ( new SFSUserVariable ( 'usl', iDatum ) );
+									_roverData.usRangeLeft = iDatum;
+									bRangeChange = true;
+								}
+							}
+							break;
+						case RANGE_RIGHT_ID:
+							// ultrasonic ranger right
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( RANGE_RIGHT_ID, 1 ) ] );
+							}
+							else
+							{
+								iDatum = bytes.readShort ( );
+								if ( iDatum != _roverData.usRangeRight )
+								{
+									aVarsToSend.push ( new SFSUserVariable ( 'usr', iDatum ) );
+									_roverData.usRangeRight = iDatum;
+									bRangeChange = true;
+								}
+							}
+							break;
+						case CLEAN_BATTERY_ID:
+							// electronics battery
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( CLEAN_BATTERY_ID, 1 ) ] );
+							}
+							else
+							{
+								iDatum = bytes.readShort ( );
+								if ( iDatum != _roverData.cleanBat )
+								{
+									aVarsToSend.push ( new SFSUserVariable ( 'cbt', iDatum ) );
+									_roverData.cleanBat = iDatum;
+								}
+							}
+							break;
+						case DIRTY_BATTERY_ID:
+							// motor battery
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( DIRTY_BATTERY_ID, 1 ) ] );
+							}
+							else
+							{
+								iDatum = bytes.readShort ( );
+								if ( iDatum != _roverData.dirtyBat )
+								{
+									aVarsToSend.push ( new SFSUserVariable ( 'dbt', iDatum ) );
+									_roverData.dirtyBat = iDatum;	
+								}
+							}
+							break;
+						case PAN_POSITION_ID:
+							// pan
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( PAN_POSITION_ID, 1 ) ] );
+							}
+							else
+							{
+								uDatum = bytes.readUnsignedShort ( );
+								if ( uDatum != _roverData.panAngle )
+								{
+									aVarsToSend.push ( new SFSUserVariable ( 'cp', uDatum ) );
+									_roverData.panAngle = uDatum;
+									// ##### TESTING #####
+									_DebugOut ( 'pan degrees from Arduino: ' + uDatum );
+									// ###################
+									if ( _bTurretPanEnabled )
+									{
+										if ( _TurretPanUpdate ( uDatum ) )
+										{
+											bTurretChange = true;
+										}
+									}
+								}
+							}
+							break;
+						case TILT_POSITION_ID:
+							// tilt
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( TILT_POSITION_ID, 1 ) ] );
+							}
+							else
+							{
+								uDatum = bytes.readUnsignedShort ( );
+								if ( uDatum != _roverData.tiltAngle )
+								{
+									aVarsToSend.push ( new SFSUserVariable ( 'ct', uDatum ) );
+									_roverData.tiltAngle = uDatum;
+									// ##### TESTING #####
+									_DebugOut ( 'tilt degrees from Arduino: ' + uDatum );
+									// ###################
+									if ( _bTurretTiltEnabled )
+									{
+										if ( _TurretTiltUpdate ( uDatum ) )
+										{
+											bTurretChange = true;
+										}
+									}
+								}
+							}
+							break;
+						case EEPROM_RESPONSE_ID:
+							// EEPROM read result
+							bValid = false;
+							sId = '';
+							eep = _aEepromByAddr [ bytes.readUnsignedShort ( ) ] as ArduinoEeprom;
+							if ( eep != null )
+							{
+								if ( bytes.bytesAvailable > 0 )
+								{
+									uLen = bytes.readUnsignedByte ( );
+									sId = eep.id;
+									if ( sId == 'eepv' )
+									{
+										// checking EEPROM schema version
+										if ( bytes.bytesAvailable >= uLen )
+										{
+											bValid = true;
+											uDatum = bytes.readUnsignedShort ( );
+											if ( ( eep.value as uint ) == uDatum )
+											{
+												// EEPROM schema is current, so remove from list
+												// and continue to read the rest
+												_vsEepromIdsToCheck.splice ( _vsEepromIdsToCheck.indexOf ( sId ), 1 );
+												callLater ( _EepromsRead );
+											}
+											else
+											{
+												// need to initialize EEPROM
+												_DebugOut ( 'status_eeprom_update', true, null, true );
+												_EepromConfigStart ( true );
+											}
+										}
+									}
+									else
+									{
+										// reading all other EEPROMs
+										if ( eep.restoreValueFromByteArray ( bytes ) )
+										{
+											bValid = true;
+											_vsEepromIdsToCheck.splice ( _vsEepromIdsToCheck.indexOf ( sId ), 1 );
+											callLater ( _EepromsRead );
+										}
+									}
+								}
+							}
+							if ( !bValid )
+							{
+								_DebugOut ( 'error_arduino_eeprom_response', true, [ sId ] );
+							}
+							break;
+						case EMERGENCY_ID:
+							_DebugOut ( 'arduino_emergency', true, [ HexStringUtil.HexStringFromByteArray ( bytes ) ] );
+							break;
+						case COMMAND_DUMP_ID:
+							bytesOut = new ByteArray ( );
+							bytes.readBytes ( bytesOut );
+							_DebugOut ( 'arduino_cmd_dump', true, [ HexStringUtil.HexStringFromByteArray ( bytesOut ) ] );
+							break;
+						case EXCEPTION_ID:
+							if ( bytes.bytesAvailable < 2 )
+							{
+								_DebugOut ( 'error_arduino_args', true, [ HexStringUtil.HexNumberStringFromUintBytes ( EXCEPTION_ID, 1 ) ] );
+							}
+							else
+							{
+								_DebugOut ( 'error_arduino_cmd_pkt_' + bytes [ 1 ], true, [ HexStringUtil.HexNumberStringFromUintBytes ( bytes [ 2 ], 1 ) ] );
+							}
+							break;
+						default:
+							if ( _custCmdMgr.idIsInCustomRange ( uId ) )
+							{
+								// custom command status
+								if ( _custCmdMgr.suspend )
+								{
+									// command interpretation not available due to config view currently open
+									_DebugOut ( 'error_arduino_custom_suspend', true, [ uId ] );
+								}
+								
+								ccc = _custCmdMgr.getCommandConfigById ( uId );
+								if ( ccc != null )
+								{
+									// valid ID
+									if ( ccc.setCommandValueFromByteArray ( bytes ) )
+									{
+										// had enough bytes to update value, so update user variable
+										aVarsToSend.push ( new SFSUserVariable ( 'cu' + uId, ccc.commandToSFSObject() ) );
+									}
+									else
+									{
+										// too few bytes available
+										_DebugOut ( 'error_arduino_custom_bytes', true, [ uId ] );
+									}
+								}
+								else
+								{
+									// command not configured
+									_DebugOut ( 'error_arduino_custom_cfg', true, [ uId ] );
+								}
+							}
+							else
+							{
+								// unknown telemetry ID
+								_DebugOut ( 'error_arduino_id', true, [ uId ] );
+							}
+							break;
+					} // end switch
+					
+					bytes.clear ( );
+					
+				} // end while loop
+				
+				if ( aVarsToSend.length > 0 )
+				{
+					_UserVarsQueue ( aVarsToSend );
+				}
+				
+				if ( bTurretChange )
+				{
+					_TurretUpdateCommit ( );
+				}
+				
+				if ( bRangeChange )
+				{
+					_UltraSonicRangeCheck ( );
+				}
+			}
+			
+			private function _ArduinoSend ( ba:ByteArray ) : Boolean
+			{
+				if ( !_arduinoConnector )
+					return false; // return
+				
+				return _arduinoConnector.send ( ba );
+			}
+			
+			private function _AvCastMgrDismiss ( ) : void
+			{
+				if ( _avCastMgr != null )
+				{
+					_avCastMgr.removeEventListener ( RedBoxConnectionEvent.AV_CONNECTION_INITIALIZED, _AvConnectionInited );
+					_avCastMgr.removeEventListener ( RedBoxConnectionEvent.AV_CONNECTION_ERROR, _AvConnectionError );
+					_avCastMgr.destroy ( );
+					_avCastMgr = null;
+				}
+			}
+			
+			private function _AvCastMgrInit ( ) : void
+			{
+				currentState = 'livecast_wait';
+				
+				// instantiate AVCastManager
+				_avCastMgr = new AVCastManagerAosa ( _sf, _sf.currentIp, false, true );
+				
+				_avCastMgr.addEventListener ( RedBoxConnectionEvent.AV_CONNECTION_INITIALIZED, _AvConnectionInited );
+				_avCastMgr.addEventListener ( RedBoxConnectionEvent.AV_CONNECTION_ERROR, _AvConnectionError );
+			}
+			
+			private function _AvConnectionError ( event:RedBoxConnectionEvent ) : void
+			{
+				_DebugOut ( 'error_av_connect', true, [ event.params.errorCode ] );
+			}
+			
+			private function _AvConnectionInited ( event:RedBoxConnectionEvent ) : void
+			{
+				_LiveCastPublish ( );
+			}
+			
+			private function _BatteryCheckIOS ( event:TimerEvent = null ) : void
+			{
+				_batteryUtil.check ( );
+			}
+			
+			private function _BatteryUpdated ( event:BatteryEvent ) : void
+			{
+				var nPctOld:Number = _nBatteryPct;
+				_nBatteryPct = 100 * event.batteryLevel;
+				if ( !_bSleep )
+				{
+					_UserVarsQueue ( [ new SFSUserVariable ( 'pbt', _nBatteryPct ) ] );
+				}
+				if ( FlagsUtil.IsSet ( _uEmFlags, EmergencyFlags.BATTERY ) )
+				{
+					if ( _nBatteryPct > _iBatteryPctMin )
+					{
+						_EmergencyFlagsClear ( EmergencyFlags.BATTERY );
+					}
+				}
+				else
+				{
+					if ( _nBatteryPct < _iBatteryPctMin )
+					{
+						_EmergencyFlagsSet ( EmergencyFlags.BATTERY );
+						callLater ( _SystemsDeactivate );
+					}
+				}
+			}
+			
+			private function _BluetoothConfigDone ( ) : void
+			{
+				currentState = 'awake';
+			}
+			
+			private function _BluetoothConfigOpen ( ) : void
+			{
+				if ( currentState == 'awake' )
+					currentState = 'bluetooth_config';
+			}
+			
+			private function _BluetoothConfigSuccess ( ) : void
+			{
+				// change state to display brief success message
+				var tm:Timer = new Timer ( 3000, 1 );
+				tm.addEventListener ( TimerEvent.TIMER, _BluetoothConfigSuccessDone );
+				tm.start ( );
+				currentState = 'bluetooth_success';
+			}
+			
+			private function _BluetoothConfigSuccessDone ( event:TimerEvent ) : void
+			{
+				// close success message and Bluetooth Config view
+				( event.target as Timer ).removeEventListener ( TimerEvent.TIMER, _BluetoothConfigSuccessDone );
+				_BluetoothConfigDone ( );
+			}
+			
+			private function _BluetoothConfigEvent ( event:UtilityEvent ) : void
+			{
+				// for now only using this event type for requesting opening of bluetooth config,
+				// so no need to check params
+				_BluetoothConfigOpen ( );
+			}
+			
+			private function _BluetoothConnected ( event:UtilityEvent ) : void
+			{
+				var sAddr:String = event.params as String;
+				if ( sAddr != _userState.bluetoothAddress )
+				{
+					_userState.bluetoothAddress = sAddr;
+					callLater ( _UserStatePersist );
+				}
+			}
+			
+			private function _CameraConfigAdjustReport ( ) : void
+			{
+				_UserVarsQueue ( [ new SFSUserVariable ( 'ccfga', _userState.cameraAdjustForMotion ) ] );
+			}
+			
+			private function _CameraConfigAdjustRequest ( sfso:ISFSObject ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CameraConfigAdjustRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				// if true, only apply if actually have cameraConfigMotion
+				var bVal:Boolean = sfso.getBool ( 'b' );
+				if ( bVal )
+				{
+					if ( !_userState.cameraConfigMotion )
+					{
+						bVal = false;
+					}
+				}
+				if ( bVal == _userState.cameraAdjustForMotion )
+					return;  // no change
+				
+				_userState.cameraAdjustForMotion = bVal;
+				callLater ( _UserStatePersist );
+				callLater ( _CameraConfigAdjustReport );
+				// if we were moving, the change to cameraAdjustForMotion puts us in non-compliance, so switch config
+				if ( _bMoving )
+				{
+					if ( bVal )
+					{
+						_cameraConfigActive = _userState.cameraConfigMotion;
+					}
+					else
+					{
+						_cameraConfigActive = _userState.cameraConfigDefault;
+					}
+					callLater ( _LiveCastConfigUpdate );
+				}
+			}
+			
+			private function _CameraConfigDefaultRequest ( sfso:ISFSObject ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CameraConfigDefaultRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				_userState.cameraConfigDefault = CameraConfig.newFromSFSObject ( sfso );
+				callLater ( _UserStatePersist );
+				if ( !isMoving || !_userState.cameraAdjustForMotion )
+				{
+					_cameraConfigActive = _userState.cameraConfigDefault;
+					callLater ( _LiveCastConfigUpdate );
+				}
+			}
+			
+			private function _CameraConfigMotionRequest ( sfso:ISFSObject ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CameraConfigMotionRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				_userState.cameraConfigMotion = CameraConfig.newFromSFSObject ( sfso );
+				callLater ( _UserStatePersist );
+				if ( isMoving && _userState.cameraAdjustForMotion )
+				{
+					_cameraConfigActive = _userState.cameraConfigMotion;
+					callLater ( _LiveCastConfigUpdate );
+				}
+			}
+			
+			private function _CameraConfigReport ( ) : void
+			{
+				_UserVarsQueue ( [
+					new SFSUserVariable (
+						'ccfg',
+						new CameraConfig (
+							_iVideoActualWd,
+							_iVideoActualHt,
+							Math.min ( _cameraConfigActive.fps, _camera.currentFPS ),
+							_cameraConfigActive.favorArea,
+							_camera.bandwidth,
+							_camera.quality,
+							_camera.keyFrameInterval
+						).toSFSObject()
+					)
+				] );
+			}
+			
+			private function _CameraConfigRequest ( sfso:ISFSObject ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CameraConfigRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				_cameraConfigActive = CameraConfig.newFromSFSObject ( sfso );
+				
+				callLater ( _LiveCastPublish );
+			}
+			
+			private function _CameraFpsPoll ( event:TimerEvent ) : void
+			{
+				_UserVarsQueue ( [ new SFSUserVariable ( 'cfps', _camera.currentFPS ) ] );
+			}
+			
+			private function _CameraFpsPollRequest ( sfso:ISFSObject ) : void
+			{
+				var iMsec:int = sfso.getShort ( 'm' ) || 0;
+				if ( iMsec < 1 )
+				{
+					// turn polling off
+					_tmrFps.stop();
+				}
+				else
+				{
+					if ( iMsec < 500 )
+					{
+						// don't poll more often than once every half second
+						iMsec = 500;
+					}
+					_tmrFps.delay = iMsec;
+					if ( !_tmrFps.running )
+					{
+						_tmrFps.start();
+					}
+				}
+			}
+			
+			private function _CameraMoveHomeRequest ( ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CameraMoveHomeRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				// ##### TESTING #####
+				_DebugOut ( 'Arduino command: 4' );
+				// ###################
+				if ( _bTurretEnabled )
+				{
+					_ArduinoSend ( _baArdComCameraHome );
+					// ##### TESTING #####
+					if ( !_bArduinoConnected )
+					{
+						// fake it
+						var aVarsToSend:Array = [];
+						if ( _TurretPanUpdate ( _iTurretPanHome ) )
+						{
+							aVarsToSend.push ( new SFSUserVariable ( 'cp', _iTurretPanHome ) );
+						}
+						if ( _TurretTiltUpdate ( _iTurretTiltHome ) )
+						{
+							aVarsToSend.push ( new SFSUserVariable ( 'ct', _iTurretTiltHome ) );
+						}
+						if ( aVarsToSend.length > 0 )
+						{
+							_UserVarsQueue ( aVarsToSend );
+							_TurretUpdateCommit ( );
+						}
+					}
+					// ###################
+				}
+			}
+			
+			private function _CameraMoveRequest ( sfso:ISFSObject ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CameraMoveRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				var cm:CameraMove = CameraMove.NewFromSFSObject ( sfso );
+				// ##### TESTING #####
+				_DebugOut ( 'Arduino command: ' + cm.commandString );
+				// ###################
+				if ( _bTurretEnabled )
+				{
+					_ArduinoSend ( cm.commandPacket );
+					// ##### TESTING #####
+					if ( !_bArduinoConnected )
+					{
+						// fake it
+						var aVarsToSend:Array = [];
+						if ( _TurretPanUpdate ( cm.panDegrees ) )
+						{
+							aVarsToSend.push ( new SFSUserVariable ( 'cp', cm.panDegrees ) );
+						}
+						if ( _TurretTiltUpdate ( cm.tiltDegrees ) )
+						{
+							aVarsToSend.push ( new SFSUserVariable ( 'ct', cm.tiltDegrees ) );
+						}
+						if ( aVarsToSend.length > 0 )
+						{
+							_UserVarsQueue ( aVarsToSend );
+							_TurretUpdateCommit ( );
+						}
+					}
+					// ###################
+				}
+			}
+			
+			private function _CameraMoveResetRequest ( ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CameraMoveResetRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				// ##### TESTING #####
+				_DebugOut ( 'Arduino command: 5' );
+				// ###################
+				if ( _bTurretEnabled )
+				{
+					_ArduinoSend ( _baArdComCameraReset );
+					// ##### TESTING #####
+					if ( !_bArduinoConnected )
+					{
+						// fake it
+						var aVarsToSend:Array = [];
+						if ( _TurretPanUpdate ( _iTurretPanReset ) )
+						{
+							aVarsToSend.push ( new SFSUserVariable ( 'cp', _iTurretPanReset ) );
+						}
+						if ( _TurretTiltUpdate ( _iTurretTiltReset ) )
+						{
+							aVarsToSend.push ( new SFSUserVariable ( 'ct', _iTurretTiltReset ) );
+						}
+						if ( aVarsToSend.length > 0 )
+						{
+							_UserVarsQueue ( aVarsToSend );
+							_TurretUpdateCommit ( );
+						}
+					}
+					// ###################
+				}
+			}
+			
+			private function _CameraRestartRequest ( ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CameraRestartRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				callLater ( _LiveCastPublish );
+			}
+			
+			private function _CustomConfigDone ( ) : void
+			{
+				// validation to occur as soon as progress view is visible
+				currentState = 'custom_validate';
+				callLater ( _CustomConfigValidate );
+			}
+			
+			private function _CustomConfigOpen ( ) : void
+			{
+				var sState:String = currentState;
+				if ( !_bSleep )
+					_SystemsDeactivate ( );
+				
+				_sCfgDoneState = sState;
+				_custCmdMgr.suspend = true;
+				currentState = 'custom_config';
+			}
+			
+			private function _CustomConfigValidate ( ) : void
+			{
+				if ( _custCmdMgr.validate ( ) )
+				{
+					// configuration okay
+					_custCmdMgr.suspend = false;
+					_UserVarsQueue ( [ new SFSUserVariable ( 'cus', _custCmdMgr.commandsToSFSObject() ) ] );
+					currentState = _sCfgDoneState;
+					if ( _sCfgDoneState != 'asleep' )
+					{
+						_SystemsActivate ( );
+					}
+				}
+				else
+				{
+					// return to configuration
+					currentState = 'custom_config';
+				}
+			}
+			
+			private function _CustomInit ( ) : void
+			{
+				// first request for instance will
+				// initialize singleton and restore
+				// custom command config data from dat file, if exists
+				_custCmdMgr = CustomCommandManager.instance;
+				
+				callLater ( _SfsPresetsLoad );
+			}
+			
+			private function _CustomRequest ( sfso:ISFSObject ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_CustomRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				var ac:ArduinoCommand = ArduinoCommand.NewFromSFSObject ( sfso );
+				// ##### TESTING #####
+				_DebugOut ( 'Arduino command: ' + ac.commandString );
+				// ###################
+				
+				if ( _custCmdMgr.suspend )
+				{
+					_DebugOut ( '_CustomRequest discorded while Command Configuration in progress.' );
+					return;
+				}
+				
+				_ArduinoSend ( ac.commandPacket );
+			}
+			
+			private function _DebugByteArrayReceived ( event:DebugByteArrayEvent ) : void
+			{
+				if ( _bDebug )
+				{
+					var sHex:String = HexStringUtil.HexStringFromByteArray ( event.bytes );
+					var sMsg:String = resourceManager.getString ( 'default', event.messageResource, [ sHex ] );
+					if ( !sMsg )
+					{
+						sMsg = event.messageResource + ': ' + sHex;
+					}
+					_DebugOut ( sMsg );
+				}
+			}
+			
+			/**
+			 * @param message Message to display
+			 * @param isResource Indicates that the message string is to be passed to
+			 * resourceManager.getString()
+			 * @param resourceParams Parameters (if any) to pass to resourceManager.getString()
+			 * if isResource is true
+			 * @param alertOk If debug mode is off, display an Alert
+			 * @param end String (if any) to add at end of debug output
+			 * (defaults to new line character)
+			 */
+			private function _DebugOut (
+				message:String = '',
+				isResource:Boolean = false,
+				resourceParams:Array = null,
+				alertOk:Boolean = false,
+				end:String = '\n'
+			) : void
+			{
+				var sMsg:String;
+				if ( _bDebug )
+				{
+					if ( isResource )
+					{
+						sMsg = resourceManager.getString ( 'default', message, resourceParams );
+						if ( !sMsg )
+						{
+							sMsg = message;
+						}
+					}
+					else
+					{
+						sMsg = message;
+					}
+					// limit line count
+					var s:String = taDebug.text;
+					var iOver:int = s.match ( _reNewLines ).length - 39;
+					if ( iOver > 0 )
+					{
+						for ( var i:int=0; i<iOver; i++ )
+						{
+							s = s.replace ( _reLine0, '' );
+						}
+						taDebug.text = s;
+					}
+					taDebug.appendText ( '-- ' + sMsg + end );
+				}
+				else if ( alertOk )
+				{
+					dispatchEvent (
+						new DialogEvent (
+							DialogEvent.ALERT,
+							message,
+							'',
+							resourceParams
+						)
+					);
+				}
+			}
+			
+			private function _DebugOutReceived ( event:DebugEventEx ) : void
+			{
+				_DebugOut (
+					event.message,
+					event.isResource,
+					event.resourceParams,
+					event.alertOk,
+					event.end
+				);
+			}
+			
+			private function _DeclinationUpdated ( event:UtilityEvent ) : void
+			{
+				var nDec:Number = event.params.declination;
+				
+				var aVarsToSend:Array = [ new SFSUserVariable ( 'mdc', nDec ) ];
+				_GyroHeadingUpdate ( aVarsToSend );
+				_UserVarsQueue ( aVarsToSend );
+				// _OrientationAdjustUpdate ( );
+			}
+			
+			// returns value between -180 and 180
+			private function _DegreesRangeValidate ( value:Number ) : Number
+			{
+				var nVal:Number = value;
+				if ( nVal > 180 )
+				{
+					do
+						nVal -= 360;
+					while ( nVal > 180 );
+				}
+				else if ( nVal < -180 )
+				{
+					do
+						nVal += 360;
+					while ( nVal < -180 );
+				}
+				return nVal;
+			}
+			
+			private function _EepromCheckVersion ( ) : void
+			{
+				// get current capabilities schema version
+				var i_eep:ArduinoEeprom = _oEepromById [ 'eepv' ] as ArduinoEeprom;
+				if ( _bCapsStorePhone )
+				{
+					// values stored on phone
+					var oStore:Object = _EepromsPhoneRestore ( );
+					var bNew:Boolean = true;
+					var i_sId:String;
+					var i_val:*;
+					var i:int;
+					var iLim:int;
+					if ( oStore != null )
+					{
+						if  ( oStore.hasOwnProperty ( 'eepv' ) )
+						{
+							i_val = oStore [ 'eepv' ];
+							if ( i_val == i_eep.value )
+							{
+								bNew = false;
+								// EEPROM schema is current, so remove it from list
+								// and continue to restore the rest
+								_vsEepromIdsToCheck.splice ( _vsEepromIdsToCheck.indexOf ( 'eepv' ), 1 );
+								iLim = _vsEepromIdsToCheck.length;
+								for ( i=0; i<iLim; i++ )
+								{
+									i_sId = _vsEepromIdsToCheck.pop ( );
+									if ( oStore.hasOwnProperty ( i_sId ) )
+									{
+										i_eep = _oEepromById [ i_sId ] as ArduinoEeprom;
+										i_eep.restoreValue ( oStore [ i_sId ] );
+									}
+								}
+							}
+						}
+					}
+					_EepromConfigStart ( bNew );
+				}
+				else
+				{
+					// stored on Arduino
+					if ( _ArduinoSend ( i_eep.readCommandPacket ) )
+					{
+						_EepromReadTimerReset ( );
+					}
+					else
+					{
+						_EepromReadTimedOut ( );
+					}
+				}
+			}
+			
+			private function _EepromConfigStart ( isNew:Boolean = false ) : void
+			{
+				// Display appropriate captions, depending upon whether or not we already have
+				// stored capabilities configuration data compatible with the current schema.
+				// If this is a new installation or an update with new schema version,
+				// user will need to configure from scratch.  Otherwise their previous choices
+				// will still be in force.
+				if ( isNew )
+				{
+					_sEepromConfigCaptRsrc = 'eeprom_config_new_title';
+					_sEepromWriteCaptRsrc = 'eeprom_write_new_title';
+				}
+				else
+				{
+					_sEepromConfigCaptRsrc = 'eeprom_config_title';
+					_sEepromWriteCaptRsrc = 'eeprom_write_title';
+				}
+				// Display capabilities configuration screen.
+				currentState = 'eeprom_config';
+			}
+			
+			private function _EepromConfigUserDone ( ) : void
+			{
+				currentState = 'eeprom_write';
+				callLater ( _EepromConfigWriteQueue );
+			}
+			
+			private function _EepromConfigWrite ( ) : void
+			{
+				// to save memory, can dispose of _acEeproms which won't be needed again during this session
+				_acEeproms = null;
+				
+				try
+				{
+					_bTurretPanEnabled = ( _oEepromById.ccp as ArduinoEeprom ).value;
+					if ( _bTurretPanEnabled )
+					{
+						_bTurretEnabled = true;
+						_iTurretPanHome = ( _oEepromById.ccph as ArduinoEeprom ).value;
+						_iTurretPanReset = ( _oEepromById.ccpr as ArduinoEeprom ).value;
+					}
+					_bTurretTiltEnabled = ( _oEepromById.cct as ArduinoEeprom ).value;
+					if ( _bTurretTiltEnabled )
+					{
+						_bTurretEnabled = true;
+						_iTurretTiltHome = ( _oEepromById.ccth as ArduinoEeprom ).value;
+						_iTurretTiltReset = ( _oEepromById.cctr as ArduinoEeprom ).value;
+					}
+					_bLightExternal = ( _oEepromById.hle as ArduinoEeprom ).value;
+					// _DebugOut ( '_bLightExternal: ' + _bLightExternal );
+					if ( _bLightExternal )
+					{
+						_bLightEnabled = true;
+						_baArdComLightOff = new ByteArray ( );
+						_baArdComLightOff.writeByte ( 0xC );
+						_baArdComLightOn = new ByteArray ( );
+						_baArdComLightOn.writeByte ( 0xD );
+					}
+				}
+				catch ( err:Error )
+				{
+					_DebugOut ( 'error_eeprom_item_nf', true, [ err.message ] );
+				}
+				
+				if ( _bEepromReadFail )
+				{
+					// no point in attempting to write if could not read
+					_EepromsWriteDone ( );
+					return;
+				}
+				
+				// add to the queue any eeprom items that have changed values and are not already in the list
+				var i_sId:String;
+				var i_eep:ArduinoEeprom;
+				for ( i_sId in _oEepromById )
+				{
+					i_eep = _oEepromById [ i_sId ] as ArduinoEeprom;
+					if ( i_eep.changed && _vsEepromIdsToCheck.indexOf ( i_sId ) < 0 )
+					{
+						_vsEepromIdsToCheck.push ( i_sId );
+					}
+				}
+				if ( _vsEepromIdsToCheck.length < 1 )
+				{
+					_EepromsWriteDone ( );
+				}
+				else
+				{
+					// have something to write
+					if ( _bCapsStorePhone )
+					{
+						callLater ( _EepromsPhonePersist );
+					}
+					else
+					{
+						callLater ( _EepromsWriteBegin ); 
+					}
+				}
+			}
+			
+			private function _EepromConfigWriteQueue ( ) : void
+			{
+				if ( vwProgress != null )
+					callLater ( _EepromConfigWrite );
+				else
+					callLater ( _EepromConfigWriteQueue );
+			}
+			
+			private function _EepromReadTimedOut ( event:TimerEvent = null ) : void
+			{
+				_bEepromReadFail = true;
+				_DebugOut ( 'error_eeprom_read', true, null, true );
+				// skip to EEPROM config view
+				_EepromConfigStart ( true );
+			}
+			
+			private function _EepromReadTimerReset ( ) : void
+			{
+				_tmrEepromReadWait.reset ( );
+				_tmrEepromReadWait.start ( );
+			}
+			
+			private function _EepromReadTimerStop ( ) : void
+			{
+				_tmrEepromReadWait.stop ( );
+			}
+			
+			private function _EepromsPhonePersist ( ) : void
+			{
+				var oStore:Object = {};
+				for ( var i_sId:String in _oEepromById )
+				{
+					oStore [ i_sId ] = ( _oEepromById [ i_sId ] as ArduinoEeprom ).value;
+				}
+				
+				try
+				{
+					var ba:ByteArray = new ByteArray ( );
+					ba.writeObject ( oStore );
+					
+					var f:File = _dirSets.resolvePath ( 'Caps.dat' );
+					if ( f.exists ) f.deleteFile ( );
+					
+					var fs:FileStream = new FileStream();
+					// open
+					fs.open ( f, FileMode.WRITE );
+					// write
+					fs.writeBytes ( ba );
+					// close
+					fs.close();
+					
+					if ( _bOsAllowsExit )
+					{
+						var fBkp:File = _dirSetsBkp.resolvePath ( 'Caps.dat' );
+						f.copyTo ( fBkp, true );
+					}
+				}
+				catch ( err:Error )
+				{
+					_DebugOut ( err.message );
+				}
+				_EepromsWriteDone ( );
+			}
+			
+			private function _EepromsPhoneRestore ( ) : Object
+			{
+				var oStore:Object;
+				
+				var f:File = _dirSets.resolvePath ( 'Caps.dat' );
+				if ( !f.exists )
+					return oStore; // not yet saved locally
+				
+				var fs:FileStream = new FileStream();
+				// open
+				fs.open ( f, FileMode.READ );
+				// read
+				var ba:ByteArray = new ByteArray();
+				fs.readBytes ( ba );
+				// close
+				fs.close();
+				
+				try
+				{
+					oStore = ba.readObject ( );
+				}
+				catch ( err:Error )
+				{
+					_DebugOut ( err.message );
+				}
+				
+				return oStore;
+			}
+			
+			private function _EepromsRead ( ) : void
+			{
+				if ( _vsEepromIdsToCheck.length < 1 )
+				{
+					_EepromReadTimerStop ( );
+					// go to EEPROM config view
+					_EepromConfigStart ( );
+					return;
+				}
+				
+				var eep:ArduinoEeprom = _oEepromById [ _vsEepromIdsToCheck [ 0 ] ] as ArduinoEeprom;
+				if ( _ArduinoSend ( eep.readCommandPacket ) )
+				{
+					_EepromReadTimerReset ( );
+				}
+				else
+				{
+					_EepromReadTimedOut ( );
+				}
+			}
+			
+			private function _EepromsWrite ( event:TimerEvent = null ) : void
+			{
+				if ( _vsEepromIdsToCheck.length < 1 )
+				{
+					_EepromsWriteDone ( );
+					return;
+				}
+				
+				var eep:ArduinoEeprom = _oEepromById [ _vsEepromIdsToCheck.pop ( ) ] as ArduinoEeprom;
+				var uCount:uint = eep.byteCount;
+				var nMsecs:Number = EEPROM_WRITE_INTERVAL * uCount;
+				_tmrEepromWrite.delay = nMsecs;
+				// ##### TESTING #####
+				_DebugOut ( 'allowing ' + nMsecs + ' msecs to write ' + uCount + ' bytes to EEPROM at ' + eep.addressHex );
+				// ###################
+				_ArduinoSend ( eep.writeCommandPacket );
+			}
+			
+			private function _EepromsWriteBegin ( ) : void
+			{
+				_tmrEepromWrite.start ( );
+			}
+			
+			private function _EepromsWriteDone ( ) : void
+			{
+				_tmrEepromWrite.stop ( );
+				currentState = 'login_prompt';
+			}
+			
+			private function _EmergencyAcknowledge ( ) : void
+			{
+				// Called when receive message from pilot acknowledging notice of emergency condition.
+				// Can indicate that a latency problem has abated and we can resume activity if no other
+				// emergency flags are set.
+				_DebugOut ( 'Emergency state acknowledged by Pilot' );
+				_EmergencyFlagsClear ( EmergencyFlags.LATENCY );
+			}
+			
+			private function _EmergencyFlagsClear ( flags:uint, fromArduino:Boolean = false ) : void
+			{
+				var uFlags:uint = FlagsUtil.Clear ( _uEmFlags, EmergencyFlags.ValidateFlags ( flags ) );
+				if ( uFlags != _uEmFlags )
+				{
+					_uEmFlags = uFlags;
+					_EmergencyStateUpdate ( );
+				}
+			}
+			
+			private function _EmergencyFlagsSet ( flags:uint, fromArduino:Boolean = false ) : void
+			{
+				var uFlags:uint = FlagsUtil.Set ( _uEmFlags, EmergencyFlags.ValidateFlags ( flags ) );
+				if ( uFlags != _uEmFlags )
+				{
+					_uEmFlags = uFlags;
+					_EmergencyStateUpdate ( );
+					// #############
+					// until Arduino does safe correctly
+					var bStop:Boolean = true;
+					if ( _uEmFlags == EmergencyFlags.OBSTACLE && ( _moveProps.leftRun == MotorStates.BACKWARD || _moveProps.rightRun == MotorStates.BACKWARD ) )
+					{
+						bStop = false;
+					}
+					if ( bStop )
+					{
+						_moveProps = MoveProps.newFromParameters ( );
+						isMoving = false;
+						_ArduinoSend ( _moveProps.commandPacket );
+					}
+					// #############
+					if ( !fromArduino )
+					{
+						// Arduino safe mode
+						_ArduinoSend ( _baArdComSafe );
+					}
+				}
+			}
+			
+			private function _EmergencyStateUpdate ( ) : void
+			{
+				// update user variable
+				_UserVarsQueue ( [ new SFSUserVariable ( 'ems', _uEmFlags ) ] );
+				// If all clear, resume normal activity.
+				// Arduino will prevent forward motion if ultrasonic range is too small.
+				_bMoveIgnore = ( _uEmFlags != 0 && _uEmFlags != EmergencyFlags.OBSTACLE );
+			}
+			
+			private function _ExitQuery ( ) : void
+			{
+				dispatchEvent (
+					new DialogEvent (
+						DialogEvent.DIALOG,
+						'exit_confirm_msg',
+						'exit_confirm_title',
+						null,
+						null,
+						new DialogData (
+							'exit',
+							new <DialogOption> [
+								new DialogOption ( 'y', 'yes_label' ),
+								new DialogOption ( 'n', 'no_label' )
+							],
+							-1,
+							_ExitQueryResponse
+						)
+					)
+				);
+			}
+			
+			private function _ExitQueryResponse ( commit:Boolean, data:DialogData ) : void
+			{
+				if ( data.responseIndex == 0 )
+				{
+					_ExitRequest ( );
+				}
+			}
+			
+			private function _ExitRequest ( ) : void
+			{
+				if ( _bOsAllowsExit )
+				{
+					_bExiting = true;
+					
+					_SystemsDeactivate ( );
+					if ( _bBatterySupport )
+					{
+						_batteryUtil.service.removeEventListener ( BatteryEvent.BATTERY_INFO, _BatteryUpdated );
+						_batteryUtil.unregister ( );
+						_batteryUtil.dismiss ( );
+						_batteryUtil = null;
+					}
+					
+					if ( _sf.isConnected )
+					{
+						if ( _sf.lastJoinedRoom != null )
+						{
+							_AvCastMgrDismiss ( );
+							callLater ( _ExitStepLogout );
+						}
+						else
+						{
+							callLater ( _ExitStepDisconnect );
+						}
+					}
+					else
+					{
+						callLater ( _ExitStepExit );
+					}
+					if ( _bBluetoothInUse )
+					{
+						_arduinoBluetooth.removeEventListener ( UtilityEvent.BLUETOOTH_CONFIG, _BluetoothConfigEvent );
+						_arduinoBluetooth.removeEventListener ( UtilityEvent.BLUETOOTH_CONNECTED, _BluetoothConnected );
+						_arduinoBluetooth = null;
+					}
+					_arduinoConnector.removeEventListener ( TelemetryEvent.PACKET_PAYLOADS, _ArduinoDataReceived );
+					_arduinoConnector.dismiss ( );
+					_arduinoConnector = null;
+				}
+			}
+			
+			private function _ExitStepDisconnect ( ) : void
+			{
+				_sf.disconnect ( );
+				callLater ( _ExitStepExit );
+			}
+			
+			private function _ExitStepExit ( ) : void
+			{
+				// this does not work on iOS
+				NativeApplication.nativeApplication.exit ( );
+			}
+			
+			private function _ExitStepLogout ( ) : void
+			{
+				_Logout ( );
+				callLater ( _ExitStepDisconnect );
+			}
+			
+			private function _GeolocationUpdated ( event:GeolocationEvent ) : void
+			{
+				var bChange:Boolean = false;
+				var nDif:Number = event.latitude - _gps.lat;
+				if ( nDif < _nGpsDifNeg || nDif > _nGpsDifPos )
+				{
+					bChange = true;
+					_gps.lat = event.latitude
+				}
+				nDif = event.longitude - _gps.lng;
+				if ( nDif < _nGpsDifNeg || nDif > _nGpsDifPos )
+				{
+					bChange = true;
+					_gps.lng = event.longitude;
+				}
+				_gps.accuracy = event.horizontalAccuracy;
+				/*
+				if ( event.horizontalAccuracy != _gps.accuracy )
+				{
+					bChange = true;
+					_gps.accuracy = event.horizontalAccuracy;
+				}
+				if ( event.speed != _gps.speed )
+				{
+					bChange = true;
+					_gps.speed = event.speed;
+				}
+				*/
+				if ( bChange )
+				{
+					_declinationUtil.setCoordinates ( event.latitude, event.longitude );
+					var sfsoGps:ISFSObject = _gps.toSFSObject();
+					_UserVarsQueue ( [ new SFSUserVariable ( 'gps', sfsoGps ) ] );
+					_fGpsRoomVarUpdate ( sfsoGps );
+				}
+			}
+			
+			private function _GpsRoomVarUpdate ( sfsoGps:ISFSObject ) : void
+			{
+				var nTime:Number = new Date().getTime();
+				if ( ( nTime - _nLastRoomGpsTime ) > 10000 )
+				{
+					_nLastRoomGpsTime = nTime;
+					// update room variable
+					_sf.send ( new SetRoomVariablesRequest ( [ new SFSRoomVariable ( 'gps', sfsoGps ) ] ) );
+				}
+			}
+			
+			// called when there is a significant change in gyro vector, camera turret vector or magnetic declination
+			private function _GyroHeadingUpdate ( varsToSend:Array ) : void
+			{
+				var nVal:Number = _DegreesRangeValidate ( _nHeadingRaw + _declinationUtil.declination + _nPhoneCompassOffset + _nPhoneOrientationOffset - _iTurretPanNet );
+				
+				var nDif:Number = nVal - _nHeading;
+				if ( nDif < _nFloatDifNeg || nDif > _nFloatDifPos )
+				{
+					_nHeading = nVal;
+					varsToSend.push ( new SFSUserVariable ( 'hd', nVal ) );
+				}
+			}
+			
+			// called when there is a significant change in either gyro vector or turret vector
+			private function _GyroPitchUpdate ( varsToSend:Array ) : void
+			{
+				var nVal:Number = _DegreesRangeValidate ( _DegreesRangeValidate ( _nPitchRaw + _nPhoneOrientationOffset - _iTurretTiltNet ) );
+				
+				var nDif:Number = nVal - _nPitch;
+				if ( nDif < _nFloatDifNeg || nDif > _nFloatDifPos )
+				{
+					_nPitch = nVal;
+					varsToSend.push ( new SFSUserVariable ( 'pt', nVal ) );
+				}
+			}
+			
+			private function _GyroRollUpdate ( varsToSend:Array ) : void
+			{
+				var nVal:Number = _nRollRaw;
+				
+				var nDif:Number = nVal - _nRoll;
+				if ( nDif < _nFloatDifNeg || nDif > _nFloatDifPos )
+				{
+					_nRoll = nVal;
+					varsToSend.push ( new SFSUserVariable ( 'ro', nVal ) );
+				}
+			}
+			
+			private function _GyroUpdatedAdvanced ( event:GyroscopeEvent ) : void
+			{
+				var aVarsToSend:Array = [];
+				var nDif:Number;
+				var nVal:Number;
+				
+				// Android phone values assume portrait position, with
+				// y axis positive toward top, x axis positive toward right,
+				// and z axis positive out of the screen toward user.
+				// In landscape position, Android pitch becomes our roll
+				// and roll becomes our pitch.
+				
+				// ##### TODO #####
+				// Add logic to allow for the use of devices whose coordinate system
+				// defaults to landscape mode, as a few Android tablets are reputed to do.
+				// See http://www.sensorplatforms.com/understanding-orientation-conventions-mobile-platforms/
+				// ################
+				
+				// pitch
+				nVal = _DegreesRangeValidate ( _nPhoneOrientationSign * _nPitchSign * ( MathConsts.RADIANS_TO_DEGREES * event.roll + 90 ) );
+				
+				nDif = nVal - _nPitchRaw;
+				if ( nDif < _nFloatDifNeg || nDif > _nFloatDifPos )
+				{
+					_nPitchRaw = nVal;
+					_GyroPitchUpdate ( aVarsToSend );
+				}
+				
+				// roll
+				nVal = _nPhoneOrientationSign * _nRollSign * MathConsts.RADIANS_TO_DEGREES * event.pitch;
+				
+				nDif = nVal - _nRollRaw;
+				if ( nDif < _nFloatDifNeg || nDif > _nFloatDifPos )
+				{
+					_nRollRaw = nVal;
+					_GyroRollUpdate ( aVarsToSend );
+				}
+				
+				// heading
+				nVal = event.yaw * MathConsts.RADIANS_TO_DEGREES;
+				
+				nDif = nVal - _nHeadingRaw;
+				if ( nDif < _nFloatDifNeg || nDif > _nFloatDifPos )
+				{
+					_nHeadingRaw = nVal;
+					_GyroHeadingUpdate ( aVarsToSend );
+				}
+				
+				// if we have anything in array, send it
+				if ( aVarsToSend.length > 0 )
+				{
+					_UserVarsQueue ( aVarsToSend );
+				}
+				
+				/*
+				if ( _bDeviceDefaultPortrait )
+				{
+					_qDeviceSensors.fromEulerAngles ( event.pitch, event.roll, event.yaw );
+				}
+				else
+				{
+					_qDeviceSensors.fromEulerAngles ( event.roll, event.pitch, event.yaw );
+				}
+				_OrientationUpdate ( );
+				*/
+				
+				/*
+				_DebugOut (
+				'p: ' + Math.round ( event.pitch * RADIANS_TO_DEGREES ) +
+				'  r: ' + Math.round ( event.roll * RADIANS_TO_DEGREES ) +
+				'  y: ' + Math.round ( event.yaw * RADIANS_TO_DEGREES )
+				);
+				*/
+			}
+			
+			private function _HaveValidPilotId ( ) : Boolean
+			{
+				
+				if ( _iPilotUserId < 1 )
+					return false;
+				
+				if ( _sf.lastJoinedRoom != null )
+				{
+					if ( _sf.lastJoinedRoom.getUserById ( _iPilotUserId ) != null )
+					{
+						return true;
+					}
+				}
+				
+				_iPilotUserId = 0;
+				return false;
+			}
+			
+			private function _InitialVariablesReport ( ) : void
+			{
+				_fGpsRoomVarUpdate = _GpsRoomVarUpdate; // from now on this method will be called when geolocation changes
+				var sfsoGps:ISFSObject = _gps.toSFSObject();
+				var aRoomVars:Array = [
+					new SFSRoomVariable ( 'gps', sfsoGps ),
+					new SFSRoomVariable ( 'asd', _sRobotAssetsDir ),
+					new SFSRoomVariable ( 'pip', _sPilotNames )
+				];
+				_sf.send ( new SetRoomVariablesRequest ( aRoomVars ) );
+				
+				var aUserVars:Array = [
+					new SFSUserVariable ( 'appv', _sAppVersion ),
+					new SFSUserVariable ( 'ccfga', _userState.cameraAdjustForMotion ),
+					new SFSUserVariable ( 'fle', _bLightEnabled ),
+					new SFSUserVariable ( 'hd', _nHeading ),
+					new SFSUserVariable ( 'mdc', _declinationUtil.declination ),
+					new SFSUserVariable ( 'ro', _nRoll ),
+					new SFSUserVariable ( 'pt', _nPitch ),
+					new SFSUserVariable ( 'pbt', _nBatteryPct ),
+					new SFSUserVariable ( 'gps', sfsoGps ),
+					new SFSUserVariable ( 'remex', _bOsAllowsExit ),
+					new SFSUserVariable ( 'sleep', _bSleep ),
+					new SFSUserVariable ( 'cus', _custCmdMgr.commandsToSFSObject() )
+				];
+				
+				var i_eep:ArduinoEeprom;
+				var i_sId:String;
+				for ( i_sId in _oEepromById )
+				{
+					i_eep = _oEepromById [ i_sId ] as ArduinoEeprom;
+					if ( i_eep.reportable )
+					{
+						aUserVars.push ( new SFSUserVariable ( i_sId, i_eep.value ) );
+					}
+				}
+				
+				if ( _bTurretPanEnabled )
+					aUserVars.push ( new SFSUserVariable ( 'cp', _iTurretPanHome + _iTurretPanNet ) );
+				
+				if ( _bTurretTiltEnabled )
+					aUserVars.push ( new SFSUserVariable ( 'ct', _iTurretTiltHome + _iTurretTiltNet ) );
+				
+				_UserVarsQueue ( aUserVars );
+			}
+			
+			private function _Light ( on:Boolean ) : void
+			{
+				if ( !_bLightEnabled )
+					return;
+				
+				_bLightOn = on;
+				
+				if ( _bLightExternal )
+				{
+					if ( on )
+					{
+						_ArduinoSend ( _baArdComLightOn );
+					}
+					else
+					{
+						_ArduinoSend ( _baArdComLightOff );
+					}
+				}
+				else
+				{
+					if ( on )
+					{
+						stage.displayState = StageDisplayState.FULL_SCREEN;
+					}
+					else
+					{
+						stage.displayState = StageDisplayState.NORMAL;
+					}
+				}
+				
+				_UserVarsQueue ( [ new SFSUserVariable ( 'fl', _bLightOn ) ] );
+			}
+			
+			private function _LightCancel ( ) : void
+			{
+				_Light ( false );
+			}
+			
+			private function _LiveCastCameraAttach ( ) : void
+			{
+				if ( _bLiveCastMonitor )
+				{
+					_video.attachCamera ( _camera );
+				}
+				else
+				{
+					_video.attachCamera ( null );
+					_video.clear ( );
+				}
+			}
+			
+			private function _LiveCastCheckSize ( ) : void
+			{
+				var wd:Number = _camera.width || 0;
+				if ( wd < 1 )
+				{
+					callLater ( _LiveCastCheckSize );
+				}
+				else
+				{
+					_iVideoActualWd = wd;
+					_iVideoActualHt = _camera.height;
+					
+					var nAspRatio:Number = 1.0 * _iVideoActualHt / _iVideoActualWd;
+					var nScale:Number;
+					if ( nAspRatio > _nDeviceAspectRatio )
+					{
+						// height is limiting
+						nScale = 1.0 * _iAppHt / _iVideoActualHt;
+					}
+					else
+					{
+						nScale = 1.0 * _iAppWd / _iVideoActualWd;
+					}
+					_iVideoMonFullWd = Math.round ( nScale * _iVideoActualWd );
+					_iVideoMonFullHt = Math.round ( nScale * _iVideoActualHt );
+					
+					_iVideoMonPortWd = Math.round ( _nVideoPortFract * _iVideoMonFullWd );
+					_iVideoMonPortHt = Math.round ( _nVideoPortFract * _iVideoMonFullHt );
+					
+					// _iChatWd = Math.min ( 240, Math.max ( 160, _iAppWd - 16 - _iVideoMonPortWd ) );
+					
+					_LiveCastMonitorSizeSet ( );
+					if ( currentState == 'livecast_wait' )
+						currentState = 'awake';
+					
+					callLater ( _CameraConfigReport );
+				}
+			}
+			
+			private function _LiveCastClear ( ) : Boolean
+			{
+				var bWasOn:Boolean = false;
+				_LiveCastMonitorClear ( );
+				if ( _nsLiveCast != null )
+				{
+					bWasOn = true;
+					_avCastMgr.unpublishLiveCast ( );
+					_nsLiveCast.dispose ( );
+					_nsLiveCast = null;
+				}
+				return bWasOn;
+			}
+			
+			private function _LiveCastConfigUpdate ( ) : void
+			{
+				if ( _nsLiveCast == null )
+				{
+					_LiveCastPublish ( );
+				}
+				else
+				{
+					try
+					{
+						// ask the camera for what we want; we'll find out later what it really gives us
+						_camera.setMode (
+							_cameraConfigActive.width,
+							_cameraConfigActive.height,
+							_cameraConfigActive.fps,
+							_cameraConfigActive.favorArea
+						);
+						_camera.setQuality ( _cameraConfigActive.bandWidth, _cameraConfigActive.quality );
+						_camera.setKeyFrameInterval ( _cameraConfigActive.keyFrameInterval );
+						
+						callLater ( _LiveCastCheckSize );
+					}
+					catch ( e:Error )
+					{
+						_DebugOut ( 'error_livecast_config_update', true, [ e.message ] );
+					}
+				}
+			}
+			
+			private function _LiveCastMonitorClear ( ) : void
+			{
+				if ( _video )
+				{
+					_video.attachCamera ( null );
+					_video.clear ( );
+					uicVideo.removeChild ( _video );
+					_video = null;
+				}
+			}
+			
+			private function _LiveCastMonitorFullToggle ( ) : void
+			{
+				_bLiveCastMonFull = !_bLiveCastMonFull;
+				_LiveCastMonitorSizeSet ( );
+			}
+			
+			private function _LiveCastMonitorSizeSet ( ) : void
+			{
+				if ( _bLiveCastMonFull )
+				{
+					_iVideoMonWd = _iVideoMonFullWd;
+					_iVideoMonHt = _iVideoMonFullHt;
+					_iVideoMonTop = 0;
+					_iVideoMonLeft = ( _iAppWd - _iVideoMonFullWd ) / 2;
+				}
+				else
+				{
+					_iVideoMonWd = _iVideoMonPortWd;
+					_iVideoMonHt = _iVideoMonPortHt;
+					_iVideoMonTop = 8; // whatever gui dictates
+					_iVideoMonLeft = 8;
+				}
+				_LiveCastMonitorUpdate ( );
+			}
+			
+			private function _LiveCastMonitorToggle ( ) : void
+			{
+				_bLiveCastMonitor = !_bLiveCastMonitor;
+				_LiveCastMonitorUpdate ( );
+			}
+			
+			private function _LiveCastMonitorUpdate ( ) : void
+			{
+				_LiveCastMonitorClear ( );
+				if ( _bLiveCastMonitor )
+				{
+					_video = new Video ( _iVideoActualWd, _iVideoActualHt );
+					_video.width = _iVideoMonWd;
+					_video.height = _iVideoMonHt;
+					uicVideo.addChild ( _video );
+					_video.attachCamera ( _camera );
+				}
+			}
+			
+			private function _LiveCastPublish ( ) : void
+			{
+				_LiveCastClear ( );
+				// Publish my live cast
+				try
+				{
+					// ask the camera for what we want; we'll find out later what it really gives us
+					_camera.setMode (
+						_cameraConfigActive.width,
+						_cameraConfigActive.height,
+						_cameraConfigActive.fps,
+						_cameraConfigActive.favorArea
+					);
+					_camera.setQuality ( _cameraConfigActive.bandWidth, _cameraConfigActive.quality );
+					_camera.setKeyFrameInterval ( _cameraConfigActive.keyFrameInterval );
+					
+					_nsLiveCast = _avCastMgr.publishLiveCast ( true, true, _camera );
+					
+					if ( _nsLiveCast != null )
+					{
+						_DebugOut ( 'status_livecast_publish', true );
+						// Attach camera output
+						callLater ( _LiveCastCheckSize );
+					}
+					else
+					{
+						_DebugOut ( 'error_livecast_stream_null', true, null, true );
+					}
+				}
+				catch ( err:Error )
+				{
+					_DebugOut ( 'error_livecast_publish', true, [ err.message ] );
+				}
+			}
+			
+			private function _LocalEepromConfigLoad ( ) : void
+			{
+				var f:File = File.applicationDirectory.resolvePath ( 'config/eeprom.json' );
+				
+				if ( !f.exists )
+				{
+					_DebugOut ( 'error_eeprom_cfg', true, null, true );
+					return;
+				}
+				
+				try
+				{
+					var fs:FileStream = new FileStream();
+					// open
+					fs.open ( f, FileMode.READ );
+					
+					// read
+					var sJson:String = fs.readUTFBytes ( fs.bytesAvailable );
+					
+					// close
+					fs.close ( );
+					
+					// _DebugOut ( sJson );
+					
+					var oJson:Object = JSON.parse ( sJson );
+					
+					// var sTest:String = '';
+					var i_ae:ArduinoEeprom;
+					var i_oVal:Object;
+					var i_sGrpId:String;
+					var i_sId:String;
+					var i_uAddr:uint;
+					var aEeps:Array = [];
+					// accumulate group IDs so can add group header items to config display
+					var vGrpIds:Vector.<String> = new <String> [];
+					for ( i_sId in oJson )
+					{
+						i_oVal = oJson [ i_sId ];
+						i_ae = ArduinoEeprom.NewFromJson ( i_sId, i_oVal );
+						i_uAddr = i_ae.address;
+						i_sGrpId = i_ae.groupId;
+						_aEepromByAddr [ i_uAddr ] = i_ae;
+						if ( vGrpIds.indexOf ( i_sGrpId ) < 0 )
+						{
+							// first encounter with this group ID
+							vGrpIds.push ( i_sGrpId );
+							aEeps.push ( new ArduinoEeprom ( 0, 0, i_sGrpId, 'group', null, false, i_sGrpId ) )
+						}
+						aEeps.push ( i_ae );
+						_vsEepromIdsToCheck.push ( i_sId );
+						_oEepromById [ i_sId ] = i_ae;
+						// sTest += i_sId + '  addr: ' + i_ae.address + ',  bytes: ' + i_ae.byteCount + ',  value: ' + i_ae.value + ',  desc: ' + resourceManager.getString('default',i_ae.resource) + '\n';
+					}
+					aEeps.sortOn ( [ 'groupId', 'address' ], [ Array.CASEINSENSITIVE, Array.NUMERIC ] );
+					_acEeproms = new ArrayCollection ( aEeps );
+					/*
+					var srt:Sort = new Sort ( );
+					srt.fields = [ new SortField ( 'groupId', false, false ), new SortField ( 'address', false, true ) ];
+					_acEeproms.sort = srt;
+					_acEeproms.refresh ( );
+					*/
+					// _DebugOut ( sTest, false, null, false, '' );
+					callLater ( _EepromCheckVersion );
+				}
+				catch ( err:Error )
+				{
+					_DebugOut ( 'error_eeprom_cfg_load', true, [ err.message ], true );
+				}
+			}
+			
+			private function _LocalEepromConfigLoadQueue ( ) : void
+			{
+				if ( vwProgress != null )
+					callLater ( _LocalEepromConfigLoad );
+				else
+					callLater ( _LocalEepromConfigLoadQueue );
+			}
+			
+			private function _LocalFilesInitialize ( ) : void
+			{
+				// storage directory
+				_dirSets = File.applicationStorageDirectory.resolvePath ( 'settings' );
+				_dirSets.createDirectory ( ); // no effect if already exists
+				if ( _bOsAllowsExit )
+				{
+					_dirSetsBkp = File.userDirectory.resolvePath ( 'ArxRobotBkp/settings' );
+					_dirSetsBkp.createDirectory ( ); // no effect if already exists
+					
+				}
+				
+				// defaults
+				var iCamIdx:int = -1; // camera selection logic will ignore this as invalid
+				_cameraConfigActive = new CameraConfig ( );
+				
+				// get settings from previous session, if exist
+				if ( _UserStateRestore ( ) )
+				{
+					if ( !_userState.cameraConfigDefault )
+					{
+						_userState.cameraConfigDefault = _cameraConfigActive;
+					}
+					if ( isNaN ( _userState.cameraIndex ) )
+					{
+						_userState.cameraIndex = iCamIdx;
+					}
+				}
+				else
+				{
+					_userState = new UserState ( );
+					_userState.cameraConfigDefault = _cameraConfigActive;
+					_userState.cameraIndex = iCamIdx;
+				}
+				_bCapsStorePhone = _userState.capabilitiesStorePhone;
+				_bDeviceFacesBack = _userState.deviceFacesBack;
+				_iBatteryPctMin = _userState.phoneBatteryMin;
+				_uArduinoModeId = _userState.arduinoModeId;
+				_iCapsStoreIdx = _bCapsStorePhone ? 1 : 0;
+				_cameraConfigActive = _userState.cameraConfigDefault;
+				_sRobotAssetsDir = _userState.assetsDir;
+				_sPilotNames = _userState.pilotNames;
+				_sRobotName = _userState.robotName;
+			}
+			
+			private function _LoginAttempt ( userName:String = '', password:String = null, zoneName:String = null, params:ISFSObject = null ) : void
+			{
+				currentState = 'login_wait';
+				_sRobotPass = password;
+				_sf.send ( new LoginRequest ( userName, password, zoneName, params ) );
+			}
+			
+			/*
+			private function _LoginForRoomList ( ) : void
+			{
+				_sf.send ( new LoginRequest ( ) );
+			}
+			*/
+			
+			private function _LoginRequest ( event:UtilityEvent ) : void
+			{
+				
+				// validate
+				var reEnds:RegExp = /^\s+|\s+$/g;
+				var reExcess:RegExp = /\s{2,}/g;
+				var sName:String = _sRobotName.replace ( reEnds, '' );
+				sName = sName.replace ( reExcess, ' ' );
+				var iLen:int = sName.length;
+				var bError:Boolean = false;
+				var aLobbyNames:Array = [ 'Lobby', 'lobby', 'Lounge', 'lounge' ];
+				var aPilots:Array = [];
+				if ( iLen < 3 || iLen > 32 || aLobbyNames.indexOf ( sName ) >= 0 )
+				{
+					// invalid Robot name
+					bError = true;
+				}
+				else
+				{
+					var sPilots:String = _sPilotNames.replace ( reEnds, '' );
+					sPilots = sPilots.replace ( reExcess, ' ' );
+					if ( sPilots.length < 3 )
+					{
+						// invalid Pilot name
+						bError = true;
+					}
+					else
+					{
+						aPilots = sPilots.split ( /\s*,\s*/ );
+						var iLim:int = aPilots.length;
+						var i_sName:String;
+						for ( var i:int=0; i<iLim; i++ )
+						{
+							i_sName = aPilots [ i ];
+							iLen = i_sName.length;
+							if ( iLen < 3 || iLen > 32 || aLobbyNames.indexOf ( i_sName ) >= 0 )
+							{
+								// invalid Pilot name
+								bError = true;
+								break;
+							}
+						}
+						sPilots = aPilots.join ( ',' );
+					}
+				}
+				
+				_sPilotNames = sPilots;
+				_sRobotName = sName;
+				
+				if ( bError )
+				{
+					dispatchEvent ( new DialogEvent ( DialogEvent.ALERT, 'error_login_name', 'error_login_name_title' ) );
+					return;
+				}
+				
+				_vsPilots = Vector.<String> ( aPilots );
+				
+				// if get here, have reasonable entries
+				var bChange:Boolean = false;
+				if ( _sRobotName != _userState.robotName )
+				{
+					// user changed Robot name
+					_userState.robotName = _sRobotName;
+					bChange = true;
+				}
+				if ( _sPilotNames != _userState.pilotNames )
+				{
+					// user changed Pilot name(s)
+					_userState.pilotNames = _sPilotNames;
+					bChange = true;
+				}
+				if ( _sRobotAssetsDir != _userState.assetsDir )
+				{
+					_userState.assetsDir = _sRobotAssetsDir;
+					bChange = true;
+				}
+				
+				if ( bChange )
+				{
+					callLater ( _UserStatePersist );
+				}
+				// for now no passwords needed
+				_LoginAttempt ( _sRobotName );
+			}
+			
+			private function _Logout ( ) : void
+			{
+				_sf.send ( new LogoutRequest ( ) );
+			}
+			
+			private function _MotionRequest ( sfso:ISFSObject ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_MotionRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				_moveProps = MoveProps.NewFromSFSObject ( sfso );
+				
+				// ##### TESTING #####
+				_DebugOut ( 'Arduino motion: ' + _moveProps.commandString );
+				// ###################
+				
+				_ArduinoSend ( _moveProps.commandPacket );
+				
+				if ( _bMoving != _moveProps.isMoving )
+				{
+					// update camera config
+					isMoving = !_bMoving;
+				}
+			}
+			
+			/*
+			private function _MotionRequestScale ( ) : MoveProps
+			{
+				var mp:MoveProps = _moveProps.clone ( );
+				if ( _moveProps.isMovingLeft )
+					mp.leftSpeed = _iDcMin + Math.round ( _moveProps.leftSpeed * _nDcScale );
+				if ( _moveProps.isMovingRight )
+					mp.rightSpeed = _iDcMin + Math.round ( _moveProps.rightSpeed * _nDcScale );
+				return mp;
+			}
+			
+			private function _MotorLimitsRequest ( sfso:ISFSObject ) : void
+			{
+				if ( _bMoveIgnore )
+				{
+					_DebugOut ( '_MotorLimitsRequest discarded due to emergency flags: ' + _uEmFlags );
+					return;
+				}
+				
+				var ml:MotorLimits = MotorLimits.newFromSFSObject ( sfso );
+				var iDcMinOld:int = _iDcMin;
+				var iDcTopOld:int = _iDcTop;
+				_iDcMin = ml.dcMin;
+				_iDcTop = ml.dcTop;
+				if ( iDcMinOld != _iDcMin || iDcTopOld != _iDcTop )
+				{
+					_nDcScale = ( _iDcTop - _iDcMin ) / 255;
+					if ( _bMoving )
+					{
+						// rescale latest requested speed to new range
+						var mp:MoveProps = _MotionRequestScale ( );
+						// ##### TESTING #####
+						_DebugOut ( 'Arduino moveProps rescaled: ' + mp.commandString );
+						// ###################
+						_ArduinoSend ( mp.commandPacket );
+					}
+				}
+			}
+			*/
+			
+			private function _NoOp ( arg:* = null ) : void { }
+			
+			/*
+			private function _OrientationAdjustUpdate ( ) : void
+			{
+				var qtrn:Quaternion = new Quaternion ( );
+				qtrn.fromEulerAngles ( -MathConsts.DEGREES_TO_RADIANS * _iTurretTiltNet, 0, MathConsts.DEGREES_TO_RADIANS * ( _decUtil.declination - _iTurretPanNet ) );
+				qtrn.normalize ( );
+				_qAdjust.multiply ( _qDeviceMount, qtrn );
+			}
+			*/
+			
+			private function _OrientationDeviceMountUpdate ( orientation:String ) : void
+			{
+				// ##### TESTING #####
+				_DebugOut ( orientation );
+				// ###################
+				
+				/*
+				var iYaw:int = 0;
+				var iRoll:int = 0;
+				var iPitch:int = 0;
+				if ( _bDeviceFacesBack )
+				{
+					if ( _bDeviceDefaultPortrait )
+					{
+						iYaw = -90;
+						iRoll = -90;
+					}
+					else
+					{
+						iPitch = 90;
+					}
+				}
+				else
+				{
+					if ( _bDeviceDefaultPortrait )
+					{
+						iYaw = 90;
+						iRoll = -90;
+					}
+					else
+					{
+						iYaw = 180;
+						iPitch = 90;
+					}
+				}
+				*/
+				
+				if ( orientation == _sOrient180 )
+				{
+					_nPhoneOrientationOffset = 180;
+					_nPhoneOrientationSign = -1;
+					// iYaw += 180;
+				}
+				else
+				{
+					_nPhoneOrientationOffset = 0;
+					_nPhoneOrientationSign = 1;
+				}
+				
+				/*
+				while ( iYaw > 180 )
+					iYaw -= 360;
+				
+				_qDeviceMount.fromEulerAngles (
+					MathConsts.DEGREES_TO_RADIANS * iPitch,
+					MathConsts.DEGREES_TO_RADIANS * iRoll,
+					MathConsts.DEGREES_TO_RADIANS * iYaw
+				);
+				
+				_OrientationAdjustUpdate ( );
+				*/
+			}
+			
+			/*
+			private function _OrientationUpdate ( ) : void
+			{
+				// eventually will want to use temp variable and
+				// test for near equality (dot product?), then
+				// send only when has changed significantly
+				_qReported.multiply ( _qDeviceSensors, _qAdjust );
+				_UserVarsQueue ( [ new SFSUserVariable ( 'oq', _qReported.toSFSObject() ) ] );
+			}
+			*/
+			
+			private function _PingReceived ( sfso:ISFSObject ) : void
+			{
+				var ping:Ping = Ping.newFromSFSObject ( sfso );
+				ping.robotTimeStamp = new Date().getTime();
+				ping.robotLagSfs = _iSfsLagRT;
+				_Pong ( ping );
+			}
+			
+			private function _Pong ( ping:Ping ) : void
+			{
+				if ( _HaveValidPilotId ( ) )
+				{
+					_WatchDogIntervalSet ( ping.intervalMsecs );
+					_sf.send ( new PrivateMessageRequest ( 'pong', _iPilotUserId, ping.toSFSObject() ) );
+					if ( _bSleep )
+					{
+						_UserVarsQueue ( [ new SFSUserVariable ( 'pbt', _nBatteryPct ) ], false );
+						_UserVarsQueuedSend ( );
+					}
+				}
+			}
+			
+			private function _SfsConnect ( ) : void
+			{
+				_SfsConnectTimerStart ( );
+				_sf.connectWithConfig ( _connectSettings.configData );
+			}
+			
+			private function _SfsConnectQueue ( ) : void
+			{
+				currentState = 'connect_wait';
+				Security.loadPolicyFile ( 'xmlsocket://' + _connectSettings.host + ':' + _connectSettings.port );
+				callLater ( _SfsConnect );
+			}
+			
+			private function _SfsPresetsLoad ( ) : void
+			{
+				_connectSettings = new SfsPreset ( );
+				_sConnectPrompt = resourceManager.getString ( 'default', 'connect_prompt' );
+				var f:File = File.applicationDirectory.resolvePath ( 'config/sfs-presets.json' );
+				
+				if ( !f.exists )
+				{
+					_DebugOut ( 'error_sfs_presets', true, null, true );
+					currentState = 'connect_prompt';
+					return;
+				}
+				
+				// build arrayList of presets, and pre-select the default one
+				var sIdDef:String = '';
+				var aPsts:Array = [];
+				var spDef:SfsPreset;
+				var spTyp:SfsPreset;
+				
+				try
+				{
+					var fs:FileStream = new FileStream();
+					// open
+					fs.open ( f, FileMode.READ );
+					
+					// read
+					var sJson:String = fs.readUTFBytes ( fs.bytesAvailable );
+					
+					// close
+					fs.close ( );
+					
+					// _DebugOut ( sJson );
+					
+					var oJson:Object = JSON.parse ( sJson );
+					
+					if ( oJson.hasOwnProperty ( 'configs' ) )
+					{
+						if ( oJson.hasOwnProperty ( 'default' ) )
+						{
+							sIdDef = oJson [ 'default' ];
+						}
+						var iLabelLen:int = 0;
+						var oCfgs:Object = oJson [ 'configs' ];
+						var i_sId:String;
+						var i_sLoc:String;
+						var i_iLen:int;
+						var i_sp:SfsPreset;
+						for ( i_sId in oCfgs )
+						{
+							i_sp = new SfsPreset ( i_sId, oCfgs [ i_sId ] )
+							aPsts.push ( i_sp );
+							if ( i_sId == sIdDef )
+							{
+								spDef = i_sp;
+							}
+							i_sLoc = resourceManager.getString ( 'default', 'connect_preset_' + i_sId );
+							if ( !i_sLoc )
+							{
+								i_sLoc = i_sId;
+							}
+							i_iLen = i_sLoc.length;
+							if ( i_iLen > iLabelLen )
+							{
+								iLabelLen = i_iLen;
+								spTyp = i_sp;
+							}
+						}
+					}
+				}
+				catch ( err:Error )
+				{
+					_DebugOut ( 'error_sfs_presets_load', true, [ err.message ], true );
+					currentState = 'connect_prompt';
+					return;
+				}
+				
+				aPsts.sortOn ( 'id', Array.CASEINSENSITIVE );
+				_alConnectPresets = new ArrayList ( aPsts );
+				connectPreset = spDef;
+				_connectPresetTypical = spTyp;
+				
+				currentState = 'connect_prompt';
+			}
+			
+			/*
+			private function _SfsConnectManual ( ) : void
+			{
+				var sHost:String = tinSfsHost.text;
+				var iPort:int = parseInt ( tinSfsPort.text );
+				_sf.config.host = sHost;
+				_sf.config.udpHost = sHost;
+				_sf.config.port = iPort;
+				_sf.config.udpPort = iPort;
+				_sf.config.zone = tinSfsZone.text;
+				Security.loadPolicyFile ( 'xmlsocket://' + sHost + ':' + iPort );
+				callLater ( _SfsConnect );
+			}
+			
+			private function _SfsConnectHostInit ( ) : void
+			{
+				if ( _sf && _sf.config )
+				{
+					tinSfsHost.text = _sf.config.host;
+					tinSfsPort.text = _sf.config.port.toString();
+					tinSfsZone.text = _sf.config.zone;
+				}
+			}
+			*/
+			
+			private function _SfsConnectTimeout ( event:TimerEvent ) : void
+			{
+				_SfsConnectTimerStop ( );
+				_sf.disconnect ( );
+				_DebugOut ( 'error_sfs_connect_timeout', true, null, true );
+				currentState = 'connect_prompt';
+			}
+			
+			private function _SfsConnectTimerStart ( ) : void
+			{
+				_tmrConnect.reset ( );
+				_tmrConnect.start ( );
+			}
+			
+			private function _SfsConnectTimerStop ( ) : void
+			{
+				_tmrConnect.stop ( );
+			}
+			
+			private function _SfsConnection ( event:SFSEvent ) : void
+			{
+				_SfsConnectTimerStop ( );
+				if ( event.params.success )
+				{
+					_DebugOut ( 'status_sfs_connect', true );
+					currentState = 'phone_config';
+				}
+				else
+				{
+					_DebugOut ( 'error_sfs_connect', true, [ event.params.errorMessage ], true );
+					currentState = 'connect_prompt';
+				}
+			}
+			
+			private function _SfsConnectionLost ( event:SFSEvent ) : void
+			{
+				if ( _bExiting )
+					return;
+				
+				_SfsConnectTimerStop ( );
+				_sConnectPrompt = resourceManager.getString ( 'default', 'error_sfs_connect_lost', [ event.params.reason ] );
+				_LiveCastClear ( );
+				_AvCastMgrDismiss ( );
+				currentState = 'connect_prompt';
+			}
+			
+			private function _SfsJoinFailure ( event:SFSEvent ) : void
+			{
+				_DebugOut ( 'error_sfs_join', true, [ event.params.errorMessage ], true );
+				
+				// ##### TODO #####
+				
+			}
+			
+			private function _SfsJoinSuccess ( event:SFSEvent ) : void
+			{
+				var sName:String = event.params.room.name;
+				if ( sName != _userState.robotName )
+				{
+					_userState.robotName = sName;
+					callLater ( _UserStatePersist );
+				}
+				callLater ( _InitialVariablesReport );
+				_DebugOut ( 'status_sfs_join', true, [ sName ] );
+				
+				// now onward to the video feed
+				_AvCastMgrInit ( );
+				_sf.enableLagMonitor ( true );
+				_arduinoBluetooth.setAutoConnect ( true );
+			}
+			
+			private function _SfsLagMonitorUpdate ( event:SFSEvent ) : void
+			{
+				_iSfsLagRT = event.params.lagValue;
+			}
+			
+			private function _SfsLoginFailure ( event:SFSEvent ) : void
+			{
+				_DebugOut ( 'error_sfs_login', true, [ event.params.errorMessage ] );
+				if ( currentState == 'login_wait' )
+				{
+					currentState = 'login_prompt';
+				}
+				else
+				{
+					// ##### TODO #####
+				}
+			}
+			
+			private function _SfsRoomCreationError ( event:SFSEvent ) : void
+			{
+				_DebugOut ( 'error_sfs_room_creation', true, [ event.params.errorMessage ] );
+				
+			}
+			
+			private function _SfsLoginSuccess ( event:SFSEvent ) : void
+			{
+				currentState = 'join_wait';
+				// _DebugOut ( 'status_sfs_login', true, [ event.params.user.name ] );
+				if ( _sf.roomManager.containsRoom ( _sRobotName ) )
+				{
+					// should not happen, but just in case...
+					_sf.send ( new JoinRoomRequest ( _sRobotName ) );
+				}
+				else
+				{
+					// create room and auto-join
+					var re:RoomEvents = new RoomEvents ( );
+					re.allowUserCountChange = true;
+					re.allowUserEnter = true;
+					re.allowUserExit = true;
+					re.allowUserVariablesUpdate = true
+					var rp:RoomPermissions = new RoomPermissions ( );
+					rp.allowPublicMessages = true;
+					var rs:RoomSettings = new RoomSettings ( _sRobotName );
+					rs.events = re;
+					rs.permissions = rp;
+					rs.maxUsers = 100;
+					rs.maxVariables = 100;
+					
+					_sf.send ( new CreateRoomRequest ( rs, true ) );
+				}
+			}
+			
+			private function _SfsLogoutDone ( event:SFSEvent ) : void
+			{
+				// currentState = 'phone_config';
+			}
+			
+			private function _SfsPrivateMessageReceived ( event:SFSEvent ) : void
+			{
+				var sender:User = event.params.sender;
+				if ( sender == _sf.mySelf )
+					return;
+				
+				// validate sender so control messages are only accepted from pilot
+				var sSenderName:String = sender.name;
+				if ( _vsPilots.indexOf ( sSenderName ) < 0 )
+					return;
+				
+				_iPilotUserId = sender.id;
+				
+				if ( !_bSleep )
+				{
+					_WatchDogReset ( );
+				}
+				
+				var sMsg:String = event.params.message;
+				if ( sMsg == 'ping' )
+				{
+					// no need to flood debugout with these
+					_PingReceived ( event.params.data );
+				}
+				else
+				{
+					// ##### TESTING #####
+					if ( _bDebug )
+					{
+						if ( event.params.data )
+						{
+							_DebugOut (
+								'Private msg from ' + sSenderName + ': ' + sMsg + '\n' +
+								( event.params.data as ISFSObject ).getHexDump(),
+								false, null, false, '' );
+						}
+						else
+						{
+							_DebugOut ( 'Private msg from ' + sSenderName + ': ' + sMsg );
+						}
+					}
+					// ###################
+					
+					if ( sMsg == 'emsack' )
+					{
+						_EmergencyAcknowledge();
+					}
+					else if ( sMsg == 'mv' )
+					{
+						_MotionRequest ( event.params.data );
+					}
+					else if ( sMsg == 'cu' )
+					{
+						_CustomRequest ( event.params.data );
+					}
+					else if ( sMsg == 'cm' )
+					{
+						_CameraMoveRequest ( event.params.data );
+					}
+					else if ( sMsg == 'ch' )
+					{
+						_CameraMoveHomeRequest ( );
+					}
+					else if ( sMsg == 'cr' )
+					{
+						_CameraMoveResetRequest ( );
+					}
+					/*
+					else if ( sMsg == 'ml' )
+					{
+						_MotorLimitsRequest ( event.params.data );
+					}
+					*/
+					else if ( sMsg == 'fl' )
+					{
+						_Light ( event.params.data.getBool ( 'b' ) );
+					}
+					else if ( sMsg == 'camerarestart' )
+					{
+						_CameraRestartRequest ( );
+					}
+					else if ( sMsg == 'cameraconfig' )
+					{
+						_CameraConfigRequest ( event.params.data );
+					}
+					else if ( sMsg == 'cameraconfigadjust' )
+					{
+						_CameraConfigAdjustRequest ( event.params.data );
+					}
+					else if ( sMsg == 'cameraconfigdef' )
+					{
+						_CameraConfigDefaultRequest ( event.params.data );
+					}
+					else if ( sMsg == 'cameraconfigmotion' )
+					{
+						_CameraConfigMotionRequest ( event.params.data );
+					}
+					else if ( sMsg == 'camerafpspollmsec' )
+					{
+						_CameraFpsPollRequest ( event.params.data );
+					}
+					else if ( sMsg == 'sleep' )
+					{
+						_SleepRequest ( );
+					}
+					else if ( sMsg == 'wake' )
+					{
+						_WakeRequest ( );
+					}
+					else if ( sMsg == 'exit' )
+					{
+						_ExitRequest ( );
+					}
+					else
+					{
+						_DebugOut ( 'error_control_message', true, [ sMsg ] );
+					}						
+				}
+			}
+			
+			private function _SfsUserCountChanged ( event:SFSEvent ) : void
+			{
+				_SfsPilotCheck ( event.params.room );
+			}
+			
+			private function _SfsUserEnteredRoom ( event:SFSEvent ) : void
+			{
+				_SfsPilotCheck ( event.params.room );
+			}
+			
+			private function _SfsUserExitedRoom ( event:SFSEvent ) : void
+			{
+				_SfsPilotCheck ( event.params.room, event.params.user );
+			}
+			
+			private function _SfsPilotCheck ( room:Room, userLeaving:User = null ) : void
+			{
+				if ( room != _sf.lastJoinedRoom )
+					return;
+				
+				var bPiloted:Boolean = room.getVariable ( 'pib' ).getBoolValue ( );
+				var sPilot:String = room.getVariable ( 'pic' ).getStringValue ( );
+				if ( !bPiloted )
+				{
+					_iPilotUserId = 0;
+					_EmergencyFlagsClear ( EmergencyFlags.LATENCY );
+				}
+				else if ( room.getUserByName ( sPilot ) == null || ( userLeaving != null && userLeaving.name == sPilot ) )
+				{
+					// pilot exited room
+					var aRoomVars:Array = [
+						new SFSRoomVariable ( 'pib', false ),
+						new SFSRoomVariable ( 'pic', '' )
+					];
+					_sf.send ( new SetRoomVariablesRequest ( aRoomVars ) );
+					_iPilotUserId = 0;
+					_EmergencyFlagsClear ( EmergencyFlags.LATENCY );
+				}
+			}
+			
+			private function _SleepRequest ( ) : void
+			{
+				if ( !_bSleep )
+				{
+					// ##### TESTING #####
+					_DebugOut ( 'Arduino command: ' + ( _baArdComSleep [ 0 ] as uint ) );
+					// ###################
+					_SystemsDeactivate ( );
+				}
+			}
+			
+			private function _SleepWakeToggle ( ) : void
+			{
+				if ( _bSleep )
+					_SystemsActivate ( );
+				else
+					_SystemsDeactivate ( );
+			}
+			
+			private function _StageOrientChanged ( event:StageOrientationEvent ) : void
+			{
+				_OrientationDeviceMountUpdate ( event.afterOrientation );
+			}
+			
+			private function _StageOrientRotate180 ( ) : void
+			{
+				if ( _sOrientStage == _sOrient180 )
+				{
+					_sOrientStage = _sOrient0;
+				}
+				else
+				{
+					_sOrientStage = _sOrient180;
+				}
+				stage.setOrientation ( _sOrientStage );
+			}
+			
+			private function _SystemsActivate ( ) : void
+			{
+				// tasks necessary to resume full activity, such as
+				// acquire wake lock, start streaming video/audio,
+				// start or increase frequency of sensor polling,
+				// resume magnetic declination checks
+				if ( currentState == 'custom_config' || currentState == 'custom_validate' )
+					return;
+				
+				_bSleep = false;
+				currentState = 'awake';
+				NativeApplication.nativeApplication.systemIdleMode = SystemIdleMode.KEEP_AWAKE;
+				// _DebugOut ( 'SystemIdleMode.KEEP_AWAKE' );
+				
+				if ( _bGeoSupport )
+				{
+					_declinationUtil.resume();
+					if ( !_geo )
+					{
+						try
+						{
+							_geo = new Geolocation();
+							// register to receive location updates
+							_geo.addEventListener ( GeolocationEvent.UPDATE, _GeolocationUpdated );
+							_geo.setRequestedUpdateInterval ( 1000 );
+						}
+						catch(err:Error)
+						{
+							_DebugOut ( 'error_geo_init', true, [ err.message ] );
+						}
+					}
+				}
+				
+				if ( _bGyroSupport )
+					GyroUtil.instance.register();
+				
+				_sf.enableLagMonitor ( true );
+				
+				_LiveCastPublish();
+
+				_ArduinoSend ( _baArdComWake );
+				_UserVarsQueue ( [ new SFSUserVariable ( 'sleep', _bSleep ) ] );
+			}
+			
+			private function _SystemsDeactivate ( ) : void
+			{
+				// tasks necessary to go dormant and converve power, such as
+				// release wake lock, stop streaming video/audio,
+				// stop or decrease frequency of sensor polling,
+				// pause magnetic declination checks
+				if ( currentState == 'custom_config' || currentState == 'custom_validate' )
+					return;
+				
+				_LiveCastClear();
+				
+				_sf.enableLagMonitor ( false );
+				
+				if ( _bGyroSupport )
+					GyroUtil.instance.unregister();
+				
+				if ( _bGeoSupport )
+				{
+					if ( _geo )
+					{
+						_geo.removeEventListener ( GeolocationEvent.UPDATE, _GeolocationUpdated );
+						_geo = null;
+					}
+					_declinationUtil.pause();
+				}
+				
+				_WatchDogCancel ( );
+				_ArduinoSend ( _baArdComSleep );
+				NativeApplication.nativeApplication.systemIdleMode = SystemIdleMode.NORMAL;
+				// _DebugOut ( 'SystemIdleMode.NORMAL' );
+				
+				if ( !_bExiting )
+				{
+					_bSleep = true;
+					currentState = 'asleep';
+					_UserVarsQueue ( [ new SFSUserVariable ( 'sleep', _bSleep ) ] );
+				}
+			}
+			
+			private function _TurretPanUpdate ( val:int ) : Boolean
+			{
+				var bChange:Boolean = false;
+				if ( _bTurretPanEnabled )
+				{
+					var iNet:int = val - _iTurretPanHome;
+					if ( iNet != _iTurretPanNet )
+					{
+						bChange = true;
+						_iTurretPanNet = iNet;
+					}
+				}
+				return bChange;
+			}
+			
+			private function _TurretTiltUpdate ( val:int  ) : Boolean
+			{
+				var bChange:Boolean = false;
+				if ( _bTurretTiltEnabled )
+				{
+					var iNet:int = val - _iTurretTiltHome;
+					if ( iNet != _iTurretTiltNet )
+					{
+						bChange = true;
+						_iTurretTiltNet = iNet;
+					}
+				}
+				return bChange;
+			}
+			
+			private function _TurretUpdateCommit ( ) : void
+			{
+				var aVarsToSend:Array = [];
+				_GyroPitchUpdate ( aVarsToSend );
+				_GyroRollUpdate ( aVarsToSend );
+				_GyroHeadingUpdate ( aVarsToSend );
+				if ( aVarsToSend.length > 0 )
+				{
+					_UserVarsQueue ( aVarsToSend );
+				}
+				// _OrientationAdjustUpdate ( );
+			}
+			
+			private function _UltraSonicRangeCheck ( ) : void
+			{
+				if ( FlagsUtil.IsSet ( _uEmFlags, EmergencyFlags.OBSTACLE ) )
+				{
+					// can it be cleared?
+					if ( _roverData.usRangeLeft >= _iUltraSonicThreshold && _roverData.usRangeRight >= _iUltraSonicThreshold )
+					{
+						_EmergencyFlagsClear ( EmergencyFlags.OBSTACLE, true );
+					}
+				}
+				else
+				{
+					// should it be set?
+					if ( _roverData.usRangeLeft < _iUltraSonicThreshold || _roverData.usRangeRight < _iUltraSonicThreshold )
+					{
+						_EmergencyFlagsSet ( EmergencyFlags.OBSTACLE, true );
+					}
+				}
+			}
+			
+			private function _UserStatePersist ( ) : void
+			{
+				try
+				{
+					var ba:ByteArray = new ByteArray ( );
+					ba.writeObject ( _userState );
+					
+					var f:File = _dirSets.resolvePath ( 'UserState.dat' );
+					if ( f.exists ) f.deleteFile ( );
+					
+					var fs:FileStream = new FileStream();
+					// open
+					fs.open ( f, FileMode.WRITE );
+					// write
+					fs.writeBytes ( ba );
+					// close
+					fs.close();
+					if ( _bOsAllowsExit )
+					{
+						var fBkp:File = _dirSetsBkp.resolvePath ( 'UserState.dat' );
+						f.copyTo ( fBkp, true );
+					}
+				}
+				catch ( err:* )
+				{
+					_DebugOut ( err );
+				}
+				
+			}
+			
+			private function _UserStateRestore ( ) : Boolean
+			{
+				registerClassAlias ( 'UserState', UserState as Class );
+				registerClassAlias ( 'CameraConfig', CameraConfig as Class );
+				
+				var f:File = _dirSets.resolvePath ( 'UserState.dat' );
+				if ( !f.exists )
+				{
+					// not yet saved locally or else app update wiped out app storage
+					if ( _bOsAllowsExit )
+					{
+						// might have a backup
+						var fBkp:File = _dirSetsBkp.resolvePath ( 'UserState.dat' );
+						if ( fBkp.exists )
+						{
+							// have backup
+							try
+							{
+								_dirSetsBkp.copyTo ( _dirSets, true );
+								
+							}
+							catch ( err:Error )
+							{
+								_DebugOut ( 'error_userstate_restore', true, [ err.message ] );
+								return false;
+							}
+						}
+						else
+						{
+							return false;  // no backup
+						}
+					}
+					else
+					{
+						return false; // with iOS not possible
+					}
+					
+				}
+				
+				try
+				{
+					var fs:FileStream = new FileStream();
+					// open
+					fs.open ( f, FileMode.READ );
+					// read
+					var ba:ByteArray = new ByteArray();
+					fs.readBytes ( ba );
+					// close
+					fs.close();
+					
+					_userState = ba.readObject ( );
+				}
+				catch ( err:Error )
+				{
+					_DebugOut ( 'error_userstate_restore', true, [ err.message ] );
+					return false;
+				}
+				
+				return true;
+			}
+			
+			private function _UserVarsQueue ( vars:Array, setTimer:Boolean = true ) : void
+			{
+				if ( setTimer && !_tmrUserVars.running )
+				{
+					// reset the timer
+					_tmrUserVars.reset ( );
+					_tmrUserVars.start ( );
+				}
+				// only keeping the latest value if any repeats
+				for each ( var i_uv:SFSUserVariable in vars )
+				{
+					_oUserVarsToSend [ i_uv.name ] = i_uv;
+				}
+			}
+			
+			private function _UserVarsQueuedSend ( event:TimerEvent = null ) : void
+			{
+				var vars:Array = [];
+				for each ( var i_uv:SFSUserVariable in _oUserVarsToSend )
+				{
+					vars.push ( i_uv );
+				}
+				_oUserVarsToSend = {}; // ready for next batch
+				if ( vars.length > 0 )
+				{
+					// send all the queued variables
+					_sf.send ( new SetUserVariablesRequest ( vars ) );
+				}
+			}
+			
+			private function _WakeRequest ( ) : void
+			{
+				if ( _bSleep )
+				{
+					// ##### TESTING #####
+					_DebugOut ( 'Arduino command: ' + ( _baArdComWake [ 0 ] as uint ) );
+					// ###################
+					_SystemsActivate ( );
+				}
+			}
+			
+			private function _WatchDogBark ( event:TimerEvent ) : void
+			{
+				// Watch dog timer lapsed.
+				_DebugOut ( 'status_watchdog', true, [ _tmrDog.delay ] );
+				if ( _HaveValidPilotId ( ) )
+				{
+					_EmergencyFlagsSet ( EmergencyFlags.LATENCY );
+				}
+			}
+			
+			private function _WatchDogCancel ( ) : void
+			{
+				_tmrDog.stop ( );
+			}
+			
+			private function _WatchDogIntervalSet ( pingIntervalMsecs:int ) : void
+			{
+				// allow a cushion on top of time until next expected ping
+				var iNew:int = pingIntervalMsecs * 1.5 + _iSfsLagRT;
+				if ( _tmrDog.delay != iNew )
+					_tmrDog.delay = iNew;
+			}
+			
+			private function _WatchDogReset ( ) : void
+			{
+				_tmrDog.reset ( );
+				_tmrDog.start ( );
+			}
+			
+			//----------------------------Tuan-----------------------------------------
+			// Funcionality of this listener moved to _SfsPrivateMessageReceived
+			// on 7/5/2013 by gch.
+			//Send command to control Rover
+			/*
+			private function _onCommand (event:SFSEvent) : void
+			{
+			var sender:User = event.params.sender;
+			if (sender != _sf.mySelf && event.params.message != "ping")
+			{
+			_arduino.sendComand(event.params.message);
+			_DebugOut ( '_onCommand msg from ' + sender.name + ': ' + event.params.message);
+			// var ni:NotificationInterface = new NotificationInterface();
+			// ni.notify(event.params.message);
+			}
+			}
+			*/
+			//------------------------------------------------------------------------
+			//---------------Tuan Code----------------------------------
+			// Receive data from the Rover and send to User Client
+			// User Variable: bodytemp, usrangeleft, usrangeright
+			/*
+			private function onData( event:RoverEvent ):void 
+			{
+				
+				// convert string back to byte array
+				var data:Array = event.roverData.split(",");
+				if (data.length > 0) {
+					var loop_count:int = 0;  // ****************************
+					var datum:uint;
+					var i:int = 0;
+					var dataArray:Array = [];
+					while (i < data.length) {
+						loop_count++;
+						if (loop_count > 50) {
+							_DebugOut("endless loop"); 
+							break;
+						}
+						var len:int = data.length - i;
+						switch (uint(data[i])) {
+							case 0x1:
+								// motor 1 current
+								if (len >= 3) {
+									datum = composeInt(data[i+1], data[i+2])*34;
+									if (datum != _roverData.motor1Current){
+										// dataArray.push(new SFSUserVariable("tbd",datum));
+										_roverData.motor1Current = datum;
+									}
+								}
+								i += 3;
+								break;
+							case 0x2:
+								// motor 2 current
+								if (len >= 3) {
+									datum = composeInt(data[i+1], data[i+2])*34;
+									if (datum != _roverData.motor2Current){
+										// dataArray.push(new SFSUserVariable("tbd",datum));
+										_roverData.motor2Current = datum 
+									}
+								}
+								i += 3;
+								break;
+							case 0x3:
+								// Temperature
+								if (len >= 3) {
+									_roverData.temperature = (Number(composeInt(data[i+1], data[i+2]))*500.0/1023.0)*9.0/5.0+32.0;
+									if (datum != _roverData.temperature){
+										dataArray.push(new SFSUserVariable("btm",datum));
+										_roverData.temperature = datum;
+									}
+								}
+								i += 3;
+								break;
+							case 0x4:
+								// ultrasonic ranger left
+								if (len >= 3) {
+									datum = (composeInt(data[i+1], data[i+2]));
+									if (datum != _roverData.usRangeLeft){
+										dataArray.push(new SFSUserVariable("usl", datum));
+										_roverData.usRangeLeft = datum;
+									}
+								}
+								i += 3;
+								break;
+							case 0x5:
+								// ultrasonic ranger right
+								if (len >= 3) {
+									datum = (composeInt(data[i+1], data[i+2]));
+									if (datum != _roverData.usRangeRight){
+										dataArray.push(new SFSUserVariable("usr", datum));					
+										_roverData.usRangeRight = datum;
+									}
+								}
+								i += 3;
+								break;
+							case 0x6:
+								// electronics battery
+								if (len >= 3) {
+									datum = Number(composeInt(data[i+1], data[i+2]))*5.0*2.8/1024.0;
+									datum = Math.floor(((datum-9)/3)*100);
+									if (datum != _roverData.cleanBat){
+										dataArray.push(new SFSUserVariable("cbt", datum));
+										_roverData.cleanBat = datum;	
+									}
+								}
+								i += 3;
+								break;
+							case 0x7:
+								// motor battery
+								if (len >= 3) {
+									datum = Number(composeInt(data[i+1], data[i+2]))*5.0*1.6/1024.0;
+									datum = Math.floor(((datum-6)/2)*100);
+									if (datum != _roverData.dirtyBat)
+									{
+										dataArray.push(new SFSUserVariable("dbt", datum));
+										_roverData.dirtyBat = datum;
+									}
+								}
+								i += 3;
+								break;
+							
+							case 0x8:
+								// pan and tilt
+								if (len >= 3) {
+									_roverData.panAngle = uint(data[i+1]); // 32-bit unsigned int
+									_roverData.tiltAngle = uint(data[i+2]);
+								}
+								i += 3;
+								break;
+							
+							default:
+								_DebugOut("ArxRover Main: Unknown Command"); 
+								i = len;
+								break;
+						}
+					}
+					if (dataArray.length > 0){
+						_sf.send(new SetUserVariablesRequest(dataArray));
+					}
+				}
+				
+			}
+			
+			private function composeInt(hi:String, lo:String):uint
+			{
+				var val:uint = uint (hi) & 0x000000FF;
+				val = val << 8;           // val *= 256;
+				val += uint (lo) & 0x000000FF;
+				return val;
+			}
+			*/
+			
+			//---------------------------------------------------------------------------------------------
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="connect_wait" stateGroups="busy" />
+		<s:State name="connect_prompt" />
+		<s:State name="custom_config" stateGroups="custom" />
+		<s:State name="custom_validate" stateGroups="custom, busy" />
+		<s:State name="eeprom_config" />
+		<s:State name="eeprom_read" stateGroups="eeprom, busy" />
+		<s:State name="eeprom_write" stateGroups="eeprom, busy" />
+		<s:State name="join_wait" stateGroups="busy" />
+		<s:State name="livecast_wait" stateGroups="busy" />
+		<s:State name="login_prompt" stateGroups="login" />
+		<s:State name="login_wait" stateGroups="login, busy" />
+		<s:State name="phone_config" />
+		<s:State name="awake" stateGroups="live, wake" />
+		<s:State name="bluetooth_config" stateGroups="live, wake, bluetooth" />
+		<s:State name="bluetooth_success" stateGroups="live, wake, bluetooth, busy" />
+		<s:State name="asleep" stateGroups="live, sleep" />
+	</s:states>
+	<s:Label
+		right="8" bottom="8"
+		text="{_sAppVersion}"
+		/>
+	<mx:UIComponent
+		id="uicVideo"
+		visible="{_bLiveCastMonitor}"
+		left="{_iVideoMonLeft}"
+		top="{_iVideoMonTop}"
+		width="{_iVideoMonWd}"
+		height="{_iVideoMonHt}"
+		/>
+	<vw:ChatView
+		id="vwChat"
+		includeIn="live"
+		top="{gpTop.height+16}"
+		right="8"
+		width="30%"
+		height="{_iChatHt}"
+		rover="{_oRobot}"
+		sfs="{_sf}"
+		/>
+	<s:TextArea
+		id="taDebug"
+		visible="{_bDebug}"
+		bottom="8"
+		height="80%"
+		left="8"
+		width="60%"
+		editable="false"
+		selectable="false"
+		/>
+	<s:VGroup
+		id="gpBtnDebug"
+		bottom="8"
+		left="{16+taDebug.width}"
+		gap="4"
+		horizontalAlign="left"
+		>
+		<s:Button
+			label="{resourceManager.getString('default','clear_btn_label')}"
+			click="{taDebug.text=''}"
+			visible="{_bDebug}"
+			/>
+		<s:Spacer
+			height="12"
+			/>
+		<s:Label
+			text="{resourceManager.getString('default','debug_btn_label')}"
+			/>
+		<s:ToggleSwitch
+			id="btnDebug"
+			selected="@{_bDebug}"
+			/>
+	</s:VGroup>
+	<s:HGroup
+		id="gpTop"
+		gap="8"
+		left="8" right="8"
+		top="8"
+		horizontalAlign="left"
+		>
+		<comp:RoverCamInfo
+			id="rcInfo"
+			includeIn="wake"
+			camera="{_camera}"
+			monitorLiveCast="{_bLiveCastMonitor}"
+			monitorLiveCastFull="{_bLiveCastMonFull}"
+			monitor_toggle="_LiveCastMonitorToggle()"
+			monitor_full_toggle="_LiveCastMonitorFullToggle()"
+			/>
+		<s:Spacer width="100%" />
+		<s:Group
+			id="gpBtnBluetooth"
+			includeIn="wake"
+			enabled="true"
+			enabled.bluetooth="false"
+			visible="{_bBluetoothInUse}"
+			includeInLayout="{_bBluetoothInUse}"
+			>		
+			<s:Button
+				id="btnBluetooth"
+				horizontalCenter="0"
+				verticalCenter="0"
+				icon="{IconBluetoothCallout}"
+				color="{_arduinoBluetooth.iconColor}"
+				click="_BluetoothConfigOpen()"
+				/>
+			<s:BusyIndicator
+				id="bsyBluetooth"
+				horizontalCenter="0"
+				verticalCenter="0"
+				visible="{_arduinoBluetooth.isConnecting}"
+				enabled="{_arduinoBluetooth.isConnecting}"
+				/>
+		</s:Group>
+		<s:Button
+			id="btnCustom"
+			includeIn="live"
+			enabled="true"
+			enabled.custom="false"
+			label="{resourceManager.getString('default','custom_cmd_btn_label')}"
+			click="_CustomConfigOpen()"
+			/>
+		<s:Button
+			id="btnRotate"
+			label="{resourceManager.getString('default','rotate_btn_label')}"
+			click="_StageOrientRotate180()"
+			/>
+		<s:Button
+			id="btnSleepWake"
+			includeIn="live"
+			label="{resourceManager.getString('default','sleep_btn_label')}"
+			label.asleep="{resourceManager.getString('default','wake_btn_label')}"
+			click="_SleepWakeToggle()"
+			/>
+		<s:Button
+			id="btnExit"
+			visible="{_bOsAllowsExit}"
+			includeInLayout="{_bOsAllowsExit}"
+			label="{resourceManager.getString('default','exit_btn_label')}"
+			click="_ExitQuery()"
+			/>
+	</s:HGroup>
+	<vw:PhoneConfigView
+		id="vwConfig"
+		includeIn="phone_config"
+		horizontalCenter="0"
+		verticalCenter="0"
+		maxHeight="{height}"
+		arduinoMode="@{_ldiArduinoMode}"
+		arduinoModesList="{_alArduinoModes}"
+		capabilitiesStoreIdx="@{_iCapsStoreIdx}"
+		capabilitiesStoresList="@{_alCapsStores}"
+		phoneBatteryMin="@{_iBatteryPctMin}"
+		camera="@{_camera}"
+		camerasList="{_alCameras}"
+		deviceFacesBack="@{_bDeviceFacesBack}"
+		done="_ApplicationConfigure()"
+		/>
+	<vw:EepromConfigView
+		id="vwEeprom"
+		includeIn="eeprom_config"
+		left="16"
+		width="80%"
+		top="8" bottom="8"
+		captionResource="{_sEepromConfigCaptRsrc}"
+		eepromsCollection="{_acEeproms}"
+		done="_EepromConfigUserDone()"
+		/>
+	<vw:LoginView
+		id="vwLogin"
+		includeIn="login"
+		enabled="true"
+		enabled.login_wait="false"
+		horizontalCenter="0"
+		verticalCenter="0"
+		assetsDir="@{_sRobotAssetsDir}"
+		pilotNames="@{_sPilotNames}"
+		robotName="@{_sRobotName}"
+		login="_LoginRequest(event)"
+		/>
+	<vw:CustomConfigView
+		id="vwCustom"
+		includeIn="custom"
+		enabled.custom_config="true"
+		enabled.custom_validate="false"
+		itemDestructionPolicy="auto"
+		left="8" right="8"
+		top="8" bottom="8"
+		done="_CustomConfigDone()"
+		/>
+	<vw:BluetoothConfigView
+		id="vwBluetooth"
+		includeIn="bluetooth_config"
+		arduinoBluetooth="{_arduinoBluetooth}"
+		itemDestructionPolicy="auto"
+		left="8" right="8"
+		top="8" bottom="8"
+		connected="_BluetoothConfigSuccess()"
+		done="_BluetoothConfigDone()"
+		/>
+	<vw:ProgressView
+		id="vwProgress"
+		includeIn="busy"
+		horizontalCenter="0"
+		verticalCenter="0"
+		captionResource="busy_title"
+		captionResource.custom_validate="custom_validate_title"
+		captionResource.eeprom_read="eeprom_read_title"
+		captionResource.eeprom_write="{_sEepromWriteCaptRsrc}"
+		captionResource.connect_wait="connect_wait_title"
+		captionResource.login_wait="login_wait_title"
+		captionResource.join_wait="join_wait_title"
+		captionResource.livecast_wait="livecast_wait_title"
+		captionResource.bluetooth_success="bluetooth_success_title"
+		/>
+	<vw:LightView
+		id="vwLight"
+		visible="{_bLightOn}"
+		includeInLayout="{_bLightOn}"
+		external="{_bLightExternal}"
+		cancel="_LightCancel()"
+		/>
+	<vw:ConnectView
+		id="vwConnect"
+		includeIn="connect_prompt"
+		horizontalCenter="0"
+		top="8" bottom="8"
+		currentSettings="{_connectSettings}"
+		presetsList="{_alConnectPresets}"
+		prompt="{_sConnectPrompt}"
+		selectedPreset="@{connectPreset}"
+		typicalPreset="{_connectPresetTypical}"
+		connect="_SfsConnectQueue()"
+		/>
+	
+</s:Application>

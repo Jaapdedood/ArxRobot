@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	addedToStage="_AddedToStage()"
+	creationComplete="_CreationComplete()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.CameraManager;
+			
+			import icons.IconCamera;
+			
+			private var _bInited:Boolean = false;
+			
+			private var _camera:Camera;
+			
+			[Bindable]
+			private var _camMgr:CameraManager = CameraManager.instance;
+			
+			private var _tmr:Timer;
+			
+			private function _AddedToStage ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _Closed ( ) : void
+			{
+				if ( _tmr )
+				{
+					_tmr.removeEventListener ( TimerEvent.TIMER, _PollStats );
+					_tmr.stop();
+					_tmr = null;
+				}
+				_camera = null;
+			}
+			
+			private function _CreationComplete ( ) : void
+			{
+				_Init ( );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+					cf.properties = { styleName: 'thinCallout' };
+					cbCamInfo.dropDown = cf;
+				}
+			}
+			
+			private function _MonitorToggle ( ) : void
+			{
+				_camMgr.monitor = !_camMgr.monitor;
+			}
+			
+			private function _Opened ( ) : void
+			{
+				_camera = _camMgr.camera;
+				_tmr = new Timer ( 2000, 0 );
+				_tmr.addEventListener ( TimerEvent.TIMER, _PollStats );
+				_tmr.start();
+				callLater ( _PollStats );
+			}
+			
+			private function _PollStats ( event:TimerEvent = null ) : void
+			{
+				lblWdDisp.text = _camera.width.toString();
+				lblHtDisp.text = _camera.height.toString();
+				lblFpsDisp.text = _camera.currentFPS.toFixed(1); 
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:CalloutButton
+		id="cbCamInfo"
+		styleName="nav"
+		icon="{IconCamera}"
+		open="_Opened()"
+		close="_Closed()"
+		>
+		<s:TileGroup
+			horizontalGap="16"
+			verticalGap="16"
+			verticalAlign="middle"
+			>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:ToggleSwitch
+					id="swchMonitor"
+					change="_MonitorToggle()"
+					selected="{_camMgr.monitor}"
+					/>
+				<s:Label
+					id="lblMonitor"
+					text="{resourceManager.getString('default','camera_display_label')}"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:Label
+					id="lblWdDisp"
+					styleName="textHead"
+					/>
+				<s:Label
+					id="lblWd"
+					text="{resourceManager.getString('default','camera_width_label')}"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:Label
+					id="lblHtDisp"
+					styleName="textHead"
+					/>
+				<s:Label
+					id="lblHt"
+					text="{resourceManager.getString('default','camera_height_label')}"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				gap="8"
+				horizontalAlign="center"
+				>
+				<s:Label
+					id="lblFpsDisp"
+					styleName="textHead"
+					/>
+				<s:Label
+					id="lblFps"
+					text="{resourceManager.getString('default','camera_fps_label')}"
+					/>
+			</s:VGroup>
+		</s:TileGroup>	
+	</s:CalloutButton>
+	
+</s:Group>

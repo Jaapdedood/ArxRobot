@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sView"
+	alpha.disabled=".4"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.SessionManager;
+			
+			import icons.IconModeRC;
+			import icons.IconModeRobotCS;
+			import icons.IconModeRobotPP;
+			
+			import vo.OpModes;
+			
+			private function _Select ( mode:uint ) : void
+			{
+				SessionManager.instance.opModeSelected ( mode );
+			}
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:Group
+		horizontalCenter="0"
+		verticalCenter="0"
+		>
+		<s:layout>
+			<s:ConstraintLayout>
+				<s:constraintColumns>
+					<s:ConstraintColumn id="colL" width="10%" />
+					<s:ConstraintColumn id="colLgap" width="8" />
+					<s:ConstraintColumn id="colM" />
+					<s:ConstraintColumn id="colRgap" width="8" />
+					<s:ConstraintColumn id="colR" width="10%" />
+				</s:constraintColumns>
+				<s:constraintRows>
+					<!--
+					<s:ConstraintRow id="row1" />
+					<s:ConstraintRow id="row1gap" height="12" />
+					-->
+					<s:ConstraintRow id="row2" />
+					<s:ConstraintRow id="row2gap" height="12" />
+					<s:ConstraintRow id="row3" />
+					<s:ConstraintRow id="row3gap" height="12" />
+					<s:ConstraintRow id="row4" />
+					<s:ConstraintRow id="row4gap" height="12" />
+					<s:ConstraintRow id="row5" />
+				</s:constraintRows>
+			</s:ConstraintLayout>
+		</s:layout>
+		<s:Label
+			top="row2:0" bottom="row2:0"
+			left="colL:0" right="colR:0"
+			styleName="textSubhead"
+			textAlign="center"
+			text="{resourceManager.getString('default','op_mode_label')}"
+			/>
+		<s:Button
+			top="row3:0" bottom="row3:0"
+			left="colM:0" right="colM:0"
+			styleName="list"
+			height="100%"
+			icon="{IconModeRC}"
+			label="{resourceManager.getString('default','op_mode_rc_btn_label')}"
+			enabled="{SessionManager.instance.arduinoConnector.isBluetooth}"
+			click="_Select(OpModes.RC)"
+			/>
+		<comp:HelpLabel
+			top="row3:0"
+			left="colR:0"
+			resourceNameOrText="op_mode_rc_btn_tip"
+			/>
+		<s:Button
+			top="row4:0" bottom="row4:0"
+			left="colM:0" right="colM:0"
+			styleName="list"
+			height="100%"
+			icon="{IconModeRobotCS}"
+			label="{resourceManager.getString('default','op_mode_cs_btn_label')}"
+			click="_Select(OpModes.CS)"
+			/>
+		<comp:HelpLabel
+			top="row4:0"
+			left="colR:0"
+			resourceNameOrText="op_mode_cs_btn_tip"
+			/>
+		<s:Button
+			top="row5:0" bottom="row5:0"
+			left="colM:0" right="colM:0"
+			styleName="list"
+			height="100%"
+			icon="{IconModeRobotPP}"
+			label="{resourceManager.getString('default','op_mode_pp_btn_label')}"
+			enabled="false"
+			click="_Select(OpModes.PP)"
+			/>
+		<comp:HelpLabel
+			top="row5:0"
+			left="colR:0"
+			resourceNameOrText="op_mode_pp_btn_tip"
+			/>
+	</s:Group>
+</s:SkinnableContainer>

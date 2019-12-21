@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	alpha.disabled=".4"
+	creationComplete="_CreationCompleted()"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="connect", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import icons.IconArrowDown;
+			import mx.collections.ArrayList;
+			
+			import components.ThinCallout;
+			
+			import events.UtilityEvent;
+			
+			import vo.SfsPreset;
+			
+			[Bindable]
+			public var currentSettings:SfsPreset;
+			[Bindable]
+			public var presetsList:ArrayList;
+			[Bindable]
+			public var prompt:String;
+			[Bindable]
+			public var selectedPreset:SfsPreset;
+			[Bindable]
+			public var typicalPreset:SfsPreset;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			private function _Connect ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.CONNECT ) );
+			}
+			
+			private function _CreationCompleted ( ) : void
+			{
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+			}
+			
+			private function _PresetItemLabel ( item:Object ) : String
+			{
+				var sId:String = ( item as SfsPreset ).id;
+				var sLoc:String = resourceManager.getString ( 'default', 'connect_preset_' + sId );
+				if ( !sLoc )
+					return sId;
+				return sLoc;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	
+	<s:Label
+		id="lblConnect"
+		maxDisplayedLines="0"
+		width="100%"
+		text="{prompt}"
+		/>
+	<s:Group
+		height="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="0xffffff" alpha="0.1"
+					/>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0xffffff" alpha="0.2" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:Scroller
+			left="8" right="8"
+			top="8" bottom="8"
+			>
+			<s:Group
+				width="100%"
+				>
+				<s:layout>
+					<s:ConstraintLayout>
+						<s:constraintColumns>
+							<s:ConstraintColumn id="col1" />
+							<s:ConstraintColumn id="col1gap" width="6" />
+							<s:ConstraintColumn id="col2" width="100%" />
+						</s:constraintColumns>
+						<s:constraintRows>
+							<s:ConstraintRow id="row1" />
+							<s:ConstraintRow id="row1gap" height="6" />
+							<s:ConstraintRow id="row2" />
+							<s:ConstraintRow id="row2gap" height="6" />
+							<s:ConstraintRow id="row3" />
+							<s:ConstraintRow id="row3gap" height="6" />
+							<s:ConstraintRow id="row4" />
+							<s:ConstraintRow id="row4gap" height="6" />
+							<s:ConstraintRow id="row5" />
+							<s:ConstraintRow id="row5gap" height="6" />
+							<s:ConstraintRow id="row6" />
+							<s:ConstraintRow id="row6gap" height="6" />
+							<s:ConstraintRow id="row7" />
+							<s:ConstraintRow id="row7gap" height="6" />
+							<s:ConstraintRow id="row8" />
+							<s:ConstraintRow id="row8gap" height="6" />
+							<s:ConstraintRow id="row9" />
+							<s:ConstraintRow id="row9gap" height="6" />
+							<s:ConstraintRow id="row10" />
+						</s:constraintRows>
+					</s:ConstraintLayout>
+				</s:layout>
+				<!-- preset -->
+				<s:Label
+					top="row1:0" bottom="row1:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_preset_label')}"
+					/>
+				<s:CalloutButton
+					top="row1:0" bottom="row1:0"
+					left="col2:0" right="col2:0"
+					id="cbPreset"
+					icon="{IconArrowDown}"
+					label="{_PresetItemLabel(selectedPreset)}"
+					dropDown="{_cfDropDown}"
+					horizontalPosition="before"
+					verticalPosition="end"
+					>
+					<s:List
+						id="liPreset"
+						dataProvider="{presetsList}"
+						labelFunction="_PresetItemLabel"
+						requireSelection="true"
+						selectedItem="@{selectedPreset}"
+						typicalItem="{typicalPreset}"
+						click="{cbPreset.closeDropDown()}"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:CalloutButton>
+				<!-- host -->
+				<s:Label
+					top="row2:0" bottom="row2:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_host_label')}"
+					/>
+				<s:TextInput
+					top="row2:0" bottom="row2:0"
+					left="col2:0" right="col2:0"
+					id="tinHost"
+					text="@{currentSettings.host}"
+					/>
+				<!-- port -->
+				<s:Label
+					top="row3:0" bottom="row3:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_port_label')}"
+					/>
+				<s:NumericStepper
+					top="row3:0" bottom="row3:0"
+					left="col2:0" right="col2:0"
+					id="nsPort"
+					value="@{currentSettings.port}"
+					maximum="9999" minimum="0" snapInterval="1" stepSize="1"
+					/>
+				<!-- zone -->
+				<s:Label
+					top="row4:0" bottom="row4:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_zone_label')}"
+					/>
+				<s:TextInput
+					top="row4:0" bottom="row4:0"
+					left="col2:0" right="col2:0"
+					id="tinZone"
+					text="@{currentSettings.zone}"
+					/>
+				<!-- udp host -->
+				<s:Label
+					top="row5:0" bottom="row5:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_udp_host_label')}"
+					/>
+				<s:TextInput
+					top="row5:0" bottom="row5:0"
+					left="col2:0" right="col2:0"
+					id="tinUdpHost"
+					text="@{currentSettings.udpHost}"
+					/>
+				<!-- udp port -->
+				<s:Label
+					top="row6:0" bottom="row6:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_udp_port_label')}"
+					/>
+				<s:NumericStepper
+					top="row6:0" bottom="row6:0"
+					left="col2:0" right="col2:0"
+					id="nsUdpPort"
+					value="@{currentSettings.udpPort}"
+					maximum="9999" minimum="0" snapInterval="1" stepSize="1"
+					/>
+				<!-- http port -->
+				<s:Label
+					top="row7:0" bottom="row7:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_http_port_label')}"
+					/>
+				<s:NumericStepper
+					top="row7:0" bottom="row7:0"
+					left="col2:0" right="col2:0"
+					id="nsHttpPort"
+					value="@{currentSettings.httpPort}"
+					maximum="9999" minimum="0" snapInterval="1" stepSize="1"
+					/>
+				<!-- debug -->
+				<s:Label
+					top="row8:0" bottom="row8:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_debug_label')}"
+					/>
+				<s:ToggleSwitch
+					top="row8:0" bottom="row8:0"
+					left="col2:0" right="col2:0"
+					id="tsDebug"
+					selected="@{currentSettings.debug}"
+					/>
+				<!-- use blue box -->
+				<s:Label
+					top="row9:0" bottom="row9:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_bluebox_use_label')}"
+					/>
+				<s:ToggleSwitch
+					top="row9:0" bottom="row9:0"
+					left="col2:0" right="col2:0"
+					id="tsBlueBoxUse"
+					selected="@{currentSettings.useBlueBox}"
+					/>
+				<!-- blue box polling rate -->
+				<s:Label
+					top="row10:0" bottom="row10:0"
+					left="col1:0" right="col1:0"
+					text="{resourceManager.getString('default','connect_bluebox_rate_label')}"
+					/>
+				<s:NumericStepper
+					top="row10:0" bottom="row10:0"
+					left="col2:0" right="col2:0"
+					id="nsBlueBoxRate"
+					value="@{currentSettings.blueBoxPollingRate}"
+					maximum="1000" minimum="300" snapInterval="1" stepSize="1"
+					/>
+			</s:Group>
+		</s:Scroller>
+	</s:Group>
+	<s:Button
+		id="btnConnect"
+		styleName="done"
+		label="{resourceManager.getString('default','connect_btn_label')}"
+		click="_Connect()"
+		/>
+</s:SkinnableContainer>

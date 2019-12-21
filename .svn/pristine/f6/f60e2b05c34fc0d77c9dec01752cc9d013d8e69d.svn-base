@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="icons.*"
+	width="13"
+	height="13"
+	scaleX="2"
+	scaleY="2"
+	>
+	<s:Path
+		y="9.80176" winding="nonZero"
+		data="M0 3.19824 1.1333 0 3.19824 2.06543 0 3.19824Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Path>
+	<s:Rect
+		rotation="45" x="9.71753" y="1.21655" width="2.91992" height="11.7025"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Rect>
+	<s:Rect
+		rotation="45" x="10.9356" width="2.91992"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}"/>
+		</s:fill>
+	</s:Rect>
+</icons:ColorizedIconBase>

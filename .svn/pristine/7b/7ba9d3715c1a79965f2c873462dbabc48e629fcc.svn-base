@@ -1,0 +1,32 @@
+package events
+{
+	import flash.events.Event;
+	
+	// Jeff Gomes
+	public class DebugEvent extends Event
+	{
+		// event type constants
+		public static const DEBUG_OUT:String = 'debugOut';
+		
+		// event properties
+		public var message:String = '';
+		
+		// constructor
+		public function DebugEvent ( type:String, message:String = '', bubbles:Boolean = false, cancelable:Boolean = false )
+		{
+			super ( type, bubbles, cancelable );
+			this.message = message;
+		}
+		
+		// overrides
+		public override function clone ( ) : Event
+		{
+			return new DebugEvent ( type, this.message, bubbles, cancelable );
+		}
+		
+		public override function toString ( ) : String
+		{
+			return formatToString ( 'DebugEvent', 'type', 'message', 'bubbles', 'cancelable' );
+		}
+	}
+}

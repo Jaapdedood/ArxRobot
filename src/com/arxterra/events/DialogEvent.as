@@ -1,0 +1,90 @@
+package com.arxterra.events
+{
+	import flash.events.Event;
+	
+	import com.arxterra.vo.DialogData;
+	
+	public class DialogEvent extends Event
+	{
+		// event constants
+		public static const ALERT:String = 'alert';
+		public static const DIALOG:String = 'dialog';
+		
+		// event properties
+		public var message:String;
+		public var messageParams:Array;
+		public var title:String;
+		public var titleParams:Array;
+		public var data:DialogData;
+		public var modal:Boolean;
+		
+		// constructor
+		/**
+		 * 
+		 * @param type
+		 * @param message String value or resource name to use for dialog message
+		 * @param title String value or resource name to use for dialog title
+		 * @param messageParams optional Array of parameters that are substituted for
+		 * placeholders if <code>message</code> is a resourceName.
+		 * @param titleParams optional Array of parameters that are substituted for
+		 * placeholders if <code>title</code> is a resourceName.
+		 * @param data DialogData instance providing id, options and callback function
+		 * @param modal Boolean indicating whether dialog is modal
+		 * @param bubbles
+		 * @param cancelable
+		 * 
+		 */		
+		public function DialogEvent (
+			type:String,
+			message:String = '',
+			title:String = '',
+			messageParams:Array = null,
+			titleParams:Array = null,
+			data:DialogData = null,
+			modal:Boolean = true,
+			bubbles:Boolean = false,
+			cancelable:Boolean = false
+		)
+		{
+			super ( type, bubbles, cancelable );
+			this.message = message;
+			this.title = title;
+			this.messageParams = messageParams;
+			this.titleParams = titleParams;
+			this.data = data;
+			this.modal = modal;
+		}
+		
+		// overrides
+		public override function clone ( ) : Event
+		{
+			return new DialogEvent (
+				type,
+				this.message,
+				this.title,
+				this.messageParams,
+				this.titleParams,
+				this.data,
+				this.modal,
+				bubbles,
+				cancelable
+			);
+		}
+		
+		public override function toString ( ) : String
+		{
+			return formatToString (
+				'DialogEvent',
+				'type',
+				'message',
+				'title',
+				'messageParams',
+				'titleParams',
+				'data',
+				'modal',
+				'bubbles',
+				'cancelable'
+			);
+		}
+	}
+}

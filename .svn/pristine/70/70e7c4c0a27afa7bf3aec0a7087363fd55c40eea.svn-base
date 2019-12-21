@@ -1,0 +1,40 @@
+package vo
+{
+	public class OpModes
+	{
+		// CONSTANTS
+		
+		/**
+		 * Remote Control
+		 */
+		public static const RC:uint = 0;
+		
+		/**
+		 * Client Server via SmartFoxServer
+		 */
+		public static const CS:uint = 1;
+		
+		/**
+		 * Peer to Peer
+		 */
+		public static const PP:uint = 2;
+		
+		/**
+		 * Unspecified; used only during startup
+		 */
+		public static const NA:uint = 99;
+		
+		private static const __MODES:Array = [ RC, CS, PP, NA ];
+		
+		public function OpModes()
+		{
+		}
+		
+		public static function ValidateMode ( value:uint ) : uint
+		{
+			if ( __MODES.indexOf ( value ) < 0 )
+				return CS;
+			return value;
+		}
+	}
+}

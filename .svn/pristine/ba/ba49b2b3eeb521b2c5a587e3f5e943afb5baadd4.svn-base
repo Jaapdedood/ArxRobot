@@ -1,0 +1,19 @@
+package interfaces
+{
+	import flash.events.IEventDispatcher;
+	import vo.MessageData;
+	
+	public interface IControlConnector extends IEventDispatcher
+	{
+		function dismiss():void;
+		function init():void;
+		function avReceiverClear():void;
+		function avReceiverSubscribe():void;
+		function avSenderClear():Boolean;
+		function avSenderPublish():void;
+		function roomVarsQueue(vars:Vector.<MessageData>, immediate:Boolean = false):void;
+		function sleep():void;
+		function userVarsQueue(vars:Vector.<MessageData>, immediate:Boolean = false):void;
+		function wake():void;
+	}
+}

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	alpha.disabled=".4"
+	creationComplete="_Initialized()"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="login", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.smartfoxserver.v2.entities.SFSRoom;
+			
+			import mx.collections.ArrayList;
+			
+			import assets.icons.IconArrowUp;
+			
+			import components.ThinCallout;
+			
+			import events.UtilityEvent;
+			
+			import skins.ToggleSwitchCustomSkin;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			[Bindable]
+			public var rover:SFSRoom;
+			
+			[Bindable]
+			public var roversList:ArrayList;
+			
+			private function _Initialized ( ) : void
+			{
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+			}
+			
+			private function _Login ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.LOGIN ) );
+			}
+			
+			private function _RobotItemLabel ( item:Object ) : String
+			{
+				return ( item as SFSRoom ).name;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center" />
+	</s:layout>
+	
+	<s:Label
+		id="lblLogin"
+		styleName="textSubhead"
+		text="{resourceManager.getString('default','login_rover_label')}"
+		width="100%"
+		/>
+	<s:CalloutButton
+		id="cbRover"
+		styleName="sButtonLeftAlign"
+		icon="{IconArrowUp}"
+		label="{_RobotItemLabel(rover)}"
+		dropDown="{_cfDropDown}"
+		horizontalPosition="before"
+		verticalPosition="end"
+		width="100%"
+		>
+		<s:List
+			id="liRover"
+			dataProvider="{roversList}"
+			labelFunction="_RobotItemLabel"
+			requireSelection="true"
+			selectedItem="@{rover}"
+			click="{cbRover.closeDropDown()}"
+			>
+			<s:layout>
+				<s:VerticalLayout
+					gap="0"
+					horizontalAlign="contentJustify"
+					/>
+			</s:layout>
+		</s:List>
+	</s:CalloutButton>
+	<s:Button
+		id="btnLogin"
+		label="{resourceManager.getString('default','login_btn_label')}"
+		click="_Login()"
+		/>
+	
+</s:SkinnableContainer>

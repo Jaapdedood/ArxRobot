@@ -1,0 +1,119 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	
+	import flash.utils.ByteArray;
+	
+	/**
+	 * Used to send and store waypoint commands that require latitude/longitude and adminId.
+	 * Note: Superclass implements IExternalizable.
+	 */
+	public class WaypointCoordinates extends ArduinoCommand
+	{
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		/**
+		 * Latitude
+		 */
+		public function get latitude ( ) : Number
+		{
+			return getFloatAt ( 1 );
+		}
+		public function set latitude ( value:Number ) : void
+		{
+			setFloatAt ( value, 1 );
+		}
+		
+		/**
+		 * Longitude
+		 */
+		public function get longitude ( ) : Number
+		{
+			return getFloatAt ( 5 );
+		}
+		public function set longitude ( value:Number ) : void
+		{
+			setFloatAt ( value, 5 );
+		}
+		
+		/**
+		 * Admin ID
+		 */
+		public function get adminId ( ) : uint
+		{
+			return getUnsignedByteAt ( 9 );
+		}
+		public function set adminId ( value:uint ) : void
+		{
+			setUnsignedByteAt ( value, 9 );
+		}
+		
+		
+		// CONSTRUCTOR
+		
+		/**
+		 * If do not have commandBytes, call static method <strong>newFromParameters</strong>
+		 * or <strong>newFromSFSObject</strong>, as appropriate
+		 * @param commandBytes
+		 */
+		public function WaypointCoordinates ( commandBytes:ByteArray = null )
+		{
+			super ( commandBytes );
+		}
+		
+		
+		// PUBLIC STATIC METHODS
+		
+		/**
+		 * @param commandId WAYPOINT_COORD or WAYPOINT_MOVE
+		 * @param latitude
+		 * @param longitude
+		 * @param adminId If a value between 0 and 255, inclusive, is not provided,
+		 * a sequential one in that range will be assigned.
+		 */
+		public static function NewFromParameters (
+			commandId:uint = WAYPOINT_COORD,
+			latitude:Number = 0,
+			longitude:Number = 0,
+			adminId:int = -1
+		) : WaypointCoordinates
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( commandId );
+			ba.writeFloat ( latitude );
+			ba.writeFloat ( longitude );
+			ba.writeByte ( __AdminIdValidate ( adminId ) );
+			return new WaypointCoordinates ( ba );
+		}
+		
+		public static function NewFromSFSObject ( sfso:ISFSObject ) : WaypointCoordinates
+		{
+			return new WaypointCoordinates ( sfso.getByteArray ( 'b' ) );
+		}
+		
+		
+		// PRIVATE STATIC PROPERTIES
+		
+		private static var __uNextAdminId:uint = 0;
+		
+		
+		// PRIVATE STATIC METHODS
+		
+		private static function __AdminIdValidate ( id:int ) : uint
+		{
+			if ( id >= 0 && id <= 255 )
+			{
+				return uint ( id ); // return
+			}
+			
+			// if get here, need to assign the next ID in sequence
+			var uId:uint = __uNextAdminId++;
+			if ( __uNextAdminId > 255 )
+			{
+				__uNextAdminId = 0;
+			}
+			return uId;
+		}
+		
+	}
+}

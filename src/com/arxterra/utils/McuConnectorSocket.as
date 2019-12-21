@@ -1,0 +1,226 @@
+package com.arxterra.utils
+{
+	import flash.events.Event;
+	import flash.events.IOErrorEvent;
+	import flash.events.ProgressEvent;
+	import flash.events.SecurityErrorEvent;
+	import flash.events.ServerSocketConnectEvent;
+	import flash.net.ServerSocket;
+	import flash.net.Socket;
+	import flash.utils.ByteArray;
+	
+	import com.arxterra.vo.McuConnectModes;
+	
+	/**
+	 * Singleton class extending McuConnector
+	 * to implement connection with USB Microbridge
+	 * via ServerSocket.
+	 */
+	[Bindable]
+	public class McuConnectorSocket extends McuConnectorBase
+	{
+		// STATIC CONSTANTS AND PROPERTIES
+		
+		private static var __instance:McuConnectorSocket;
+		
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		/**
+		 * singleton instance
+		 */
+		public static function get instance ( ) : McuConnectorSocket
+		{
+			if ( !__instance )
+			{
+				__instance = new McuConnectorSocket ( new SingletonEnforcer() );
+			}
+			return __instance;
+		}
+		
+		/**
+		 * Singleton: use static property <b>instance</b> to access singleton instance.
+		 */	
+		public function McuConnectorSocket ( enforcer:SingletonEnforcer )
+		{
+			super ( );
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			if ( hasClient )
+			{
+				_socketMcu.removeEventListener ( Event.CLOSE, _Closed );
+				_socketMcu.removeEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+				_socketMcu.removeEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+				_socketMcu.removeEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+				_socketMcu.close ( );
+				_socketMcu = null;
+			}
+			if ( _socketServer != null )
+			{
+				_socketServer.removeEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+				_socketServer.close ( );
+				_socketServer = null;
+			}
+			super.dismiss ( );
+			__instance = null;
+		}
+		
+		override public function init ( ) : void
+		{
+			super.init ( );
+			_modeSet ( McuConnectModes.USB_ADB );
+			listen ( 4567 );
+		}
+		
+		
+		// PROTECTED METHODS
+		
+		override protected function _send ( bytes:ByteArray ) : Boolean
+		{
+			var bOk:Boolean = false;
+			if ( _socketMcu != null && _socketMcu.connected )
+			{
+				bytes.position = 0;
+				try
+				{
+					_socketMcu.writeBytes ( bytes );
+					_socketMcu.flush ( );
+				}
+				catch ( err:Error )
+				{
+					_debugOut ( 'error_ss_send', true, [ err.message ] );
+				}
+				bOk = true;
+			}
+			else
+			{
+				_debugOut ( 'error_ss_no_conn', true );
+			}
+			super._send ( bytes ); // pass through for ping check
+			return bOk;
+		}
+		
+		
+		// PROTECTED PROPERTIES AND GET/SET METHOD GROUPS
+		
+		protected function get bound ( ) : Boolean
+		{
+			return ( _socketServer != null && _socketServer.bound );
+		}
+		
+		protected function get hasClient ( ) : Boolean
+		{
+			return ( _socketMcu != null && _socketMcu.connected );
+		}
+		
+		protected function get listening ( ) : Boolean
+		{
+			return ( _socketServer != null && _socketServer.listening );
+		}
+		
+		protected function get port ( ) : int
+		{
+			var iPort:int;
+			if ( bound )
+				iPort = _socketServer.localPort;
+			return iPort;
+		}
+		
+		
+		// OTHER PROTECTED METHODS
+		
+		/**
+		 * Binds the server socket to the supplied port number and starts it listening
+		 * @param port The port number where the Mcu will connect
+		 */
+		protected function listen ( port:int ) : void
+		{
+			if ( _socketServer != null )
+			{
+				if ( _socketServer.listening && _socketServer.localPort == port )
+				{
+					// already listening on that port
+					return;
+				}
+				// if get here, need to dismiss existing sockets
+				if ( _socketMcu.connected )
+				{
+					_socketMcu.close ( );
+				}
+				_socketServer.removeEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+				_socketServer.close ( );
+			}
+			
+			_socketServer = new ServerSocket ( );
+			_socketServer.addEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+			try
+			{
+				_socketServer.bind ( port );
+				_socketServer.listen ( );
+			}
+			catch ( err:Error )
+			{
+				_debugOut ( 'error_ss_init', true, [ err.message ] );
+			}
+		}
+		
+		// PRIVATE PROPERTIES
+		
+		private var _socketMcu:Socket;
+		private var _socketServer:ServerSocket;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _Closed ( event:Event ) : void
+		{
+			if ( _socketMcu != null )
+			{
+				// remove event listeners
+				_socketMcu.removeEventListener ( Event.CLOSE, _Closed );
+				_socketMcu.removeEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+				_socketMcu.removeEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+				_socketMcu.removeEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+				_socketMcu = null;
+				_debugOut ( 'status_ss_disconn', true );
+			}
+		}
+		
+		private function _Connected ( event:ServerSocketConnectEvent ) : void
+		{
+			// store reference to socket and add event listeners
+			_socketMcu = event.socket;
+			_socketMcu.addEventListener ( Event.CLOSE, _Closed );
+			_socketMcu.addEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+			_socketMcu.addEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+			_socketMcu.addEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+			_debugOut ( 'status_ss_conn', true );
+		}
+		
+		private function _DataReceived ( event:ProgressEvent ) : void
+		{
+			var ba:ByteArray = new ByteArray ( );
+			try
+			{
+				_socketMcu.readBytes ( ba );
+				_telemetryInputQueuePush ( ba );
+			}
+			catch ( err:Error )
+			{
+				_debugOut ( 'error_ss_receive', true, [ err.message ] );
+			}
+		}
+		
+		private function _IoError ( event:IOErrorEvent ) : void
+		{
+			_debugOut ( 'error_ss_io', true, [ event.text ] );
+		}
+		
+		private function _SecurityError ( event:SecurityErrorEvent ) : void
+		{
+			_debugOut ( 'error_ss_security', true, [ event.text ] );
+		}
+	}
+}
+class SingletonEnforcer {}

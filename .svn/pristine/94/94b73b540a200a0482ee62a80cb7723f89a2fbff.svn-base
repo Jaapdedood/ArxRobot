@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sView"
+	alpha.disabled=".4"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	removedFromStage="_Dismiss()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import controllers.SessionManager;
+			
+			import utils.ControlConnectorCS;
+			
+			import vo.UserState;
+			
+			private var _bInited:Boolean = false;
+			
+			private function _Dismiss ( ) : void
+			{
+				if ( !_bInited )
+					return;
+				
+				_bInited = false;
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+				{
+					_PropsUpdate (
+						SessionManager.instance.controlConnector as ControlConnectorCS
+					);
+					return;
+				}
+				_bInited = true;
+			}
+			
+			private function _Login ( ) : void
+			{
+				var ccsf:ControlConnectorCS = SessionManager.instance.controlConnector as ControlConnectorCS;
+				if ( !ccsf.loginRequestQueue (
+					tinRobot.text,
+					tinPilots.text,
+					tinAssets.text )
+				)
+				{
+					// validation problem, so reload fields with
+					// recent entries that have possibly been modified
+					// (such as excess spaces removed)
+					_PropsUpdate ( ccsf );
+				}
+			}
+			
+			private function _PropsReset ( ) : void
+			{
+				var userState:UserState = SessionManager.instance.userState;
+				tinAssets.text = userState.assetsDir;
+				tinPilots.text = userState.pilotNames;
+				tinRobot.text = userState.robotName;
+			}
+			
+			private function _PropsUpdate ( ccsf:ControlConnectorCS ) : void
+			{
+				tinAssets.text = ccsf.loginAssetsDir;
+				tinPilots.text = ccsf.loginPilotNames;
+				tinRobot.text = ccsf.loginRobotName;
+				var sPrompt:String = ccsf.loginPrompt;
+				var bPrompt:Boolean = ( sPrompt.length > 0 );
+				lblPrompt.text = sPrompt;
+				lblPrompt.visible = bPrompt;
+				lblPrompt.includeInLayout = bPrompt;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="4"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		id="lblHead"
+		styleName="textHead"
+		text="{resourceManager.getString('default','login_title')}"
+		/>
+	<s:Group
+		height="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="0xffffff" alpha="0.1"
+					/>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0xffffff" alpha="0.2" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:Scroller
+			left="8" right="8"
+			top="8" bottom="8"
+			>
+			<s:VGroup
+				gap="4"
+				horizontalAlign="left"
+				>
+				<s:Label
+					id="lblPrompt"
+					width="100%"
+					/>
+				<s:HGroup
+					paddingTop="12"
+					gap="6"
+					horizontalAlign="left" verticalAlign="middle"
+					width="100%"
+					>
+					<s:Label
+						id="lblRobot"
+						styleName="textSubhead"
+						text="{resourceManager.getString('default','login_robot_label')}"
+						/>
+					<comp:HelpLabel
+						id="tipRobot"
+						buttonPinVertical="bottom"
+						popupPinVertical="top"
+						resourceNameOrText="login_robot_tip"
+						/>
+				</s:HGroup>
+				<s:TextInput
+					id="tinRobot"
+					width="100%"
+					/>
+				<s:HGroup
+					paddingTop="12"
+					gap="6"
+					horizontalAlign="left" verticalAlign="middle"
+					width="100%"
+					>
+					<s:Label
+						id="lblPilots"
+						styleName="textSubhead"
+						text="{resourceManager.getString('default','login_pilots_label')}"
+						/>
+					<comp:HelpLabel
+						id="tipPilots"
+						resourceNameOrText="login_pilots_tip"
+						/>
+				</s:HGroup>
+				<s:TextInput
+					id="tinPilots"
+					width="100%"
+					/>
+				<s:Group
+					width="100%"
+					>
+					<s:Rect
+						left="1" right="1"
+						top="11" bottom="1"
+						>
+						<s:fill>
+							<s:SolidColor
+								color="0xffffff" alpha="0.1"
+								/>
+						</s:fill>
+						<s:stroke>
+							<s:SolidColorStroke
+								color="0xffffff" alpha="0.2" weight="1"
+								/>
+						</s:stroke>
+					</s:Rect>
+					<s:VGroup
+						left="4" right="4"
+						top="14" bottom="4"
+						gap="4"
+						horizontalAlign="left"
+						>
+						<s:CheckBox
+							id="cbExpand"
+							skinClass="skins.TwistyCheckBoxSkin"
+							label="{resourceManager.getString('default','optional_btn_label')}"
+							/>
+						<s:HGroup
+							gap="6"
+							horizontalAlign="left" verticalAlign="middle"
+							width="100%"
+							visible="{cbExpand.selected}"
+							includeInLayout="{cbExpand.selected}"
+							>
+							<s:Label
+								id="lblAssets"
+								styleName="textSubhead"
+								text="{resourceManager.getString('default','login_assets_dir_label')}"
+								/>
+							<comp:HelpLabel
+								id="tipAssets"
+								resourceNameOrText="login_assets_dir_tip"
+								/>
+						</s:HGroup>
+						<s:TextInput
+							id="tinAssets"
+							width="100%"
+							visible="{cbExpand.selected}"
+							includeInLayout="{cbExpand.selected}"
+							/>
+					</s:VGroup>
+				</s:Group>
+			</s:VGroup>
+		</s:Scroller>
+	</s:Group>
+	<!--
+	<s:Label
+		width="100%"
+		text="{resourceManager.getString('default','lock_rotation_instruct')}"
+		/>
+	-->
+	<s:HGroup
+		gap="12"
+		verticalAlign="middle"
+		>
+		<s:Button
+			id="btnLogin"
+			styleName="done"
+			label="{resourceManager.getString('default','login_btn_label')}"
+			click="_Login()"
+			/>
+		<s:Button
+			id="btnReload"
+			label="{resourceManager.getString('default','login_reload_btn_label')}"
+			click="_PropsReset()"
+			/>
+	</s:HGroup>
+	
+</s:SkinnableContainer>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	autoDrawBackground="false"
+	left="0" top="0" right="0" bottom="0">
+	<s:layout>
+		<s:ConstraintLayout>
+			<s:constraintColumns>
+				<s:ConstraintColumn id="col1" width="50%" />
+				<s:ConstraintColumn id="col2" width="8" />
+				<s:ConstraintColumn id="col3" width="50%" />
+			</s:constraintColumns>
+			<s:constraintRows>
+				<s:ConstraintRow id="row1" />
+			</s:constraintRows>
+		</s:ConstraintLayout>
+	</s:layout>
+	<s:Label
+		top="row1:0" bottom="row1:0"
+		right="col1:0"
+		text="{resourceManager.getString('default',data.resource)}"
+		/>
+	<s:NumericStepper
+		top="row1:0" bottom="row1:0"
+		left="col3:0"
+		value="@{data.value}"
+		maximum="65535" minimum="0" snapInterval="1" stepSize="1"
+		/>
+</s:ItemRenderer>

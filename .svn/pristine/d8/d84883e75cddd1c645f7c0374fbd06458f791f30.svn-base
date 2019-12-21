@@ -1,0 +1,244 @@
+package vo
+{
+	import flash.utils.ByteArray;
+
+	/**
+	 * Represents an Arduino EEPROM item.
+	 */
+	public class ArduinoEeprom
+	{
+		// CONSTANTS
+		
+		private static const RESOURCE_ROOT:String = 'eeprom_';
+		private static const TYPES:Vector.<String> = new <String> [ 'bool', 'byte', 'double', 'short', 'ubyte', 'ushort' ];
+		
+		// CONSTRUCTOR
+		
+		/**
+		 * @param address uint - EEPROM address, as a uint representing an unsigned short
+		 * @param byteCount uint - Number of bytes required to store the data, as a uint representing an unsigned byte
+		 * @param id String - Somewhat human-readable unique ID used in SmartFox variables, locale resource names, and documentation
+		 * @param type String - One of the abbreviations [ 'bool', 'byte', 'double', 'short', 'ubyte', 'ushort' ]
+		 * used in eeprom.json config file to represent data types written into ByteArray form stored in EEPROM
+		 * @param value * - Data stored in this EEPROM item
+		 * @param reportable Boolean - True if this item should be reported to SmartFox Server as user variable
+		 */
+		public function ArduinoEeprom ( address:uint, byteCount:uint, id:String, type:String, value:*, reportable:Boolean )
+		{
+			_id = id;
+			_bytes = new ByteArray ( );
+			_bytes.writeShort ( address );
+			if ( TYPES.indexOf ( type ) < 0 )
+			{
+				_type = 'ubyte';
+				_bytes.writeByte ( 1 );
+			}
+			else
+			{
+				_type = type;
+				_bytes.writeByte ( byteCount );
+			}
+			_reportable = reportable;
+			this.value = value;
+		}
+		
+		// PUBLIC METHODS IMPLEMENTING IArduinoEeprom
+		
+		/**
+		 * EEPROM address, as a uint representing an unsigned short
+		 */
+		public function get address ( ) : uint
+		{
+			_bytes.position = 0;
+			return _bytes.readUnsignedShort ( );
+		}
+		
+		/**
+		 * Number of bytes required to store the data, as a uint representing an unsigned byte
+		 */
+		public function get byteCount ( ) : uint
+		{
+			return _bytes [ 2 ];
+		}
+		
+		/**
+		 * Somewhat human-readable unique ID used for lookup, SmartFox variables, locale resource names, and documentation
+		 */
+		public function get id ( ) : String
+		{
+			return _id;
+		}
+		
+		/**
+		 * ByteArray to send to Arduino to read this EEPROM item
+		 */
+		public function get readCommand ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( 0x6 );
+			ba.writeBytes ( _bytes, 0, 3 );
+			return ba;
+		}
+		
+		/**
+		 * Flag for item that should be reported to SmartFox Server as user variable
+		 */
+		public function get reportable ( ) : Boolean
+		{
+			return _reportable;
+		}
+		
+		/**
+		 * Name passed to resourceManager.getString() to read localized label string from locale properties.  Derived from ID string.
+		 */
+		public function get resource ( ) : String
+		{
+			return RESOURCE_ROOT + _id;
+		}
+		
+		/**
+		 * One of the abbreviations [ 'bool', 'byte', 'double', 'short', 'ubyte', 'ushort' ]
+		 * used in eeprom.json config file to represent data types written into ByteArray form stored in EEPROM
+		 */
+		public function get type ( ) : String
+		{
+			return _type;
+		}
+		
+		public function get value ( ) : *
+		{
+			return this [ _type ];
+		}
+		
+		public function set value ( newValue:* ) : void
+		{
+			this [ type ] = newValue;
+		}
+		
+		/**
+		 * ByteArray to send to Arduino to write this EEPROM item
+		 */
+		public function get writeCommand ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( 0x7 );
+			ba.writeBytes ( _bytes );
+			return ba;
+		}
+		
+		/**
+		 * Sets value from next available bytes in supplied byte array.
+		 * @param byteArray reference to incoming byte array
+		 * @return true if there were sufficient bytes available, false if not
+		 */
+		public function setValueFromByteArray ( byteArray:ByteArray ) : Boolean
+		{
+			if ( byteArray.bytesAvailable < byteCount )
+				return false;
+			
+			byteArray.readBytes ( _bytes, 3, byteCount );
+			return true;
+		}
+		
+		// PROTECTED PROPERTIES
+		
+		protected var _bytes:ByteArray;
+		protected var _id:String;
+		protected var _reportable:Boolean;
+		protected var _type:String;
+		
+		// PROTECTED METHODS
+		
+		protected function get bool ( ) : Boolean
+		{
+			if ( !_ReadyToReadValue ( ) )
+				return false;
+			return _bytes.readBoolean ( );
+		}
+		
+		protected function set bool ( value:Boolean ) : void
+		{
+			_bytes.position = 3;
+			_bytes.writeBoolean ( value );
+		}
+		
+		protected function get byte ( ) : int
+		{
+			if ( !_ReadyToReadValue ( ) )
+				return 0;
+			return _bytes.readByte ( );
+		}
+		
+		protected function set byte ( value:int ) : void
+		{
+			_bytes.position = 3;
+			_bytes.writeByte ( value );
+		}
+		
+		protected function get short ( ) : int
+		{
+			if ( !_ReadyToReadValue ( ) )
+				return 0;
+			return _bytes.readShort ( );
+		}
+		
+		protected function set short ( value:int ) : void
+		{
+			_bytes.position = 3;
+			_bytes.writeShort ( value );
+		}
+		
+		protected function get double ( ) : Number
+		{
+			if ( !_ReadyToReadValue ( ) )
+				return NaN;
+			return _bytes.readDouble ( );
+		}
+		
+		protected function set double ( value:Number ) : void
+		{
+			_bytes.position = 3;
+			_bytes.writeDouble ( value );
+		}
+		
+		protected function get ubyte ( ) : uint
+		{
+			if ( !_ReadyToReadValue ( ) )
+				return 0;
+			return _bytes.readUnsignedByte ( );
+		}
+		
+		protected function set ubyte ( value:uint ) : void
+		{
+			_bytes.position = 3;
+			_bytes.writeByte ( value );
+		}
+		
+		protected function get ushort ( ) : uint
+		{
+			if ( !_ReadyToReadValue ( ) )
+				return 0;
+			return _bytes.readUnsignedShort ( );
+		}
+		
+		protected function set ushort ( value:uint ) : void
+		{
+			_bytes.position = 3;
+			_bytes.writeShort ( value );
+		}
+		
+		// PRIVATE METHODS
+		
+		// validates whether enough bytes are available, and sets position
+		private function _ReadyToReadValue ( ) : Boolean
+		{
+			if ( _bytes.length < 3 )
+				return false;
+			_bytes.position = 3;
+			if ( _bytes.bytesAvailable <  _bytes [ 2 ] )
+				return false;
+			return true;
+		}
+		
+	}
+}

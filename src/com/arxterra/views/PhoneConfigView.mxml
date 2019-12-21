@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	styleName="sView"
+	alpha.disabled=".4"
+	creationComplete="_Init()"
+	addedToStage="_Init()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.components.ThinCallout;
+			import com.arxterra.controllers.CameraManager;
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.icons.IconArrowDown;
+			import com.arxterra.interfaces.IPermissionsChecker;
+			import com.arxterra.vo.ListDataItem;
+			import com.arxterra.vo.McuConnectModes;
+			import com.arxterra.vo.McuWatchdogModes;
+			import com.arxterra.vo.UserState;
+			
+			import mx.collections.ArrayList;
+			
+			import org.apache.flex.collections.VectorList;
+			
+			private var _bInited:Boolean = false;
+			
+			private var _cam:Camera;
+			[Bindable]
+			private function get _camSelected():Camera
+			{
+				return _cam;
+			}
+			private function set _camSelected(value:Camera):void
+			{
+				if ( !value )
+					return; // return
+				
+				_cam = value;
+				if ( _sessionMgr.osIsIOS )
+				{
+					callLater ( _AutoSelectCamFlipIOS );
+				}
+			}
+			
+			[Bindable]
+			private var _alCameras:ArrayList;
+			
+			[Bindable]
+			private var _alMcuConnectModes:ArrayList;
+			
+			[Bindable]
+			private var _alCapsStores:ArrayList;
+			
+			[Bindable]
+			private var _bCamFlipH:Boolean;
+			
+			[Bindable]
+			private var _bCamFlipV:Boolean;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			[Bindable]
+			private var _iCapsStoreIdx:int = 1;
+			
+			[Bindable]
+			private var _iPhoneBatMin:int;
+			
+			[Bindable]
+			private var _ldiMcuConnectMode:ListDataItem;
+			
+			[Bindable]
+			private var _ldiMcuConnectModeTypical:ListDataItem;
+			
+			[Bindable]
+			private var _ldiMcuWatchdogMode:ListDataItem;
+			
+			[Bindable]
+			private var _ldiMcuWatchdogModeTypical:ListDataItem;
+			
+			[Bindable]
+			private var _nGap:Number;
+			[Bindable]
+			private var _nGap3:Number;
+			
+			[Bindable]
+			private var _prmsChkr:IPermissionsChecker;
+			
+			private var _sessionMgr:SessionManager = SessionManager.instance;
+			
+			[Bindable]
+			private var _vlMcuWatchdogModes:VectorList;
+			
+			private function _AutoSelectCamFlipIOS ( ) : void
+			{
+				if ( _cam.position == CameraPosition.FRONT )
+				{
+					_bCamFlipH = true;
+				}
+				else if ( _cam.position == CameraPosition.BACK )
+				{
+					_bCamFlipH = false;
+				}
+			}
+			
+			private function _Done ( ) : void
+			{
+				var oParams:Object = {
+					'mcuConnectModeId': _ldiMcuConnectMode.id,
+						'mcuWatchdogModeId': _ldiMcuWatchdogMode.id,
+						'capabilitiesStorePhone': ( _iCapsStoreIdx > 0 ),
+						'phoneBatteryMin': _iPhoneBatMin,
+						'camera': _camSelected,
+						'cameraFlipH': _bCamFlipH,
+						'cameraFlipV': _bCamFlipV
+				};
+				_sessionMgr.phoneConfigDone ( oParams );
+			}
+			
+			private function _DoneQueue ( ) : void
+			{
+				callLater ( _Done );
+			}
+			
+			private function _CameraItemLabel ( item:Object ) : String
+			{
+				var cam:Camera = item as Camera;
+				return resourceManager.getString ( 'default', 'camera_list_item_' + cam.position, [ cam.name ] );
+			}
+			
+			private function _Init ( ) : void
+			{
+				if ( _bInited )
+					return;
+				
+				_bInited = true;
+				
+				_nGap = _sessionMgr.guiGap;
+				_nGap3 = _sessionMgr.guiGap3;
+				
+				var cf:ClassFactory = new ClassFactory ( com.arxterra.components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+				
+				_prmsChkr = _sessionMgr.permissionsChecker;
+				var userState:UserState = _sessionMgr.userState;
+				var uModeId:uint = userState.mcuConnectModeId;
+				// mcu connection modes
+				var aModeIds:Array = McuConnectModes.GetCompatibleModeIds ( );
+				var iLim:int = aModeIds.length;
+				var i:int;
+				var i_uId:uint;
+				var i_ldi:ListDataItem;
+				var i_iLblLen:int;
+				var iLenMax:int = 0;
+				var iLenMaxIdx:int = -1;
+				var aModes:Array = [];
+				for ( i = 0; i < iLim; i++ )
+				{
+					i_uId = aModeIds [ i ];
+					i_ldi = new ListDataItem ( i_uId, resourceManager.getString ( 'default', 'mcu_mode_' + i_uId ) );
+					aModes [ i ] = i_ldi;
+					i_iLblLen = i_ldi.label.length;
+					if ( i_iLblLen > iLenMax )
+					{
+						iLenMax = i_iLblLen;
+						iLenMaxIdx = i;
+					}
+					if ( i_uId == uModeId )
+					{
+						_ldiMcuConnectMode = i_ldi; // current selection
+					}
+				}
+				if ( iLenMaxIdx >= 0 )
+				{
+					_ldiMcuConnectModeTypical = aModes [ iLenMaxIdx ];
+				}
+				_alMcuConnectModes = new ArrayList ( aModes );
+				
+				_vlMcuWatchdogModes = McuWatchdogModes.ModesList;
+				_ldiMcuWatchdogModeTypical = McuWatchdogModes.ModesListTypicalItem;
+				_ldiMcuWatchdogMode = _vlMcuWatchdogModes.getItemAt ( McuWatchdogModes.GetModeIndexById ( userState.mcuWatchdogModeId ) ) as ListDataItem;
+				
+				_alCapsStores = new ArrayList ( [
+					resourceManager.getString ( 'default', 'caps_store_eeprom' ),
+					resourceManager.getString ( 'default', 'caps_store_phone' )
+				] );	
+				
+				_iCapsStoreIdx = userState.capabilitiesStorePhone ? 1 : 0;
+				_iPhoneBatMin = userState.phoneBatteryMin;
+				_bCamFlipH = userState.cameraFlipHorizontal;
+				_bCamFlipV = userState.cameraFlipVertical;
+				
+				var aCams:Array = [];
+				if ( _prmsChkr.cameraPermitted ) // 2019-10-10
+				{
+					var aCamNames:Array = Camera.names;
+					iLim = aCamNames.length;
+					// dispatchEvent ( new DebugEventEx ( DebugEventEx.DEBUG_OUT, 'Camera names reported: ' + aCamNames ) );
+					for ( i = 0; i < iLim; i++ )
+					{
+						aCams [ i ] = Camera.getCamera ( i.toString() );
+					}
+					_camSelected = CameraManager.instance.camera;
+				}
+				_alCameras = new ArrayList ( aCams );
+				
+				callLater ( _ReportReady );
+			}
+			
+			private function _ReportReady ( ) : void
+			{
+				_sessionMgr.viewReady ( );
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="4"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		id="lblHead"
+		styleName="textHead"
+		text="{resourceManager.getString('default','phone_config_title')}"
+		/>
+	<s:Group
+		height="100%"
+		width="100%"
+		>
+		<s:Rect
+			left="1" right="1"
+			top="1" bottom="1"
+			>
+			<s:fill>
+				<s:SolidColor
+					color="0xffffff" alpha="0.1"
+					/>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke
+					color="0xffffff" alpha="0.2" weight="1"
+					/>
+			</s:stroke>
+		</s:Rect>
+		<s:Scroller
+			left="8" right="8"
+			top="8" bottom="8"
+			>
+			<s:VGroup
+				gap="4"
+				horizontalAlign="contentJustify"
+				>
+				<s:Label
+					id="lblMcu"
+					styleName="textSubhead"
+					text="{resourceManager.getString('default','phone_mcu_conn_label')}"
+					/>
+				<s:CalloutButton
+					id="cbMcu"
+					icon="{IconArrowDown}"
+					label="{_ldiMcuConnectMode.label}"
+					dropDown="{_cfDropDown}"
+					>
+					<s:List
+						id="liMcu"
+						dataProvider="{_alMcuConnectModes}"
+						labelField="label"
+						requireSelection="true"
+						selectedItem="@{_ldiMcuConnectMode}"
+						typicalItem="{_ldiMcuConnectModeTypical}"
+						click="cbMcu.closeDropDown()"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:CalloutButton>
+				<s:Label
+					id="lblMcuWdog"
+					styleName="textSubhead"
+					paddingTop="{_nGap}"
+					text="{resourceManager.getString('default','phone_mcu_wd_label')}"
+					/>
+				<s:CalloutButton
+					id="cbMcuWdog"
+					icon="{IconArrowDown}"
+					label="{_ldiMcuWatchdogMode.label}"
+					dropDown="{_cfDropDown}"
+					horizontalPosition="middle"
+					verticalPosition="middle"
+					>
+					<s:List
+						id="liMcuWdog"
+						maxHeight="{Math.min(height,width)-_nGap3}"
+						dataProvider="{_vlMcuWatchdogModes}"
+						labelField="label"
+						requireSelection="true"
+						selectedItem="@{_ldiMcuWatchdogMode}"
+						typicalItem="{_ldiMcuWatchdogModeTypical}"
+						click="cbMcuWdog.closeDropDown()"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:CalloutButton>
+				<s:Label
+					id="lblCapsStore"
+					styleName="textSubhead"
+					paddingTop="{_nGap}"
+					text="{resourceManager.getString('default','phone_caps_store_label')}"
+					/>
+				<s:CalloutButton
+					id="cbCapsStore"
+					icon="{IconArrowDown}"
+					label="{_alCapsStores.getItemAt(_iCapsStoreIdx)}"
+					dropDown="{_cfDropDown}"
+					enabled="false"
+					>
+					<s:List
+						id="liCapsStore"
+						dataProvider="{_alCapsStores}"
+						requireSelection="true"
+						selectedIndex="@{_iCapsStoreIdx}"
+						click="{cbCapsStore.closeDropDown()}"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:CalloutButton>
+				<s:Label
+					id="lblCamera"
+					styleName="textSubhead"
+					paddingTop="{_nGap}"
+					text="{resourceManager.getString('default','phone_camera_label')}"
+					/>
+				<s:CalloutButton
+					id="cbCamera"
+					icon="{IconArrowDown}"
+					label="{_CameraItemLabel(_camSelected)}"
+					dropDown="{_cfDropDown}"
+					enabled="{_prmsChkr.cameraPermitted}"
+					>
+					<s:List
+						id="liCamera"
+						dataProvider="{_alCameras}"
+						labelFunction="_CameraItemLabel"
+						requireSelection="true"
+						selectedItem="@{_camSelected}"
+						click="{cbCamera.closeDropDown()}"
+						>
+						<s:layout>
+							<s:VerticalLayout
+								gap="0"
+								horizontalAlign="contentJustify"
+								/>
+						</s:layout>
+					</s:List>
+				</s:CalloutButton>
+				<s:Label
+					id="lblCamFlipH"
+					styleName="textSubhead"
+					paddingTop="{_nGap}"
+					text="{resourceManager.getString('default','phone_camera_flip_h_label')}"
+					/>
+				<s:ToggleSwitch
+					id="btnCamFlipH"
+					selected="@{_bCamFlipH}"
+					/>
+				<s:Label
+					id="lblCamFlipV"
+					styleName="textSubhead"
+					paddingTop="{_nGap}"
+					text="{resourceManager.getString('default','phone_camera_flip_v_label')}"
+					/>
+				<s:ToggleSwitch
+					id="btnCamFlipV"
+					selected="@{_bCamFlipV}"
+					/>
+				<!--
+				<s:Label
+					id="lblFace"
+					styleName="textSubhead"
+					paddingTop="{_nGap}"
+					text="{resourceManager.getString('default','phone_face_toggle_label')}"
+					/>
+				<s:ToggleSwitch
+					id="btnFace"
+					selected="@{_bDevFacesBack}"
+					/>
+				-->
+				<s:Label
+					id="lblBatLow"
+					styleName="textSubhead"
+					paddingTop="{_nGap}"
+					text="{resourceManager.getString('default','phone_battery_min_label')}"
+					/>
+				<s:HSlider
+					id="slPhnBat"
+					width="200"
+					maximum="90"
+					minimum="10"
+					stepSize="1"
+					snapInterval="1"
+					dataTipPrecision="0"
+					value="@{_iPhoneBatMin}"
+					/>
+			</s:VGroup>
+		</s:Scroller>
+	</s:Group>
+	<s:Button
+		id="btnDone"
+		styleName="done"
+		label="{resourceManager.getString('default','done_btn_label')}"
+		click="_DoneQueue()"
+		/>
+</s:SkinnableContainer>

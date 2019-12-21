@@ -1,0 +1,77 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	import flash.utils.ByteArray;
+	
+	/**
+	 * Used with Camera Move message to transmit Camera Pan, Tilt or Home requests
+	 */
+	public class CameraMove extends ArduinoCommand
+	{
+		// CONSTANTS
+		
+		private static const __ARDUINO_COMMAND:uint = 2;
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		/**
+		 * Pan degrees
+		 */
+		public function get panDegrees ( ) : uint
+		{
+			_commandBytes.position = 1;
+			return _commandBytes.readUnsignedShort ( );
+		}
+		public function set panDegrees ( value:uint ) : void
+		{
+			_commandStringClear ( );
+			_commandBytes.position = 1;
+			_commandBytes.writeShort ( value );
+		}
+		
+		/**
+		 * Tilt degrees
+		 */
+		public function get tiltDegrees ( ) : uint
+		{
+			_commandBytes.position = 3;
+			return _commandBytes.readUnsignedShort ( );
+		}
+		public function set tiltDegrees ( value:uint ) : void
+		{
+			_commandStringClear ( );
+			_commandBytes.position = 3;
+			_commandBytes.writeShort ( value );
+		}
+		
+		// CONSTRUCTOR
+		
+		/**
+		 * Call static method <strong>newFromParameters</strong> or <strong>newFromSFSObject</strong>, as appropriate
+		 * @param commandBytes
+		 */		
+		public function CameraMove ( commandBytes:ByteArray = null )
+		{
+			super ( commandBytes );
+		}
+		
+		// PUBLIC STATIC METHODS
+		
+		public static function newFromParameters (
+			panDegrees:uint = 0,
+			tiltDegrees:uint = 0
+		) : CameraMove
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( __ARDUINO_COMMAND );
+			ba.writeShort ( panDegrees );
+			ba.writeShort ( tiltDegrees );
+			return new CameraMove ( ba );
+		}
+		
+		public static function newFromSFSObject ( sfso:ISFSObject ) : CameraMove
+		{
+			return new CameraMove ( sfso.getByteArray ( 'b' ) );
+		}
+	}
+}

@@ -1,0 +1,39 @@
+{
+	"default": "v27rel",
+	"configs":
+	{
+		"local":
+		{
+			"host": "192.168.111.3",
+			"udpHost": "192.168.111.3",
+			"zone": "Arx",
+			"useBlueBox": false
+		},
+		"v26dev":
+		{
+			"host": "54.241.221.210",
+			"udpHost": "54.241.221.210",
+			"zone": "ArxDevel",
+			"debug": true
+		},
+		"v26rel":
+		{
+			"host": "54.241.221.210",
+			"udpHost": "54.241.221.210",
+			"zone": "Arx"
+		},
+		"v27dev":
+		{
+			"host": "50.18.143.189",
+			"udpHost": "50.18.143.189",
+			"zone": "ArxDevel",
+			"debug": true
+		},
+		"v27rel":
+		{
+			"host": "50.18.143.189",
+			"udpHost": "50.18.143.189",
+			"zone": "Arx"
+		}
+	}
+}

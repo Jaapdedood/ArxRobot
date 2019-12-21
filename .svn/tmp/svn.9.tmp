@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	alpha.disabled=".4"
+	creationComplete="_CreationCompleted()"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="done", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayList;
+			
+			import assets.icons.IconArrowUp;
+			
+			import components.ThinCallout;
+			
+			import events.UtilityEvent;
+			
+			[Bindable]
+			public var arduinoTypeIdx:int;
+			
+			[Bindable]
+			public var arduinoTypesList:ArrayList;
+			
+			[Bindable]
+			public var phoneBatteryMin:int;
+			
+			private var _cam:Camera;
+			[Bindable]
+			public function get camera():Camera
+			{
+				return _cam;
+			}
+			public function set camera(value:Camera):void
+			{
+				_cam = value;
+				if ( _cam.position == 'back' )
+				{
+					deviceFacesBack = true;
+				}
+				else if ( _cam.position == 'front' )
+				{
+					deviceFacesBack = false;
+				}
+				// if is unknown, don't change deviceFacesBack
+			}
+			
+			[Bindable]
+			public var camerasList:ArrayList;
+			
+			[Bindable]
+			public var deviceFacesBack:Boolean;
+			
+			[Bindable]
+			private var _cfDropDown:ClassFactory;
+			
+			private function _CameraItemLabel ( item:Object ) : String
+			{
+				var cam:Camera = item as Camera;
+				return resourceManager.getString ( 'default', 'camera_list_item_' + cam.position, [ cam.name ] );
+			}
+			
+			private function _CreationCompleted ( ) : void
+			{
+				var cf:ClassFactory = new ClassFactory ( components.ThinCallout );
+				cf.properties = { styleName: 'thinCallout' };
+				_cfDropDown = cf;
+			}
+			
+			private function _Done ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.DONE ) );
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+	<s:Label
+		styleName="textHead"
+		text="{resourceManager.getString('default','phone_config_title')}"
+		/>
+	<s:Scroller
+		height="100%"
+		horizontalCenter="0"
+		>
+		<s:VGroup
+			gap="6"
+			horizontalAlign="left"
+			>
+			<s:Label
+				id="lblArduino"
+				styleName="textSubhead"
+				text="{resourceManager.getString('default','phone_arduino_conn_label')}"
+				/>
+			<s:CalloutButton
+				id="cbArduino"
+				styleName="sButtonLeftAlign"
+				icon="{IconArrowUp}"
+				label="{arduinoTypesList.getItemAt(arduinoTypeIdx)}"
+				dropDown="{_cfDropDown}"
+				horizontalPosition="before"
+				verticalPosition="end"
+				width="100%"
+				>
+				<s:List
+					id="liArduino"
+					dataProvider="{arduinoTypesList}"
+					requireSelection="true"
+					selectedIndex="@{arduinoTypeIdx}"
+					click="{cbArduino.closeDropDown()}"
+					>
+					<s:layout>
+						<s:VerticalLayout
+							gap="0"
+							horizontalAlign="contentJustify"
+							/>
+					</s:layout>
+				</s:List>
+			</s:CalloutButton>
+			<s:Label
+				id="lblCamera"
+				styleName="textSubhead"
+				text="{resourceManager.getString('default','phone_camera_label')}"
+				/>
+			<s:CalloutButton
+				id="cbCamera"
+				styleName="sButtonLeftAlign"
+				icon="{IconArrowUp}"
+				label="{_CameraItemLabel(camera)}"
+				dropDown="{_cfDropDown}"
+				horizontalPosition="before"
+				verticalPosition="end"
+				width="100%"
+				>
+				<s:List
+					id="liCamera"
+					dataProvider="{camerasList}"
+					labelFunction="_CameraItemLabel"
+					requireSelection="true"
+					selectedItem="@{camera}"
+					click="{cbCamera.closeDropDown()}"
+					>
+					<s:layout>
+						<s:VerticalLayout
+							gap="0"
+							horizontalAlign="contentJustify"
+							/>
+					</s:layout>
+				</s:List>
+			</s:CalloutButton>
+			<s:Label
+				id="lblFace"
+				styleName="textSubhead"
+				text="{resourceManager.getString('default','phone_face_toggle_label')}"
+				/>
+			<s:ToggleSwitch
+				id="btnFace"
+				selected="@{deviceFacesBack}"
+				/>
+			<s:Label
+				id="lblBatLow"
+				styleName="textSubhead"
+				text="{resourceManager.getString('default','phone_battery_min_label')}"
+				/>
+			<s:HSlider
+				id="slPhnBat"
+				width="200"
+				maximum="90"
+				minimum="10"
+				stepSize="1"
+				snapInterval="1"
+				dataTipPrecision="0"
+				value="@{phoneBatteryMin}"
+				/>
+		</s:VGroup>
+	</s:Scroller>
+	<s:Button
+		id="btnDone"
+		label="{resourceManager.getString('default','done_btn_label')}"
+		click="_Done()"
+		/>
+</s:SkinnableContainer>

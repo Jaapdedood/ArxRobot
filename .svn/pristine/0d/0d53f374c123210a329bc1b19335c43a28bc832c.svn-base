@@ -1,0 +1,92 @@
+package utils
+{
+	import flash.utils.ByteArray;
+	
+	import events.DebugEventEx;
+	import events.RoverEvent;
+	
+	import interfaces.IArduinoConnector;
+	
+	public class ArduinoConnectorPrimavera extends NonUIComponentBase implements IArduinoConnector
+	{
+		public function ArduinoConnectorPrimavera ( dataCallBack:Function )
+		{
+			super();
+			_vbaQueue = new <ByteArray> [ ];
+			_fDataCallBack = dataCallBack;
+			_pvi = PrimaveraInterface.instance;
+			_pvi.addEventListener ( RoverEvent.ROVER_DATA, _DataReceived );
+			_pvi.addEventListener ( DebugEventEx.DEBUG_OUT, debugEventRelay );
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			if ( _pvi != null )
+			{
+				_pvi.removeEventListener ( RoverEvent.ROVER_DATA, _DataReceived );
+				_pvi.removeEventListener ( DebugEventEx.DEBUG_OUT, debugEventRelay );
+				_pvi.dispose ( );
+				_pvi = null;
+			}
+			_vbaQueue = null;
+			_fDataCallBack = null;
+			super.dismiss ( );
+		}
+		
+		public function send ( bytes:ByteArray ) : Boolean
+		{
+			if ( _pvi != null )
+			{
+				_pvi.sendCommand ( bytes );
+				return true;
+			}
+			return false;
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _fDataCallBack:Function;
+		private var _pvi:PrimaveraInterface;
+		private var _vbaQueue:Vector.<ByteArray>;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _DataQueueService ( ) : void
+		{
+			// should always have at least one in the queue if this is being called
+			
+			// shift the oldest byte array from the queue
+			var ba:ByteArray = _vbaQueue.shift ( );
+			
+			// prepare for the next interation if have more in queue
+			if ( _vbaQueue.length > 0 )
+				callLater ( _DataQueueService );
+			
+			// call back with data
+			_fDataCallBack ( ba );
+		}
+		
+		private function _DataReceived ( event:RoverEvent ) : void
+		{
+			var ba:ByteArray = new ByteArray ( );
+			try
+			{
+				event.roverData.position = 0;
+				ba.writeBytes ( event.roverData );
+				if ( _vbaQueue.length < 1 )
+				{
+					// had empty queue, so need to call service
+					callLater ( _DataQueueService );
+				}
+				_vbaQueue.push ( ba );
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_pv_receive', true, [ err.message ] );
+			}
+		}
+		
+	}
+}

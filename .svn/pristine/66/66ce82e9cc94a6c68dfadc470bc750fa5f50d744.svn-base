@@ -1,0 +1,20 @@
+<extension xmlns="http://ns.adobe.com/air/extension/3.4"> 
+    <id>com.arxterra.primaveraInterface</id> 
+    <versionNumber>1</versionNumber> 
+    <platforms> 
+        <platform name="Android-ARM">
+            <applicationDeployment>
+                <nativeLibrary>primaveraInterface.jar</nativeLibrary>
+                <initializer>com.arxterra.primaveraInterface.PrimaveraInterfaceExtension</initializer>
+                <finalizer>com.arxterra.primaveraInterface.PrimaveraInterfaceExtension</finalizer>
+            </applicationDeployment> 
+        </platform>
+         <platform name="default"> 
+         	<applicationDeployment/>
+         </platform> 
+    </platforms> 
+</extension>
+
+
+
+

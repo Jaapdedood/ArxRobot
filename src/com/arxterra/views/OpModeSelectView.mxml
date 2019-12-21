@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	alpha.disabled=".4"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			
+			import com.arxterra.icons.IconModeRC;
+			import com.arxterra.icons.IconModeRobotCS;
+			
+			import com.arxterra.vo.OpModes;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager = SessionManager.instance;
+			
+			private function _Select ( mode:uint ) : void
+			{
+				_sessionMgr.opModeSelected ( mode );
+			}
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:VGroup
+		horizontalCenter="0"
+		verticalCenter="0"
+		maxHeight="{height-_sessionMgr.guiGap4}"
+		maxWidth="{width-_sessionMgr.guiGap4}"
+		gap="{_sessionMgr.guiGap}"
+		alpha="{_sessionMgr.debugOverlayAlpha}"
+		>
+		<s:Group
+			width="100%"
+			>
+			<s:Rect
+				width="100%" height="100%"
+				radiusX="{_sessionMgr.guiGap}" radiusY="{_sessionMgr.guiGap}"
+				>
+				<s:fill>
+					<s:SolidColor
+						alpha="0.9"
+						/>
+				</s:fill>
+			</s:Rect>
+			<s:Label
+				styleName="textHead"
+				width="100%"
+				left="{_sessionMgr.guiGap}" right="{_sessionMgr.guiGap}"
+				top="{_sessionMgr.guiGap}" bottom="{_sessionMgr.guiGap}"
+				textAlign="center"
+				text="{resourceManager.getString('default','op_mode_label')}"
+				/>
+		</s:Group>
+		<s:Scroller
+			height="100%" width="100%"
+			>
+			<s:Group
+				width="100%"
+				>
+				<s:layout>
+					<s:ConstraintLayout>
+						<s:constraintColumns>
+							<!--
+							<s:ConstraintColumn id="colL" width="10%" />
+							<s:ConstraintColumn id="colLgap" width="{_sessionMgr.guiGap}" />
+							-->
+							<s:ConstraintColumn id="colM" />
+							<s:ConstraintColumn id="colRgap" width="{_sessionMgr.guiGap}" />
+							<s:ConstraintColumn id="colR" />
+						</s:constraintColumns>
+						<s:constraintRows>
+							<s:ConstraintRow id="row3" />
+							<s:ConstraintRow id="row3gap" height="{_sessionMgr.guiGap}" />
+							<s:ConstraintRow id="row4" />
+							<!--
+							<s:ConstraintRow id="row4gap" height="{_sessionMgr.guiGap}" />
+							<s:ConstraintRow id="row5" />
+							-->
+						</s:constraintRows>
+					</s:ConstraintLayout>
+				</s:layout>
+				<s:Button
+					top="row3:0" bottom="row3:0"
+					left="colM:0" right="colM:0"
+					styleName="list"
+					height="100%"
+					icon="{IconModeRC}"
+					label="{resourceManager.getString('default','op_mode_rc_btn_label')}"
+					enabled="{SessionManager.instance.mcuConnector.isWireless}"
+					click="_Select(OpModes.RC)"
+					/>
+				<components:HelpLabel
+					top="row3:0"
+					left="colR:0"
+					resourceNameOrText="op_mode_rc_btn_tip"
+					/>
+				<s:Button
+					top="row4:0" bottom="row4:0"
+					left="colM:0" right="colM:0"
+					styleName="list"
+					height="100%"
+					icon="{IconModeRobotCS}"
+					label="{resourceManager.getString('default','op_mode_cs_btn_label')}"
+					click="_Select(OpModes.CS)"
+					/>
+				<components:HelpLabel
+					top="row4:0"
+					left="colR:0"
+					resourceNameOrText="op_mode_cs_btn_tip"
+					/>
+				<!--
+				<s:Button
+					top="row5:0" bottom="row5:0"
+					left="colM:0" right="colM:0"
+					styleName="list"
+					height="100%"
+					icon="{IconModeRobotPP}"
+					label="{resourceManager.getString('default','op_mode_pp_btn_label')}"
+					enabled="false"
+					click="_Select(OpModes.PP)"
+					/>
+				<comp:HelpLabel
+					top="row5:0"
+					left="colR:0"
+					resourceNameOrText="op_mode_pp_btn_tip"
+					/>
+				-->
+			</s:Group>
+		</s:Scroller>
+	</s:VGroup>
+</s:Group>

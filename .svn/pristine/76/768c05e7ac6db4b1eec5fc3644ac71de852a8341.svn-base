@@ -1,0 +1,55 @@
+package vo
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	import com.smartfoxserver.v2.entities.data.SFSObject;
+	
+	[Bindable]
+	public class RoverTelemetry
+	{
+		public var battery:Number;
+		public var heading:Number; // compass heading, adjusted for magnetic declination
+		public var pitch:Number; // 
+		public var roll:Number; // 
+		public var speed:Number;
+		
+		public function RoverTelemetry (
+			battery:Number = 100,
+			heading:Number = 0,
+			pitch:Number = 0,
+			roll:Number = 0,
+			speed:Number = 0
+		)
+		{
+			this.battery = battery;
+			this.heading = heading;
+			this.pitch = pitch;
+			this.roll = roll;
+			this.speed = speed;
+		}
+		
+		public function toSFSObject ( ) : ISFSObject
+		{
+			var sfso:ISFSObject = new SFSObject ( );
+			
+			sfso.putFloat ( 'battery', battery );
+			sfso.putFloat ( 'heading', heading );
+			sfso.putFloat ( 'pitch', pitch );
+			sfso.putFloat ( 'roll', roll );
+			sfso.putFloat ( 'speed', speed );
+			
+			return sfso;
+		}
+		
+		public static function newFromSFSObject ( sfso:ISFSObject ) : RoverTelemetry
+		{
+			return new RoverTelemetry (
+				sfso.getFloat ( 'battery' ),
+				sfso.getFloat ( 'heading' ),
+				sfso.getFloat ( 'pitch' ),
+				sfso.getFloat ( 'roll' ),
+				sfso.getFloat ( 'speed' )
+			);
+		}
+		
+	}
+}

@@ -1,0 +1,127 @@
+package utils
+{
+	import flash.utils.ByteArray;
+	
+	import events.SocketBytesEvent;
+	import interfaces.IArduinoConnector;
+	
+	[Event(name="socketBytes", type="events.SocketBytesEvent")]
+	
+	/**
+	 * Base class for serial connection to exchange
+	 * byte arrays with Arduino. Must be extended by subclasses
+	 * specific to the various connection modes, such as
+	 * USB Microbridge, USB Android as Host, and Bluetooth.
+	 */
+	[Bindable]
+	public class ArduinoConnector extends NonUIComponentBase implements IArduinoConnector
+	{
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		public function ArduinoConnector()
+		{
+			super ( );
+			init ( );
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			_vbaQueue = null;
+			super.dismiss ( );
+		}
+		
+		/**
+		 * Called automatically during instantiation,
+		 * but may also be called manually to reactivate
+		 * (if object was previously dismissed).
+		 * Subclass overrides must call super.init().
+		 */		
+		public function init ( ) : void
+		{
+			_vbaQueue = new <ByteArray> [ ];
+			isBluetooth = false;
+			isDiscoverable = false;
+		}
+		
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		/**
+		 * Boolean true if using Bluetooth, false otherwise
+		 */
+		public function get isBluetooth ( ) : Boolean
+		{
+			return _bBt;
+		}
+		protected function set isBluetooth ( bluetooth:Boolean ) : void
+		{
+			_bBt = bluetooth;
+		}
+		
+		/**
+		 * Boolean true if using Bluetooth and device is currently discoverable,
+		 * false otherwise
+		 */		
+		public function get isDiscoverable ( ) : Boolean
+		{
+			return _bBtDisc;
+		}
+		protected function set isDiscoverable ( discoverable:Boolean ) : void
+		{
+			_bBtDisc = discoverable;
+		}
+		
+		
+		// OTHER PUBLIC FUNCTIONS
+		
+		/**
+		 * Send data to Arduino.
+		 * @param bytes Data to send to Arduino.
+		 * @return true if connected or unknown status,
+		 * false if known not to be connected.
+		 */
+		// Treat as abstract method.  Subclass must override.
+		public function send ( bytes:ByteArray ) : Boolean
+		{
+			return false;
+		}
+		
+		
+		// PROTECTED METHODS
+		
+		protected function dataQueuePush ( ba:ByteArray ) : void
+		{
+			if ( _vbaQueue.length < 1 )
+			{
+				// had empty queue, so need to call service
+				callLater ( _DataQueueService );
+			}
+			_vbaQueue.push ( ba );
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _bBt:Boolean;
+		private var _bBtDisc:Boolean;
+		private var _vbaQueue:Vector.<ByteArray>;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _DataQueueService ( ) : void
+		{
+			// should always have at least one in the queue if this is being called
+			
+			// shift the oldest byte array from the queue
+			var ba:ByteArray = _vbaQueue.shift ( );
+			
+			// prepare for the next interation if have more in queue
+			if ( _vbaQueue.length > 0 )
+				callLater ( _DataQueueService );
+			
+			// data event
+			dispatchEvent ( new SocketBytesEvent ( SocketBytesEvent.SOCKET_BYTES, ba ) );
+		}
+	}
+}

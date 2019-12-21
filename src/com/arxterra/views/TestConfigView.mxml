@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	styleName="sView"
+	alpha.disabled=".4"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager = SessionManager.instance;
+			
+			private function _Done ( ) : void
+			{
+				_sessionMgr.viewStatePop ( 'test_config' );
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:VGroup
+		horizontalCenter="0"
+		verticalCenter="0"
+		maxHeight="{height-_sessionMgr.guiGap2}"
+		maxWidth="{width-_sessionMgr.guiGap2}"
+		horizontalAlign="center"
+		gap="{_sessionMgr.guiGap}"
+		>
+		<s:Label
+			id="lblHead"
+			styleName="textHead"
+			text="{resourceManager.getString('default','test_cfg_title')}"
+			/>
+		<s:Group
+			height="100%"
+			width="100%"
+			>
+			<s:Rect
+				left="1" right="1"
+				top="1" bottom="1"
+				>
+				<s:fill>
+					<s:SolidColor
+						color="0xffffff" alpha="0.1"
+						/>
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke
+						color="0xffffff" alpha="0.2" weight="1"
+						/>
+				</s:stroke>
+			</s:Rect>
+			<s:Scroller
+				left="{_sessionMgr.guiGap}" right="{_sessionMgr.guiGap}"
+				top="{_sessionMgr.guiGap}" bottom="{_sessionMgr.guiGap}"
+				>
+				<s:Group
+					width="100%"
+					>
+					<s:layout>
+						<s:ConstraintLayout>
+							<s:constraintColumns>
+								<s:ConstraintColumn id="c1" width="{_sessionMgr.guiGap4}" />
+								<s:ConstraintColumn id="c2" />
+								<s:ConstraintColumn id="cg2" width="{_sessionMgr.guiGap}" />
+								<s:ConstraintColumn id="c3" />
+							</s:constraintColumns>
+							<s:constraintRows>
+								<s:ConstraintRow id="rMedia" />
+								<s:ConstraintRow id="rGeo" />
+								<s:ConstraintRow id="rMagDec" />
+								<s:ConstraintRow id="rBat" />
+								<s:ConstraintRow id="rLagMon" />
+								<s:ConstraintRow id="rDevOr" />
+								<s:ConstraintRow id="rEmFlg" />
+								<s:ConstraintRow id="rMcuDtl" />
+								<s:ConstraintRow id="rDogs" />
+								<!--
+								<s:ConstraintRow id="r9" />
+								<s:ConstraintRow id="r10" />
+								-->
+							</s:constraintRows>
+						</s:ConstraintLayout>
+					</s:layout>
+					<!-- battery -->
+					<s:ToggleSwitch
+						top="rBat:0" bottom="rBat:0"
+						left="c1:0"
+						selected="{_sessionMgr.testCfgBatteryAllow}"
+						change="_sessionMgr.testCfgBatteryToggle()"
+						/>
+					<s:Label
+						top="rBat:0" bottom="rBat:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_battery_label')}"
+						/>
+					<!-- lag monitor smartfox -->
+					<s:ToggleSwitch
+						top="rLagMon:0" bottom="rLagMon:0"
+						left="c1:0"
+						selected="{_sessionMgr.testCfgLagMonSfAllow}"
+						change="_sessionMgr.testCfgLagMonSfToggle()"
+						/>
+					<s:Label
+						top="rLagMon:0" bottom="rLagMon:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_lag_mon_sf_label')}"
+						/>
+					<!-- device orientation -->
+					<s:ToggleSwitch
+						top="rDevOr:0" bottom="rDevOr:0"
+						left="c1:0"
+						selected="{_sessionMgr.testCfgDevOrientAllow}"
+						change="_sessionMgr.testCfgDevOrientToggle()"
+						/>
+					<s:Label
+						top="rDevOr:0" bottom="rDevOr:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_dev_orient_label')}"
+						/>
+					<!-- emergency flag stops -->
+					<s:ToggleSwitch
+						top="rEmFlg:0" bottom="rEmFlg:0"
+						left="c1:0"
+						selected="{_sessionMgr.testCfgEmFlagsAllow}"
+						change="_sessionMgr.testCfgEmFlagsToggle()"
+						/>
+					<s:Label
+						top="rEmFlg:0" bottom="rEmFlg:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_em_flags_label')}"
+						/>
+					<!-- geolocation -->
+					<s:ToggleSwitch
+						top="rGeo:0" bottom="rGeo:0"
+						left="c1:0"
+						selected="{_sessionMgr.testCfgGeoAllow}"
+						change="_sessionMgr.testCfgGeoToggle()"
+						/>
+					<s:Label
+						top="rGeo:0" bottom="rGeo:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_geo_label')}"
+						/>
+					<!-- magnetic declination (switch disabled when geo off) -->
+					<s:ToggleSwitch
+						top="rMagDec:0" bottom="rMagDec:0"
+						right="c2:0"
+						enabled="{_sessionMgr.testCfgGeoAllow}"
+						selected="{_sessionMgr.testCfgMagDecAllow}"
+						change="_sessionMgr.testCfgMagDecToggle()"
+						/>
+					<s:Label
+						top="rMagDec:0" bottom="rMagDec:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_mag_dec_label')}"
+						/>
+					<!-- audio-video streaming -->
+					<s:ToggleSwitch
+						top="rMedia:0" bottom="rMedia:0"
+						left="c1:0"
+						selected="{_sessionMgr.testCfgMediaStreamAllow}"
+						change="_sessionMgr.testCfgMediaStreamToggle()"
+						/>
+					<s:Label
+						top="rMedia:0" bottom="rMedia:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_media_label')}"
+						/>
+					<!-- trace raw mcu telemetry data -->
+					<s:ToggleSwitch
+						top="rMcuDtl:0" bottom="rMcuDtl:0"
+						left="c1:0"
+						selected="{_sessionMgr.testCfgMcuDtlTrace}"
+						change="_sessionMgr.testCfgMcuDtlTraceToggle()"
+						/>
+					<s:Label
+						top="rMcuDtl:0" bottom="rMcuDtl:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_mcu_dtl_label')}"
+						/>
+					<!-- watch dog timers and ping -->
+					<s:ToggleSwitch
+						top="rDogs:0" bottom="rDogs:0"
+						left="c1:0"
+						selected="{_sessionMgr.testCfgWatchDogsAllow}"
+						change="_sessionMgr.testCfgWatchDogsToggle()"
+						/>
+					<s:Label
+						top="rDogs:0" bottom="rDogs:0"
+						left="c3:0" right="c3:0"
+						text="{resourceManager.getString('default','test_cfg_watch_dogs_label')}"
+						/>
+				</s:Group>
+			</s:Scroller>
+		</s:Group>
+		<s:Button
+			id="btnDone"
+			styleName="done"
+			label="{resourceManager.getString('default','done_btn_label')}"
+			click="_Done()"
+			/>
+	</s:VGroup>
+</s:SkinnableContainer>

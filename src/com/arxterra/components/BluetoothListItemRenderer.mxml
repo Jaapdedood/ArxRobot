@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	autoDrawBackground="false"
+	initialize="_Initialized()"
+	dataChange="_DataChanged()"
+	width="100%"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.distriqt.extension.bluetooth.BluetoothDevice;
+			
+			import com.arxterra.controllers.SessionManager;
+			
+			import com.arxterra.icons.IconLink0;
+			import com.arxterra.icons.IconLink1;
+			
+			import com.arxterra.utils.McuConnectorBluetooth;
+			
+			private var _sessionMgr:SessionManager = SessionManager.instance;
+			
+			private function _DataChanged ( ) : void
+			{
+				if ( data == null )
+					return;
+				
+				var dev:BluetoothDevice = data as BluetoothDevice;
+				var mcuConnBluetooth:McuConnectorBluetooth = _sessionMgr.mcuBluetooth;
+				var sAddr:String = dev.address;
+				labelDisplay.text = resourceManager.getString ( 'default', 'bt_dev_item_label', [ dev.deviceName, sAddr ] );
+				gpIcon.removeAllElements ( );
+				var icn:Group;
+				if ( sAddr == mcuConnBluetooth.connectedDeviceAddress )
+				{
+					// connected
+					icn = new IconLink1 ( );
+					icn.setStyle ( 'color', mcuConnBluetooth.iconColor );
+				}
+				else
+				{
+					icn = new IconLink0 ( );
+				}
+				gpIcon.addElement ( icn );
+			}
+			
+			private function _Initialized ( ) : void
+			{
+				var nGap:Number = _sessionMgr.guiGap;
+				var nSz:Number = 20 * _sessionMgr.guiDpiMult;
+				gpDisplay.gap = nGap;
+				gpDisplay.left = nGap;
+				gpDisplay.right = nGap;
+				gpDisplay.top = nGap;
+				gpDisplay.bottom = nGap;
+				gpIcon.width = nSz;
+				gpIcon.height = nSz;
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="down" />
+		<s:State name="selected" />
+	</s:states>
+	<s:Rect
+		left="1" right="1"
+		top="1" bottom="1"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="0x333333"
+				color.down="{getStyle('downColor')}"
+				color.selected="{getStyle('selectionColor')}"
+				/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="0x999999"
+				/>
+		</s:stroke>
+	</s:Rect>
+	<s:HGroup
+		id="gpDisplay"
+		width="100%"
+		horizontalAlign="left"
+		verticalAlign="middle"
+		>
+		<s:Group
+			id="gpIcon"
+			resizeMode="scale"
+			>
+		</s:Group>
+		<s:Label
+			id="labelDisplay"
+			maxDisplayedLines="-1"
+			width="100%"
+			/>
+	</s:HGroup>
+</s:ItemRenderer>

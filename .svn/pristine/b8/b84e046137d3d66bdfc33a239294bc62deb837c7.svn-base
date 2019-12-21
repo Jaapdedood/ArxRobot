@@ -1,0 +1,385 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace comp "components.*";
+
+/*
+//------------------------------
+//  Global and Global Classes
+//------------------------------
+*/
+
+global
+{
+	chromeColor: #364c61;
+	color: #eeeeee;
+	focusAlpha: 0.3;
+	focusThickness: 1;
+	fontFamily: _sans;
+	fontSize: 14;
+	symbolColor: #000000;
+	accentColor: #663214; /* cc6600 */
+	downColor: #804000;
+	rollOverColor: #663300;
+	selectionColor: #cc6600;
+	focusedTextSelectionColor: #cc6600;
+	rollOverOpenDelay: NaN;
+}
+
+.colorAccent
+{
+	color: #cc6600;
+}
+
+.colorHead
+{
+	color: #999999;
+}
+
+.colorLight
+{
+	color: #cccccc;
+}
+
+.colorNegative
+{
+	color: #000000;
+}
+
+.colorPositive
+{
+	color: #ffffff;
+}
+
+.textBold
+{
+	fontWeight: bold;
+}
+
+.textHead
+{
+	fontSize: 24;
+	fontWeight: bold;
+}
+
+.textLarge
+{
+	fontSize: 18;
+}
+
+.textPlain
+{
+	fontWeight: normal;
+}
+
+.textSmall
+{
+	fontSize: 12;
+}
+
+.textSubhead
+{
+	fontSize: 16;
+	fontWeight: bold;
+}
+
+.textSubheadPlain
+{
+	fontSize: 16;
+}
+
+.thinCallout
+{
+	skinClass: ClassReference("skins.ThinCalloutSkin");
+	backgroundColor: #000000;
+	backgroundAlpha: 1;
+	borderColor: #666666;
+	contentBackgroundAppearance: none;
+}
+
+.tip
+{
+	skinClass: ClassReference("skins.TipSkin");
+	backgroundColor: #000000;
+	backgroundAlpha: 0.6;
+	borderColor: #666666;
+}
+
+/*
+//------------------------------
+//  Components
+//------------------------------
+*/
+
+
+comp|ThinCallout
+{
+	skinClass: ClassReference("skins.ThinCalloutSkin");
+	backgroundColor: #000000;
+	borderColor: #666666;
+	contentBackgroundAppearance: none;
+}
+
+comp|Tip
+{
+	skinClass: ClassReference("skins.TipSkin");
+	backgroundColor: #000000;
+	backgroundAlpha: 0.6;
+	borderColor: #666666;
+}
+
+comp|Tip #labelDisplay
+{
+	fontSize: 18;
+	color: #ffff00;
+}
+
+
+/*
+//------------------------------
+//  Spark
+//------------------------------
+*/
+
+
+s|BusyIndicator
+{
+	symbolColor: #ffffff;
+}
+
+s|Button
+{
+	fontSize: 18;
+}
+
+s|Button.action
+{
+	skinClass: ClassReference("spark.skins.mobile.TransparentActionButtonSkin");
+	color: #ffffff;
+	accentColor: #203242;
+}
+
+s|Button.action.emphasized
+{
+	skinClass: ClassReference("spark.skins.mobile.DefaultTransparentActionButtonSkin");
+}
+
+s|Button.actionMenu
+{
+	skinClass: ClassReference("spark.skins.mobile.TransparentActionButtonSkin");
+	icon: ClassReference("icons.IconMenu");
+	color: #ffffff;
+	accentColor: #294a66; /* 0066cc */
+}
+
+s|Button.actionMenu.emphasized
+{
+	skinClass: ClassReference("spark.skins.mobile.DefaultTransparentActionButtonSkin");
+}
+
+s|Button.actionMenuExpert
+{
+	skinClass: ClassReference("spark.skins.mobile.TransparentActionButtonSkin");
+	icon: ClassReference("icons.IconMenu");
+	color: #ffffff;
+	accentColor: #663214; /* cc6600 */
+}
+
+s|Button.actionMenuExpert.emphasized
+{
+	skinClass: ClassReference("spark.skins.mobile.DefaultTransparentActionButtonSkin");
+}
+
+s|Button.constraint
+{
+	accentColor: #203242;
+}
+
+s|Button.done
+{
+	chromeColor: #366136;
+}
+
+s|Button.light
+{
+	chromeColor: #660000;
+}
+
+s|Button.lightfront
+{
+	color: #666666;
+	chromeColor: #cccccc;
+}
+
+s|Button.list
+{
+	skinClass: ClassReference("skins.ListButtonSkin");
+}
+
+s|Button.nav
+{
+	skinClass: ClassReference("spark.skins.mobile.TransparentNavigationButtonSkin");
+	color: #ffffff;
+	accentColor: #203242;
+}
+
+s|Button.nav.emphasized
+{
+	skinClass: ClassReference("spark.skins.mobile.DefaultTransparentNavigationButtonSkin");
+}
+
+s|Button.navExit
+{
+	skinClass: ClassReference("spark.skins.mobile.TransparentNavigationButtonSkin");
+	icon: ClassReference("icons.IconExit");
+	color: #ffffff;
+	symbolColor: #ff0000;
+}
+
+s|Button.navSleep
+{
+	skinClass: ClassReference("spark.skins.mobile.TransparentNavigationButtonSkin");
+	icon: ClassReference("icons.IconSleep");
+	color: #ffffff;
+	symbolColor: #ffbb00;
+}
+
+s|Button.navWake
+{
+	skinClass: ClassReference("spark.skins.mobile.TransparentNavigationButtonSkin");
+	icon: ClassReference("icons.IconWake");
+	color: #ffffff;
+	symbolColor: #009900;
+}
+
+s|Button.iconGreen
+{
+	color: #00cc00;
+}
+
+s|Button.iconRed
+{
+	color: #ff0000;
+}
+
+s|Button.iconWhite
+{
+	color: #ffffff;
+}
+
+s|Label
+{
+	verticalAlign: middle;
+}
+
+s|Label.helpLabel
+{
+	color: #000000;
+	fontSize: 36;
+	fontWeight: bold;
+	paddingLeft: 20;
+	paddingRight: 20;
+	paddingTop: 14;
+	paddingBottom: 8;
+}
+
+s|Label.textConfigGroup
+{
+	backgroundColor: #999999;
+	color: #000000;
+	fontSize: 24;
+	fontWeight: bold;
+	paddingLeft: 4;
+	paddingRight: 4;
+	paddingTop: 8;
+	paddingBottom: 8;
+	textAlign: left;
+	verticalAlign: middle;
+}
+
+s|Label.textConfigItem
+{
+	color: #ffffff;
+	fontSize: 18;
+	paddingTop: 4;
+	paddingBottom: 4;
+	textAlign: right;
+	verticalAlign: middle;
+}
+
+s|Label.textConfigValue
+{
+	color: #ffffff;
+	fontSize: 24;
+	paddingTop: 4;
+	paddingBottom: 4;
+	textAlign: left;
+	verticalAlign: middle;
+}
+
+s|Label.tileItemLabel
+{
+	fontSize: 18;
+	textAlign: center;
+	verticalAlign: middle;
+}
+
+s|Label.toggleLabel
+{
+	fontSize: 18;
+	fontWeight: bold;
+}
+
+s|LabelItemRenderer
+{
+	alternatingItemColors: null;
+	fontSize: 18;
+}
+
+s|List
+{
+	contentBackgroundAlpha: 0;
+	contentBackgroundColor: #000000;
+}
+
+s|NumericStepper
+{
+	skinClass: ClassReference("skins.NumericStepperSkin");
+	fontSize: 24;
+}
+
+s|SkinnableContainer.sView
+{
+	skinClass: ClassReference('skins.ViewSkin');
+}
+
+s|SpinnerList
+{
+	color: #000000;
+	fontSize: 24;
+}
+
+s|TextArea
+{
+	skinClass: ClassReference('spark.skins.mobile.TextAreaSkin');
+	contentBackgroundAlpha: 0.6;
+	contentBackgroundColor: #000000;
+}
+
+s|TextInput
+{
+	skinClass: ClassReference('spark.skins.mobile.TextInputSkin');
+	contentBackgroundAlpha: 0.6;
+	contentBackgroundColor: #000000;
+	fontSize: 24;
+}
+
+s|TitleWindow
+{
+	backgroundColor: #333333;
+}
+
+s|ToggleSwitch
+{
+	fontSize: 18;
+	accentColor: #663214; /* cc6600 */
+}

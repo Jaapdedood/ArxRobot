@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnablePopUpContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	addedToStage="_AddedToStage()"
+	removedFromStage="_RemovedFromStage()"
+	close="_Closed()"
+	open="_Opened()"
+	>
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.core.FlexGlobals;
+			// import mx.managers.PopUpManager;
+			
+			import org.osmf.layout.HorizontalAlign;
+			import org.osmf.layout.VerticalAlign;
+			
+			private static const _vAlignsH:Vector.<String> = new <String> [
+				HorizontalAlign.CENTER,
+				HorizontalAlign.LEFT,
+				HorizontalAlign.RIGHT
+			];
+			private static const _vAlignsV:Vector.<String> = new <String> [
+				VerticalAlign.BOTTOM,
+				VerticalAlign.MIDDLE,
+				VerticalAlign.TOP
+			];
+			
+			private var _appTop:DisplayObjectContainer =
+				FlexGlobals.topLevelApplication as DisplayObjectContainer;
+			
+			private var _doSandboxRoot:DisplayObject;
+			
+			private var _nOwnerRectInflate:Number = 12;
+			
+			[Bindable]
+			private var _sResourceName:String = '';
+			[Bindable]
+			private var _aResourceParams:Array = [];
+			
+			private var _vPosOwner:Vector.<String> = new <String> [ HorizontalAlign.RIGHT, VerticalAlign.BOTTOM ];
+			private var _vPosTip:Vector.<String> = new <String> [ HorizontalAlign.RIGHT, VerticalAlign.TOP ];
+			
+			/**
+			 * Call mInitialize before open.
+			 * @param resourceNameOrText = localization resource name or actual string to display
+			 * @param resourceParams = optional array of values to combine with resource when using localization
+			 * @param alignTipHV = optional 2-element string vector (default = <code>&lt;String&gt; ['right','top']</code>)
+			 * @param withOwnerHV = optional 2-element string vector (default = <code>&lt;String&gt; ['right','bottom']</code>)
+			 * @param ownerRectInflate = optional amount by which to increase distance of tip from owner (default = 12)
+			 * <p>Available positioning values are stored as constants of
+			 *  org.osmf.layout.HorizontalAlign and org.osmf.layout.VerticalAlign</p>
+			 */		
+			public function mInitialize (
+				resourceNameOrText:String,
+				resourceParams:Array = null,
+				alignTipHV:Vector.<String> = null,
+				withOwnerHV:Vector.<String> = null,
+				ownerRectInflate:Number = 12
+			) : void
+			{
+				_nOwnerRectInflate = ownerRectInflate;
+				_sResourceName = resourceNameOrText;
+				_aResourceParams = resourceParams || [];
+				_vPosTip = _PosPartValidate ( alignTipHV, _vPosTip );
+				_vPosOwner = _PosPartValidate ( withOwnerHV, _vPosOwner );
+			}
+			
+			override public function updatePopUpPosition ( ) : void
+			{
+				if ( !isOpen )
+				{
+					callLater ( updatePopUpPosition );
+				}
+				else
+				{
+					callLater ( _Position );
+				}
+			}
+			
+			private function _PosPartValidate (
+				value:Vector.<String>,
+				defaultValue:Vector.<String>
+			) : Vector.<String>
+			{
+				if ( value != null &&
+					value.length > 1 &&
+					_vAlignsH.indexOf ( value [ 0 ] ) >= 0 &&
+					_vAlignsV.indexOf ( value [ 1 ] ) >= 0 )
+				{
+					return value;
+				}
+				return defaultValue;
+			}	
+			
+			private function _AddedToStage ( ) : void
+			{
+				_appTop.addEventListener ( Event.RESIZE, _Resized );
+			}
+			
+			private function _Closed ( ) : void
+			{
+				// remove clickout listeners
+				_doSandboxRoot.removeEventListener ( MouseEvent.MOUSE_DOWN, _SandboxMouseDown, true );
+				_doSandboxRoot.removeEventListener ( MouseEvent.MOUSE_UP, _SandboxMouseUp, true );
+				stage.removeEventListener ( KeyboardEvent.KEY_DOWN, _StageKeyDown );
+			}
+			
+			private function _Opened ( ) : void
+			{
+				_doSandboxRoot = systemManager.getSandboxRoot ( );
+				// add clickout listeners
+				_doSandboxRoot.addEventListener ( MouseEvent.MOUSE_DOWN, _SandboxMouseDown, true );
+				_doSandboxRoot.addEventListener ( MouseEvent.MOUSE_UP, _SandboxMouseUp, true );
+				stage.addEventListener ( KeyboardEvent.KEY_DOWN, _StageKeyDown );
+			}
+			
+			private function _Position ( ) : void
+			{
+				if ( !isOpen )
+					return;
+				
+				if ( !owner )
+					return;
+				
+				var rOwner:Rectangle = owner.getRect ( _appTop );
+				var rTip:Rectangle = getRect ( _appTop );
+				
+				rOwner.inflate ( _nOwnerRectInflate, _nOwnerRectInflate );
+				
+				// owner reference point horizontal position
+				var nOwnerH:Number;
+				switch ( _vPosOwner [ 0 ] )
+				{
+					case ( HorizontalAlign.LEFT ):
+					{
+						nOwnerH = rOwner.left;
+						break;
+					}
+					case ( HorizontalAlign.RIGHT ):
+					{
+						nOwnerH = rOwner.right;
+						break;
+					}
+					default:
+					{
+						// HorizontalAlign.CENTER
+						nOwnerH = rOwner.left + rOwner.width / 2;
+						break;
+					}
+				}
+				// owner reference point vertical position
+				var nOwnerV:Number;
+				switch ( _vPosOwner [ 1 ] )
+				{
+					case ( VerticalAlign.TOP ):
+					{
+						nOwnerV = rOwner.top;
+						break;
+					}
+					case ( VerticalAlign.BOTTOM ):
+					{
+						nOwnerV = rOwner.bottom;
+						break;
+					}
+					default:
+					{
+						// VerticalAlign.MIDDLE
+						nOwnerV = rOwner.top + rOwner.height / 2;
+						break;
+					}
+				}
+				
+				// get tip dimensions and calculate desired position
+				switch ( _vPosTip [ 0 ] )
+				{
+					case ( HorizontalAlign.LEFT ):
+					{
+						rTip.x = Math.floor ( nOwnerH );
+						break;
+					}
+					case ( HorizontalAlign.RIGHT ):
+					{
+						rTip.x = Math.floor ( nOwnerH - rTip.width );
+						break;
+					}
+					default:
+					{
+						// HorizontalAlign.CENTER
+						rTip.x = Math.floor ( nOwnerH - rTip.width / 2 );
+						break;
+					}
+				}
+				switch ( _vPosTip [ 1 ] )
+				{
+					case ( VerticalAlign.TOP ):
+					{
+						rTip.y = Math.floor ( nOwnerV );
+						break;
+					}
+					case ( VerticalAlign.BOTTOM ):
+					{
+						rTip.y = Math.floor ( nOwnerV - rTip.height );
+						break;
+					}
+					default:
+					{
+						// VerticalAlign.MIDDLE
+						rTip.y = Math.floor ( nOwnerV - rTip.height / 2 );
+						break;
+					}
+				}
+				// adjust as needed to keep on screen
+				var nOffH:Number = 0;
+				if ( rTip.x < 0 )
+				{
+					nOffH = -rTip.x;
+				}
+				else
+				{
+					var nDifR:Number = _appTop.width - rTip.right;
+					if ( nDifR < 0 )
+					{
+						nOffH = nDifR;
+					}
+				}
+				var nOffV:Number = 0;
+				if ( rTip.y < 0 )
+				{
+					nOffV = -rTip.y;
+				}
+				else
+				{
+					var nDifB:Number = _appTop.height - rTip.bottom;
+					if ( nDifB < 0 )
+					{
+						nOffV = nDifB;
+					}
+				}
+				
+				rTip.offset ( nOffH, nOffV );
+				x = rTip.x;
+				y = rTip.y;
+			}
+			
+			private function _RemovedFromStage ( ) : void
+			{
+				_appTop.removeEventListener ( Event.RESIZE, _Resized );
+			}
+			
+			private function _Resized ( event:* = null ) : void
+			{
+				if ( isOpen ) callLater ( _Position );
+			}
+			
+			private function _SandboxMouseDown ( event:Event ) : void
+			{
+				event.stopImmediatePropagation ( );
+			}
+			
+			private function _SandboxMouseUp ( event:Event ) : void
+			{
+				event.stopImmediatePropagation ( );
+				close ( );
+			}
+			
+			private function _StageKeyDown ( event:Event ) : void
+			{
+				close ( );
+			}
+		]]>
+	</fx:Script>
+	<s:Label
+		id="labelDisplay"
+		text="{resourceManager.getString('default',_sResourceName,_aResourceParams)||_sResourceName}"
+		maxWidth="300"
+		/>
+</s:SkinnablePopUpContainer>

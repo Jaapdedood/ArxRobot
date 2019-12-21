@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icons:ColorizedIconBase
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:icons="com.arxterra.icons.*"
+	width="48" height="40"
+	>
+	<s:Rect
+		width="48" height="40"
+		>
+		<s:fill>
+			<s:SolidColor
+				alpha="0" />
+		</s:fill>
+	</s:Rect>
+	<s:Path
+		y="12" winding="nonZero"
+		data="M18.6177 11C17.9141 11.6147 17.0054 12 16 12L8 12C5.79443 12 4 10.2056 4 8 4 5.79443 5.79443 4 8 4L16 4C17.0054 4 17.9141 4.38525 18.6177 5L23.4131 5C22.2261 2.06934 19.3569 0 16 0L8 0C3.58154 0 0 3.58154 0 8 0 12.4185 3.58154 16 8 16L16 16C19.3569
+		16 22.2261 13.9307 23.4131 11L18.6177 11Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Path
+		x="24.5869" y="12" winding="nonZero"
+		data="M4.79541 11C5.49902 11.6147 6.40771 12 7.41309 12L15.4131 12C17.6187 12 19.4131 10.2056 19.4131 8 19.4131 5.79443 17.6187 4 15.4131 4L7.41309 4C6.40771 4 5.49902 4.38525 4.79541 5L0 5C1.18701 2.06934 4.05615 0 7.41309 0L15.4131 0C19.8315 0 23.4131
+		3.58154 23.4131 8 23.4131 12.4185 19.8315 16 15.4131 16L7.41309 16C4.05615 16 1.18701 13.9307 0 11L4.79541 11Z"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Path>
+	<s:Rect
+		x="12" y="18" width="24" height="4" radiusX="2" radiusY="2"
+		>
+		<s:fill>
+			<s:SolidColor
+				color="{iconColor}" />
+		</s:fill>
+	</s:Rect>
+</icons:ColorizedIconBase>

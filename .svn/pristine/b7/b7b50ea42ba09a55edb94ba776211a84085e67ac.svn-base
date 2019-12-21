@@ -1,0 +1,9 @@
+package interfaces
+{
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+
+	public interface IControlMessageSerialize
+	{
+		function toSFSObject():ISFSObject;
+	}
+}

@@ -1,0 +1,222 @@
+package utils
+{
+	import flash.events.Event;
+	import flash.events.IOErrorEvent;
+	import flash.events.ProgressEvent;
+	import flash.events.SecurityErrorEvent;
+	import flash.events.ServerSocketConnectEvent;
+	import flash.net.ServerSocket;
+	import flash.net.Socket;
+	import flash.utils.ByteArray;
+	import events.SocketBytesEvent;
+
+	[Event(name="socketBytes", type="events.SocketBytesEvent")]
+	
+	/**
+	 * Manages a server socket that expects only a single client connection
+	 * intended for an Arduino, sending and receiving only byte arrays.
+	 */
+	public class ServerSocketArduino extends NonUIComponentBase
+	{
+		
+		// CONSTRUCTOR / DESTRUCTOR
+		
+		/**
+		 * Creates a server socket that expects only a single client connection
+		 * intended for an Arduino, sending and receiving only byte arrays.
+		 * To start the server socket, call the listen method with the desired port number.
+		 * Call the send method to send a ByteArray to the Arduino. Listen for the SOCKET_BYTES
+		 * event to receive a ByteArray incoming from the Arduino.
+		 */
+		public function ServerSocketArduino()
+		{
+			super();
+			_vbaQueue = new <ByteArray> [ ];
+		}
+		
+		override public function dismiss ( ) : void
+		{
+			if ( hasClient )
+			{
+				_socketArduino.removeEventListener ( Event.CLOSE, _Closed );
+				_socketArduino.removeEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+				_socketArduino.removeEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+				_socketArduino.removeEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+				_socketArduino.close ( );
+				_socketArduino = null;
+			}
+			if ( _socketServer != null )
+			{
+				_socketServer.removeEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+				_socketServer.close ( );
+				_socketServer = null;
+			}
+			_vbaQueue = null;
+			super.dismiss ( );
+		}
+		
+		
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		public function get bound ( ) : Boolean
+		{
+			return ( _socketServer != null && _socketServer.bound );
+		}
+		
+		public function get hasClient ( ) : Boolean
+		{
+			return ( _socketArduino != null && _socketArduino.connected );
+		}
+		
+		public function get listening ( ) : Boolean
+		{
+			return ( _socketServer != null && _socketServer.listening );
+		}
+		
+		public function get port ( ) : int
+		{
+			var iPort:int;
+			if ( bound )
+				iPort = _socketServer.localPort;
+			return iPort;
+		}
+		
+		
+		// OTHER PUBLIC METHODS
+		
+		/**
+		 * Binds the server socket to the supplied port number and starts it listening
+		 * @param port The port number the Arduino will connect
+		 */
+		public function listen ( port:int ) : void
+		{
+			if ( _socketServer != null )
+			{
+				if ( _socketServer.listening && _socketServer.localPort == port )
+				{
+					// already listening on that port
+					return;
+				}
+				// if get here, need to dismiss existing sockets
+				if ( _socketArduino.connected )
+				{
+					_socketArduino.close ( );
+				}
+				_socketServer.removeEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+				_socketServer.close ( );
+			}
+			
+			_socketServer = new ServerSocket ( );
+			_socketServer.addEventListener ( ServerSocketConnectEvent.CONNECT, _Connected );
+			try
+			{
+				_socketServer.bind ( port );
+				_socketServer.listen ( );
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_ss_init', true, [ err.message ] );
+			}
+		}
+		
+		public function send ( bytes:ByteArray ) : void
+		{
+			if ( _socketArduino != null && _socketArduino.connected )
+			{
+				bytes.position = 0;
+				try
+				{
+					_socketArduino.writeBytes ( bytes );
+					_socketArduino.flush ( );
+				}
+				catch ( err:Error )
+				{
+					debugOut ( 'error_ss_send', true, [ err.message ] );
+				}
+			}
+			else
+			{
+				debugOut ( 'error_ss_no_conn', true );
+			}
+		}
+		
+		
+		// PRIVATE PROPERTIES
+		
+		private var _socketArduino:Socket;
+		private var _socketServer:ServerSocket;
+		private var _vbaQueue:Vector.<ByteArray>;
+		
+		
+		// PRIVATE METHODS
+		
+		private function _Closed ( event:Event ) : void
+		{
+			if ( _socketArduino != null )
+			{
+				// remove event listeners
+				_socketArduino.removeEventListener ( Event.CLOSE, _Closed );
+				_socketArduino.removeEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+				_socketArduino.removeEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+				_socketArduino.removeEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+				_socketArduino = null;
+				debugOut ( 'status_ss_disconn', true );
+			}
+		}
+		
+		private function _Connected ( event:ServerSocketConnectEvent ) : void
+		{
+			// store reference to socket and add event listeners
+			_socketArduino = event.socket;
+			_socketArduino.addEventListener ( Event.CLOSE, _Closed );
+			_socketArduino.addEventListener ( ProgressEvent.SOCKET_DATA, _DataReceived );
+			_socketArduino.addEventListener ( IOErrorEvent.IO_ERROR, _IoError );
+			_socketArduino.addEventListener ( SecurityErrorEvent.SECURITY_ERROR, _SecurityError );
+			debugOut ( 'status_ss_conn', true );
+		}
+		
+		private function _DataQueueService ( ) : void
+		{
+			// should always have at least one in the queue if this is being called
+			
+			// shift the oldest byte array from the queue
+			var ba:ByteArray = _vbaQueue.shift ( );
+			
+			// prepare for the next interation if have more in queue
+			if ( _vbaQueue.length > 0 )
+				callLater ( _DataQueueService );
+			
+			// dispatch the data event
+			dispatchEvent ( new SocketBytesEvent ( SocketBytesEvent.SOCKET_BYTES, ba ) );
+		}
+		
+		private function _DataReceived ( event:ProgressEvent ) : void
+		{
+			var ba:ByteArray = new ByteArray ( );
+			try
+			{
+				_socketArduino.readBytes ( ba );
+				if ( _vbaQueue.length < 1 )
+				{
+					// had empty queue, so need to call service
+					callLater ( _DataQueueService );
+				}
+				_vbaQueue.push ( ba );
+			}
+			catch ( err:Error )
+			{
+				debugOut ( 'error_ss_receive', true, [ err.message ] );
+			}
+		}
+		
+		private function _IoError ( event:IOErrorEvent ) : void
+		{
+			debugOut ( 'error_ss_io', true, [ event.text ] );
+		}
+		
+		private function _SecurityError ( event:SecurityErrorEvent ) : void
+		{
+			debugOut ( 'error_ss_security', true, [ event.text ] );
+		}
+	}
+}

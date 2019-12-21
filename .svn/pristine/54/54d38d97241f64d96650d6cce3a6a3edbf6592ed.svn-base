@@ -1,0 +1,108 @@
+package vo
+{
+	import flash.utils.ByteArray;
+	
+	/**
+	 * Used to send current latitude/longitude to Arduino.
+	 * <p>Latitude and longitude are stored as 64-bit double precision floating point values
+	 * (the native Number data type of AS3), and the default commandBytes provided by
+	 * superclass ArduinoCommand thus includes 8 bytes for each.
+	 * <p>This subclass also adds two additional command formats that use 32-bit values:
+	 * <ul><li><b>commandBytesSinglePrecision</b> uses single precision floats, which are standard for most Arduinos</li>
+	 * <li><b>commandBytesIntegerDmDegrees</b> uses 32-bit integer values calculated as decimicrodegrees
+	 * (Number value multiplied by 10,000,000 and rounded to integer) which provides approximately
+	 * 1000 times the precision of the 32-bit float version</li></ul>
+	 */
+	// Note: Superclass implements IExternalizable.
+	public class CurrentCoordinates extends ArduinoCommand
+	{
+		// PUBLIC PROPERTIES AND GET/SET METHOD GROUPS
+		
+		/**
+		 * <b>commandBytesIntegerDmDegrees</b> returns a command ByteArray incorporating
+		 * 32-bit integer values calculated as decimicrodegrees
+		 * (Number value multiplied by 10,000,000 and rounded to integer).
+		 * This provides precision down to about a centimeter, as opposed to the
+		 * 11 meters of <b>commandBytesSinglePrecision</b>.<br />
+		 * REFERENCE: http://sloblog.io/~pdc/kbGgQRBcYsk/latitude-and-longitude-in-32-bits
+		 */
+		public function get commandBytesIntegerDmDegrees ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeBytes ( _commandBytes, 0, 1 );
+			_commandBytes.position = 1;
+			ba.writeInt ( int ( Math.round ( 10000000.0 * _commandBytes.readDouble() ) ) ); // lat
+			ba.writeInt ( int ( Math.round ( 10000000.0 * _commandBytes.readDouble() ) ) ); // lng
+			return ba;
+		}
+		
+		/**
+		 * <b>commandBytesSinglePrecision</b> returns a command ByteArray incorporating
+		 * 32-bit float values, which thus limits precision to roughly 11 meters.<br />
+		 * REFERENCE: http://sloblog.io/~pdc/kbGgQRBcYsk/latitude-and-longitude-in-32-bits
+		 */
+		public function get commandBytesSinglePrecision ( ) : ByteArray
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeBytes ( _commandBytes, 0, 1 );
+			_commandBytes.position = 1;
+			ba.writeFloat ( _commandBytes.readDouble() ); // lat
+			ba.writeFloat ( _commandBytes.readDouble() ); // lng
+			return ba;
+		}
+		
+		/**
+		 * Latitude as Number (double precision floating point)
+		 */
+		public function get latitude ( ) : Number
+		{
+			return getDoubleAt ( 1 );
+		}
+		public function set latitude ( value:Number ) : void
+		{
+			setDoubleAt ( value, 1 );
+		}
+		
+		/**
+		 * Longitude as Number (double precision floating point)
+		 */
+		public function get longitude ( ) : Number
+		{
+			return getDoubleAt ( 9 );
+		}
+		public function set longitude ( value:Number ) : void
+		{
+			setDoubleAt ( value, 9 );
+		}
+		
+		// CONSTRUCTOR
+		
+		/**
+		 * If do not have commandBytes, call static method <strong>NewFromParameters</strong>
+		 * @param commandBytes
+		 */
+		public function CurrentCoordinates ( commandBytes:ByteArray = null )
+		{
+			super ( commandBytes );
+		}
+		
+		// PUBLIC STATIC METHODS
+		
+		/**
+		 * @param latitude
+		 * @param longitude
+		 */
+		public static function NewFromParameters (
+			lat:Number = 0,
+			lng:Number = 0
+		) : CurrentCoordinates
+		{
+			var ba:ByteArray = new ByteArray ( );
+			ba.writeByte ( CURRENT_COORD );
+			ba.writeDouble ( lat );
+			ba.writeDouble ( lng );
+			return new CurrentCoordinates ( ba );
+		}
+		
+	}
+}

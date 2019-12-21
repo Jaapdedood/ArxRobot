@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:components="com.arxterra.components.*"
+	creationComplete="_Init()"
+	addedToStage="_Init()"
+	removedFromStage="_RemovedFromStage()"
+	gap="{_nGap}"
+	padding="{_nGap}"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.MotionManager;
+			import com.arxterra.controllers.SessionManager;
+			import com.arxterra.icons.IconArrowLeft;
+			import com.arxterra.icons.IconArrowRight;
+			import com.arxterra.icons.IconReset;
+			
+			import mx.utils.StringUtil;
+			
+			private static const _STEP:Number = 0.01;
+			private static const _LIVE_UPDATE:Boolean = false;
+			
+			private var _bNudged:Boolean = false;
+			private var _bInputOn:Boolean = false;
+			
+			private var _iInitStep:int = 0;
+			private var _iPollMsecs:int = 500;
+			
+			[Bindable]
+			private var _nGap:Number;
+			
+			[Bindable]
+			private var _nSliderHt:Number;
+			
+			private var _nVal:Number = 0;
+			private var _nValLast:Number = 0;
+			
+			private var _sDisp0:String;
+			private var _sDispPtnL:String;
+			private var _sDispPtnR:String;
+			
+			[Bindable]
+			private var _sDispVal:String;
+			
+			private var _tmrPoll:Timer;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _Init ( ) : void
+			{
+				var nTrim:Number;
+				if ( _iInitStep < 1 )
+				{
+					_sessionMgr = SessionManager.instance;
+					_nGap = _sessionMgr.guiGap;
+					_nSliderHt = _sessionMgr.guiDpiMult * 36;
+					_iPollMsecs = MotionManager.instance.pollMsecs;
+					_sDisp0 = resourceManager.getString ( 'default', 'steer_trim_pct_0' );
+					_sDispPtnL = resourceManager.getString ( 'default', 'steer_trim_pct_l' );
+					_sDispPtnR = resourceManager.getString ( 'default', 'steer_trim_pct_r' );
+				}
+				else if ( _iInitStep < 2 )
+				{
+					if ( sldrTrim )
+					{
+						_nValLast = _nVal = _NearestStep ( _sessionMgr.userState.steeringTrim );
+						sldrTrim.value = 0.5 * ( _nVal + 1 );
+						_DisplayUpdate ( );
+					}
+				}
+				_iInitStep++;
+			}
+			
+			private function _RemovedFromStage ( ) : void
+			{
+				_Input ( false );
+			}
+			
+			private function _DisplayUpdate ( ) : void
+			{
+				var sPct:String;
+				if ( _nVal == 0 )
+				{
+					_sDispVal = _sDisp0;
+				}
+				else
+				{
+					// display squared value as a percent
+					sPct = ( 100 * _nVal * _nVal ).toFixed ( 2 );
+					if ( _nVal < 0 )
+					{
+						// left
+						_sDispVal = StringUtil.substitute ( _sDispPtnL, sPct );
+					}
+					else
+					{
+						// right
+						_sDispVal = StringUtil.substitute ( _sDispPtnR, sPct );
+					}
+				}
+			}
+			
+			private function _Input ( value:Boolean ) : void
+			{
+				if ( value )
+				{
+					if ( !_bInputOn )
+					{
+						_bInputOn = true;
+						if ( _LIVE_UPDATE )
+						{
+							_tmrPoll = new Timer ( _iPollMsecs, 0 );
+							_tmrPoll.addEventListener ( TimerEvent.TIMER, _ValueStore );
+							_tmrPoll.start ( );
+						}
+					}
+				}
+				else
+				{
+					if ( _bInputOn )
+					{
+						_bInputOn = false;
+						if ( _LIVE_UPDATE )
+						{
+							_tmrPoll.stop ( );
+							_tmrPoll.removeEventListener ( TimerEvent.TIMER, _ValueStore );
+							_tmrPoll = null;
+						}
+					}
+				}
+			}
+			
+			private function _NearestStep ( value:Number ) : Number
+			{
+				return Math.round ( value / _STEP ) * _STEP;
+			}
+			
+			private function _NudgeLeftPress ( ) : void
+			{
+				_bNudged = false;
+				if ( _nVal > -1 )
+				{
+					_Input ( true );
+				}
+			}
+			
+			private function _NudgeLeftRelease ( ) : void
+			{
+				if ( !_bInputOn )
+				{
+					return; // return
+				}
+				if ( !_bNudged )
+				{
+					_NudgeLeftUpdate ( );
+				}
+				_Input ( false );
+				_ValueStore ( );
+			}
+			
+			private function _NudgeLeftUpdate ( ) : void
+			{
+				var nVal:Number;
+				if ( !_bInputOn )
+				{
+					return; // return
+				}
+				if ( _nVal <= -1 )
+				{
+					_Input ( false );
+					return; // return
+				}
+				_bNudged = true;
+				nVal = _nVal - _STEP;
+				if ( nVal < -1 )
+				{
+					nVal = -1;
+				}
+				_nVal = _NearestStep ( nVal );
+				sldrTrim.value = 0.5 * ( _nVal + 1 );
+				_DisplayUpdate ( );
+			}
+			
+			private function _NudgeRightPress ( ) : void
+			{
+				_bNudged = false;
+				if ( _nVal < 1 )
+				{
+					_Input ( true );
+				}
+			}
+			
+			private function _NudgeRightRelease ( ) : void
+			{
+				if ( !_bInputOn )
+				{
+					return; // return
+				}
+				if ( !_bNudged )
+				{
+					_NudgeRightUpdate ( );
+				}
+				_Input ( false );
+				_ValueStore ( );
+			}
+			
+			private function _NudgeRightUpdate ( ) : void
+			{
+				var nVal:Number;
+				if ( !_bInputOn )
+				{
+					return; // return
+				}
+				if ( _nVal >= 1 )
+				{
+					_Input ( false );
+					return; // return
+				}
+				_bNudged = true;
+				nVal = _nVal + _STEP;
+				if ( nVal > 1 )
+				{
+					nVal = 1;
+				}
+				_nVal = _NearestStep ( nVal );
+				sldrTrim.value = 0.5 * ( _nVal + 1 );
+				_DisplayUpdate ( );
+			}
+			
+			private function _Reset ( ) : void
+			{
+				if ( _nVal != 0 )
+				{
+					_nVal = 0;
+					sldrTrim.value = 0.5;
+					_DisplayUpdate ( );
+					_ValueStore ( );
+				}
+			}
+			
+			private function _SliderPress ( ) : void
+			{
+				_Input ( true );
+				_SliderUpdate ( );
+			}
+			
+			private function _SliderRelease ( ) : void
+			{
+				_Input ( false );
+				_SliderUpdate ( );
+				_ValueStore ( );
+			}
+			
+			private function _SliderUpdate ( ) : void
+			{
+				// slider range is 0 to 1
+				// trim range is -1 to 1
+				_nVal = _NearestStep ( 2 * sldrTrim.value - 1 );
+				_DisplayUpdate ( );
+			}
+			
+			private function _ValueStore ( event:TimerEvent = null ) : void
+			{
+				if ( _nValLast != _nVal )
+				{
+					_nValLast = _nVal;
+					_sessionMgr.steeringTrimRequest ( _nVal );
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group
+		width="100%"
+		>
+		<s:Label
+			styleName="textConfigItem"
+			textAlign="left"
+			text="{resourceManager.getString('default','steer_trim_label')}"
+			maxDisplayedLines="0"
+			left="0"
+			verticalCenter="0"
+			width="{gpBtns.x}"
+			/>
+		<s:HGroup
+			id="gpBtns"
+			horizontalCenter="0"
+			verticalCenter="0"
+			paddingLeft="{_nGap}"
+			paddingRight="{_nGap}"
+			gap="0"
+			verticalAlign="contentJustify"
+			>
+			<s:Button
+				id="btnNudgeL"
+				styleName="barLeft"
+				icon="{IconArrowLeft}"
+				mouseDown="_NudgeLeftPress()"
+				mouseUp="_NudgeLeftRelease()"
+				buttonDown="_NudgeLeftUpdate()"
+				autoRepeat="true"
+				repeatDelay="400"
+				repeatInterval="100"
+				/>
+			<s:Button
+				id="btnReset"
+				styleName="barMiddle"
+				icon="{IconReset}"
+				click="_Reset()"
+				/>
+			<!--
+			label="{resourceManager.getString('default','zero_label')}"
+			-->
+			<s:Button
+				id="btnNudgeR"
+				styleName="barRight"
+				icon="{IconArrowRight}"
+				mouseDown="_NudgeRightPress()"
+				mouseUp="_NudgeRightRelease()"
+				buttonDown="_NudgeRightUpdate()"
+				autoRepeat="true"
+				repeatDelay="400"
+				repeatInterval="100"
+				/>
+		</s:HGroup>
+		<s:Label
+			styleName="textConfigItem"
+			text="{_sDispVal}"
+			right="0"
+			verticalCenter="0"
+			width="{gpBtns.x}"
+			/>
+	</s:Group>
+	<components:TouchSliderH
+		id="sldrTrim"
+		width="100%"
+		height="{_nSliderHt}"
+		slider_press="_SliderPress()"
+		slider_release="_SliderRelease()"
+		value_change="_SliderUpdate()"
+		/>
+</s:VGroup>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:comp="components.*"
+	xmlns:lo="layouts.*"
+	creationComplete="_CreationCompleted()"
+	>
+	<fx:Metadata>
+		[Event(name="exit_query", type="flash.events.Event")]
+		[Event(name="debug_clear", type="flash.events.Event")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import controllers.CameraManager;
+			import controllers.SessionManager;
+			
+			[Bindable]
+			private var _camMgr:CameraManager;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _CreationCompleted ( ) : void
+			{
+				_sessionMgr = SessionManager.instance;
+				_camMgr = CameraManager.instance;
+			}
+			
+			private function _DebugClear ( ) : void
+			{
+				dispatchEvent ( new Event ( 'debug_clear' ) );
+			}
+			
+			private function _ExitQuery ( ) : void
+			{
+				dispatchEvent ( new Event ( 'exit_query' ) );
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Rect
+		width="100%" height="100%"
+		topLeftRadiusX="9" topLeftRadiusY="9"
+		bottomLeftRadiusX="9" bottomLeftRadiusY="9"
+		bottomRightRadiusX="9" bottomRightRadiusY="9"
+		>
+		<s:stroke>
+			<s:SolidColorStroke
+				color="{_sessionMgr.actionMenuBgColor}"
+				/>
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor
+				color="{_sessionMgr.actionMenuBgColor}" alpha="0.8"
+				/>
+		</s:fill>
+	</s:Rect>
+	<s:VGroup
+		width="{width}"
+		gap="4" horizontalAlign="right"
+		paddingLeft="4" paddingRight="4"
+		paddingTop="4" paddingBottom="4"
+		>
+		<s:Group
+			id="gpMenuBtns"
+			width="{width-8}"
+			>
+			<s:layout>
+				<lo:FlowLayout
+					horizontalGap="4" verticalGap="4"
+					/>
+			</s:layout>
+			<s:Button
+				id="btnExit"
+				visible="{_sessionMgr.osAllowsExit}"
+				includeInLayout="{_sessionMgr.osAllowsExit}"
+				label="{resourceManager.getString('default','exit_btn_label')}"
+				click="_ExitQuery()"
+				/>
+			<comp:RobotCamInfo
+				id="rcInfo"
+				visible="{_camMgr.enabled}"
+				includeInLayout="{_camMgr.enabled}"
+				/>
+			<s:Button
+				id="btnSleepWake"
+				label="{resourceManager.getString('default','sleep_btn_label_'+_sessionMgr.isSleeping)}"
+				click="_sessionMgr.sleepWakeToggle()"
+				/>
+			<s:Button
+				id="btnOpMode"
+				label="{resourceManager.getString('default','op_mode_btn_label')}"
+				click="_sessionMgr.opModePrompt()"
+				/>
+			<s:VGroup
+				gap="4"
+				horizontalAlign="center"
+				verticalAlign="bottom"
+				visible="{_sessionMgr.expertModeOn}"
+				includeInLayout="{_sessionMgr.expertModeOn}"
+				>
+				<s:Label
+					paddingTop="4"
+					styleName="toggleLabel"
+					text="{resourceManager.getString('default','debug_vis_btn_label')}"
+					verticalAlign="bottom"
+					/>
+				<s:ToggleSwitch
+					id="btnDebugVis"
+					selected="@{_sessionMgr.debugVisible}"
+					/>
+			</s:VGroup>
+			<s:VGroup
+				gap="4"
+				horizontalAlign="center"
+				verticalAlign="bottom"
+				visible="{_sessionMgr.debugVisible}"
+				includeInLayout="{_sessionMgr.debugVisible}"
+				>
+				<s:Label
+					paddingTop="4"
+					styleName="toggleLabel"
+					text="{resourceManager.getString('default','debug_btn_label')}"
+					verticalAlign="bottom"
+					/>
+				<s:ToggleSwitch
+					id="btnDebug"
+					selected="@{_sessionMgr.debugOn}"
+					/>
+			</s:VGroup>
+			<s:Button
+				visible="{_sessionMgr.debugVisible}"
+				includeInLayout="{_sessionMgr.debugVisible}"
+				label="{resourceManager.getString('default','debug_clear_btn_label')}"
+				click="_DebugClear()"
+				/>
+			<comp:HelpLabel
+				id="tipExpert"
+				buttonPinVertical="bottom"
+				popupPinVertical="top"
+				visible="{_sessionMgr.expertModeOn}"
+				includeInLayout="{_sessionMgr.expertModeOn}"
+				resourceNameOrText="expert_mode_tip_true"
+				/>
+		</s:Group>
+		<s:Label
+			styleName="colorNegative"
+			text="{_sessionMgr.appVersion}"
+			/>
+	</s:VGroup>
+</s:Group>

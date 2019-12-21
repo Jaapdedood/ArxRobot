@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:CalloutButton
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:components="com.arxterra.components.*"
+	styleName="action"
+	icon="{_sessionMgr.pilotConnector.icon}"
+	horizontalPosition="middle"
+	verticalPosition="after"
+	addedToStage="_Init()"
+	creationComplete="_Init()"
+	>
+	<fx:Script>
+		<![CDATA[
+			import com.arxterra.controllers.SessionManager;
+			
+			import com.arxterra.icons.IconModeSmRC;
+			import com.arxterra.icons.IconModeSmRobotCS;
+			
+			import com.arxterra.vo.OpModes;
+			
+			private var _bInited:Boolean = false;
+			
+			[Bindable]
+			private var _sessionMgr:SessionManager;
+			
+			private function _Init ( ) : void
+			{
+				if ( !_bInited )
+				{
+					_bInited = true;
+					_sessionMgr = SessionManager.instance;
+					var cf:ClassFactory = new ClassFactory ( com.arxterra.components.ThinCallout );
+					cf.properties = { styleName: 'thinCallout' };
+					dropDown = cf;
+				}
+			}
+			
+			private function _Select ( mode:uint ) : void
+			{
+				_sessionMgr.opModeSelected ( mode );
+				closeDropDown ( );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	<s:VGroup
+		gap="{_sessionMgr.guiGap}"
+		horizontalAlign="contentJustify"
+		>
+		<s:Label
+			styleName="textSubhead"
+			textAlign="center"
+			maxDisplayedLines="-1"
+			text="{resourceManager.getString('default','op_mode_label')}"
+			width="100%"
+			/>
+		<s:HGroup
+			gap="{_sessionMgr.guiGap}"
+			>
+			<s:Button
+				styleName="list"
+				icon="{IconModeSmRC}"
+				label="{resourceManager.getString('default','op_mode_rc_btn_label')}"
+				enabled="{_sessionMgr.mcuConnector.isWireless}"
+				click="_Select(OpModes.RC)"
+				width="100%"
+				/>
+			<components:HelpLabel
+				resourceNameOrText="op_mode_rc_btn_tip"
+				buttonPinVertical="bottom"
+				popupPinVertical="top"
+				/>
+		</s:HGroup>
+		<s:HGroup
+			gap="{_sessionMgr.guiGap}"
+			>
+			<s:Button
+				styleName="list"
+				icon="{IconModeSmRobotCS}"
+				label="{resourceManager.getString('default','op_mode_cs_btn_label')}"
+				click="_Select(OpModes.CS)"
+				width="100%"
+				/>
+			<components:HelpLabel
+				resourceNameOrText="op_mode_cs_btn_tip"
+				buttonPinVertical="bottom"
+				popupPinVertical="top"
+				/>
+		</s:HGroup>
+	</s:VGroup>
+</s:CalloutButton>

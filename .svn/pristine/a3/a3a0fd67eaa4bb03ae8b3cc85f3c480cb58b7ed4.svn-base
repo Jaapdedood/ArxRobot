@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:comp="components.*"
+	styleName="sLogin"
+	alpha.disabled=".4"
+	>
+	
+	<fx:Metadata>
+		<![CDATA[ 
+		[Event(name="login", type="events.UtilityEvent")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import events.UtilityEvent;
+			
+			[Bindable]
+			public var assetsDir:String;
+			
+			[Bindable]
+			public var pilotNames:String;
+			
+			[Bindable]
+			public var robotName:String;
+			
+			private function _Login ( ) : void
+			{
+				dispatchEvent ( new UtilityEvent ( UtilityEvent.LOGIN ) );
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout
+			gap="6"
+			horizontalAlign="center" />
+	</s:layout>
+	<s:Label
+		styleName="textHead"
+		text="{resourceManager.getString('default','login_title')}"
+		/>
+	<s:Scroller
+		height="100%"
+		>
+		<s:VGroup
+			gap="6"
+			horizontalAlign="left"
+			>
+			<s:HGroup
+				gap="6"
+				horizontalAlign="left" verticalAlign="middle"
+				width="100%"
+				>
+				<s:Label
+					id="lblRobot"
+					styleName="textSubhead"
+					text="{resourceManager.getString('default','login_robot_label')}"
+					/>
+				<comp:HelpLabel
+					id="tipRobot"
+					resourceNameOrText="login_robot_tip"
+					/>
+			</s:HGroup>
+			<s:TextInput
+				id="tinRobot"
+				width="100%"
+				text="@{robotName}"
+				/>
+			<s:HGroup
+				gap="6"
+				horizontalAlign="left" verticalAlign="middle"
+				width="100%"
+				>
+				<s:Label
+					id="lblPilots"
+					styleName="textSubhead"
+					text="{resourceManager.getString('default','login_pilots_label')}"
+					/>
+				<comp:HelpLabel
+					id="tipPilots"
+					resourceNameOrText="login_pilots_tip"
+					/>
+			</s:HGroup>
+			<s:TextInput
+				id="tinPilots"
+				width="100%"
+				text="@{pilotNames}"
+				/>
+			<s:HGroup
+				gap="6"
+				horizontalAlign="left" verticalAlign="middle"
+				width="100%"
+				>
+				<s:Label
+					id="lblAssets"
+					styleName="textSubhead"
+					text="{resourceManager.getString('default','login_assets_dir_label')}"
+					/>
+				<comp:HelpLabel
+					id="tipAssets"
+					resourceNameOrText="login_assets_dir_tip"
+					/>
+			</s:HGroup>
+			<s:TextInput
+				id="tinAssets"
+				width="100%"
+				text="@{assetsDir}"
+				/>
+		</s:VGroup>
+	</s:Scroller>
+	<s:Button
+		id="btnLogin"
+		label="{resourceManager.getString('default','login_btn_label')}"
+		click="_Login()"
+		/>
+	
+</s:SkinnableContainer>
