@@ -63,6 +63,18 @@
 			
 			[ ] Add BUTTON and SERVO to custom command and telemetry data types
 			
+			v Beta 0.1.225 2020-02-18
+			[x] Exported iOS release build with new provisioning profile because of added testing devices.
+			
+			v Beta 0.1.224 2020-02-12
+			[x] Exported iOS release build with new provisioning profile because of added testing devices.
+			
+			v Beta 0.1.223 2020-01-24
+			[x] Promoted version name to Beta.
+			
+			v Alpha 0.1.222 2020-01-23
+			[x] Exported iOS release build with new provisioning profile and certificate.
+			
 			v Alpha 0.1.221 2019-12-16
 			[x] BleProtocolSpec and BleManager changed to test peripheral names by regular expression.
 			
