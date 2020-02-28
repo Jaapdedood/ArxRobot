@@ -73,7 +73,7 @@ package com.arxterra.vo
 				{
 					for ( var i:int=0; i<_iIbcLen; i++ )
 					{
-						_vIbc [ i ].bleProtocolIsReady ( value );
+						_vIbc [ i ].bleProtocolIsReady ( _sId, value );
 					}
 				}
 				dispatchEvent ( new Event ( BLE_PROTOCOL_SPEC_READY_CHANGE ) );

@@ -5,6 +5,6 @@ package com.arxterra.interfaces
 		/**
 		 * Called by a BLE Protocol Spec to inform its clients of connection or disconnection
 		 */
-		function bleProtocolIsReady(value:Boolean):void;
+		function bleProtocolIsReady(id:String,value:Boolean):void;
 	}
 }

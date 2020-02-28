@@ -141,8 +141,50 @@ package com.arxterra.controllers
 			*/
 			
 			// hardcoded instantiation
+			
+			// EH-MC17
 			_vBps [ iLen++ ] = new BleProtocolSpec (
-				'mcu',
+				'mcu_0',
+				new <BleServiceSpec> [
+					new BleServiceSpec (
+						'serial',
+						new <String> [
+							'e0ff',
+							'0000e0ff-3c17-d293-8e48-14fe2e4da212'
+						],
+						new <BleCharacteristicSpec> [
+							new BleCharacteristicSpec (
+								'w',
+								new <String> [
+									'ffe1',
+									'0000ffe1-3c17-d293-8e48-14fe2e4da212'
+								],
+								new <String> [
+									Characteristic.PROPERTY_WRITEWITHOUTRESPONSE
+								],
+								new <String> []
+							),
+							new BleCharacteristicSpec (
+								'n',
+								new <String> [
+									'ffe2',
+									'0000ffe2-3c17-d293-8e48-14fe2e4da212'
+								],
+								new <String> [
+									Characteristic.PROPERTY_NOTIFY
+								],
+								new <String> []
+							)
+						]
+					)
+				],
+				_resourceManager.getString ( 'default', 'ble_module_mcu_0_label' ),
+				_resourceManager.getString ( 'default', 'ble_module_mcu_0_regexp' )
+			);
+			
+			// HM-11
+			_vBps [ iLen++ ] = new BleProtocolSpec (
+				'mcu_1',
 				new <BleServiceSpec> [
 					new BleServiceSpec (
 						'serial',
@@ -167,8 +209,8 @@ package com.arxterra.controllers
 						]
 					)
 				],
-				'Main MCU',
-				'(^3dot)|(^hmsoft)|(^dsd tech)|(^bt05-a)'
+				_resourceManager.getString ( 'default', 'ble_module_mcu_1_label' ),
+				_resourceManager.getString ( 'default', 'ble_module_mcu_1_regexp' )
 			);
 			
 			for ( i=0; i<iLen; i++ )

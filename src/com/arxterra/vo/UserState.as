@@ -87,6 +87,20 @@ package com.arxterra.vo
 			_oBleAddrs [ id ] = addr;
 		}
 		
+		// added 2020-02-27
+		private var _uBleMcuModId:uint = 0;
+		public function get bleMcuModuleId():uint
+		{
+			return _uBleMcuModId;
+		}
+		public function set bleMcuModuleId(value:uint):void
+		{
+			if ( value == _uBleMcuModId )
+				return;
+			_QueueSave ( );
+			_uBleMcuModId = value;
+		}
+		
 		private var _sBtAddr:String = '';
 		public function get bluetoothAddress():String
 		{

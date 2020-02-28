@@ -25,6 +25,21 @@ package com.arxterra.utils
 		
 		private static var __instance:McuConnectorBLE;
 		
+		private static const __SPECS:Object = {
+			'mcu_0':
+			{
+				'send': 'mcu_0' + BleBase.SPEC_ID_PATH_DELIMITER + 'serial' + BleBase.SPEC_ID_PATH_DELIMITER + 'w',
+				'receive': 'mcu_0' + BleBase.SPEC_ID_PATH_DELIMITER + 'serial' + BleBase.SPEC_ID_PATH_DELIMITER + 'n'
+			},
+			'mcu_1':
+			{
+				'send': 'mcu_1' + BleBase.SPEC_ID_PATH_DELIMITER + 'serial' + BleBase.SPEC_ID_PATH_DELIMITER + 'nrw',
+				'receive': 'mcu_1' + BleBase.SPEC_ID_PATH_DELIMITER + 'serial' + BleBase.SPEC_ID_PATH_DELIMITER + 'nrw'
+			}
+		};
+		
+		private var _sSpecProtocolIdCurrent:String = '';
+		
 		
 		// CONSTRUCTOR / DESTRUCTOR
 		
@@ -69,8 +84,13 @@ package com.arxterra.utils
 		
 		//  OTHER PUBLIC METHODS
 		
+		public function bleMcuModuleSet ( id:uint ) : void
+		{
+			
+		}
+		
 		// IBleClient implementation
-		public function bleProtocolIsReady ( value:Boolean ) : void
+		public function bleProtocolIsReady ( id:String, value:Boolean ) : void
 		{
 			_isConnectedSet ( value && _bcs != null );
 		}

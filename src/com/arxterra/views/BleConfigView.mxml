@@ -12,15 +12,25 @@
 	>
 	<fx:Script>
 		<![CDATA[
-			import com.arxterra.vo.UserState;
-			import spark.events.IndexChangeEvent;
 			import com.arxterra.components.ThinCallout;
 			import com.arxterra.controllers.BleManager;
 			import com.arxterra.controllers.SessionManager;
 			import com.arxterra.icons.IconArrowDown;
+			import com.arxterra.utils.McuConnectorBLE;
+			import com.arxterra.vo.ListDataItem;
+			import com.arxterra.vo.UserState;
 			
+			import mx.collections.ArrayList;
+			
+			import spark.events.IndexChangeEvent;
+			
+			
+			[Bindable]
+			private var _alMcuMods:ArrayList;
 			
 			private var _bInited:Boolean = false;
+			
+			private var _bleMcuConnector:McuConnectorBLE;
 			
 			[Bindable]
 			private var _bleMgr:BleManager;
@@ -29,6 +39,14 @@
 			private var _cfDropDown:ClassFactory;
 			
 			private var _iFiltIdxNew:int = -1;
+			
+			private var _iMcuModIdxNew:int = -1;
+			
+			[Bindable]
+			private var _ldiMcuMod:ListDataItem;
+			
+			[Bindable]
+			private var _ldiMcuModTypical:ListDataItem;
 			
 			[Bindable]
 			private var _sessionMgr:SessionManager;
@@ -67,6 +85,21 @@
 				}
 			}
 			
+			private function _McuModChange ( event:IndexChangeEvent ) : void
+			{
+				_iMcuModIdxNew = event.newIndex;
+				cbMcu.closeDropDown ( );
+			}
+			
+			private function _McuModCommit ( ) : void
+			{
+				if ( _iMcuModIdxNew > -1 )
+				{
+					// _bleMcuConnector
+				}
+				
+			}
+			
 			private function _Init ( ) : void
 			{
 				if ( _bInited )
@@ -76,11 +109,46 @@
 				_iFiltIdxNew = -1;
 				_bleMgr = BleManager.instance;
 				_sessionMgr = SessionManager.instance;
-				_userState = _sessionMgr.userState; // added 2019-10-08 
+				_userState = _sessionMgr.userState; // added 2019-10-08
 				
 				var cf:ClassFactory = new ClassFactory ( ThinCallout );
 				cf.properties = { styleName: 'thinCallout' };
 				_cfDropDown = cf;
+				
+				// mcu module versions
+				var aMcuMods:Array = [
+					new ListDataItem ( 0, resourceManager.getString('default','ble_module_mcu_0_label') ),
+					new ListDataItem ( 1, resourceManager.getString('default','ble_module_mcu_1_label') )
+				];
+				var uMcuModId:uint = _userState.bleMcuModuleId;
+				var iLim:int = aMcuMods.length;
+				var i:int;
+				var i_uId:uint;
+				var i_ldi:ListDataItem;
+				var i_iLblLen:int;
+				var iLenMax:int = 0;
+				var iLenMaxIdx:int = -1;
+				for ( i=0; i<iLim; i++ )
+				{
+					i_ldi = aMcuMods [ i ];
+					i_uId = i_ldi.id;
+					i_iLblLen = i_ldi.label.length;
+					if ( i_iLblLen > iLenMax )
+					{
+						iLenMax = i_iLblLen;
+						iLenMaxIdx = i;
+					}
+					if ( i_uId == uMcuModId )
+					{
+						_ldiMcuMod = i_ldi; // current selection
+					}
+				}
+				// designate item with longest label as typical
+				if ( iLenMaxIdx >= 0 )
+				{
+					_ldiMcuModTypical = aMcuMods [ iLenMaxIdx ];
+				}
+				_alMcuMods = new ArrayList ( aMcuMods );
 				
 				if ( !_tmrReady )
 				{
@@ -172,6 +240,7 @@
 								<s:ConstraintColumn id="marginR" width="{_sessionMgr.guiGap}" />
 							</s:constraintColumns>
 							<s:constraintRows>
+								<s:ConstraintRow id="rowMcu" baseline="{_sessionMgr.guiGap3}" /> <!-- added 2020-02-27  -->
 								<s:ConstraintRow id="rowScan" baseline="{_sessionMgr.guiGap3}" />
 								<s:ConstraintRow id="rowGreed" baseline="{_sessionMgr.guiGap3}" />
 								<s:ConstraintRow id="rowAuto" baseline="{_sessionMgr.guiGap3}" /> <!-- added 2019-10-08  -->
@@ -182,6 +251,40 @@
 							</s:constraintRows>
 						</s:ConstraintLayout>
 					</s:layout>
+					<!-- MCU module selector -->
+					<s:Label
+						id="lbMcu"
+						baseline="rowMcu:0"
+						left="colL:0" right="colL:0"
+						styleName="textConfigItem"
+						text="{resourceManager.getString('default','ble_module_mcu_label')}"
+						/>
+					<s:CalloutButton
+						id="cbMcu"
+						top="rowMcu:0" bottom="rowMcu:0"
+						left="colR:0"
+						icon="{IconArrowDown}"
+						label="{_ldiMcuMod.label}"
+						dropDown="{_cfDropDown}"
+						close="_FilterCommit()"
+						>
+						<s:List
+							id="liMcu"
+							requireSelection="true"
+							selectedIndex="{_bleMgr.peripheralAgentsFilterSelectedIndex}"
+							typicalItem="{_bleMgr.peripheralAgentsFilterTypicalLabel}"
+							dataProvider="{_bleMgr.peripheralAgentsFilterLabels}"
+							change="_FilterChange(event)"
+							click="cbMcu.closeDropDown()"
+							>
+							<s:layout>
+								<s:VerticalLayout
+									gap="0"
+									horizontalAlign="contentJustify"
+									/>
+							</s:layout>
+						</s:List>
+					</s:CalloutButton>
 					<!-- Scanning toggle -->
 					<s:Label
 						id="lbTogScan"

@@ -63,6 +63,9 @@
 			
 			[ ] Add BUTTON and SERVO to custom command and telemetry data types
 			
+			v 2020-02-26 to 28
+			[ ] Modify BLE classes to allow 3DoT board to have more than one kind of BLE module.
+			
 			v Beta 0.1.227 2020-02-27
 			[x] Exported iOS release build with new provisioning profile because of added testing device.
 			
