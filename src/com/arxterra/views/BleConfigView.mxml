@@ -30,7 +30,7 @@
 			
 			private var _bInited:Boolean = false;
 			
-			private var _bleMcuConnector:McuConnectorBLE;
+			private var _mcBLE:McuConnectorBLE;
 			
 			[Bindable]
 			private var _bleMgr:BleManager;
@@ -93,9 +93,17 @@
 			
 			private function _McuModCommit ( ) : void
 			{
+				var uId:uint;
 				if ( _iMcuModIdxNew > -1 )
 				{
-					// _bleMcuConnector
+					_ldiMcuMod = _alMcuMods.getItemAt ( _iMcuModIdxNew ) as ListDataItem;
+					uId = _ldiMcuMod.id;
+					if ( uId != _userState.bleMcuModuleId )
+					{
+						_userState.bleMcuModuleId = uId;
+						_mcBLE.bleMcuModuleSet ( uId );
+					}
+					_iMcuModIdxNew = -1;
 				}
 				
 			}
@@ -110,6 +118,7 @@
 				_bleMgr = BleManager.instance;
 				_sessionMgr = SessionManager.instance;
 				_userState = _sessionMgr.userState; // added 2019-10-08
+				_mcBLE = McuConnectorBLE.instance;
 				
 				var cf:ClassFactory = new ClassFactory ( ThinCallout );
 				cf.properties = { styleName: 'thinCallout' };
@@ -266,15 +275,15 @@
 						icon="{IconArrowDown}"
 						label="{_ldiMcuMod.label}"
 						dropDown="{_cfDropDown}"
-						close="_FilterCommit()"
+						close="_McuModCommit()"
 						>
 						<s:List
 							id="liMcu"
 							requireSelection="true"
-							selectedIndex="{_bleMgr.peripheralAgentsFilterSelectedIndex}"
-							typicalItem="{_bleMgr.peripheralAgentsFilterTypicalLabel}"
-							dataProvider="{_bleMgr.peripheralAgentsFilterLabels}"
-							change="_FilterChange(event)"
+							selectedItem="{_ldiMcuMod}"
+							typicalItem="{_ldiMcuModTypical}"
+							dataProvider="{_alMcuMods}"
+							change="_McuModChange(event)"
 							click="cbMcu.closeDropDown()"
 							>
 							<s:layout>

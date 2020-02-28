@@ -7,6 +7,7 @@ package com.arxterra.utils
 	import com.arxterra.vo.McuConnectModes;
 	
 	import flash.utils.ByteArray;
+	import com.arxterra.vo.UserState;
 
 	/**
 	 * Singleton class extending McuConnector
@@ -18,13 +19,14 @@ package com.arxterra.utils
 	{
 		// STATIC CONSTANTS AND PROPERTIES
 		
-		// spec ID of the protocol
-		private static const __SPEC_ID_PR:String = 'mcu';
-		// spec path of the characteristic
-		private static const __SPEC_PATH_CR:String = 'mcu' + BleBase.SPEC_ID_PATH_DELIMITER + 'serial' + BleBase.SPEC_ID_PATH_DELIMITER + 'nrw';
-		
-		private static var __instance:McuConnectorBLE;
-		
+		//	{
+		//		<protocol spec ID string>:
+		//		{
+		//			'send': <path of characteristic to write to>,
+		//			'receive': <path of characteristic for notification subscription>
+		//		},
+		//		...
+		//	}
 		private static const __SPECS:Object = {
 			'mcu_0':
 			{
@@ -38,7 +40,7 @@ package com.arxterra.utils
 			}
 		};
 		
-		private var _sSpecProtocolIdCurrent:String = '';
+		private static var __instance:McuConnectorBLE;
 		
 		
 		// CONSTRUCTOR / DESTRUCTOR
@@ -77,6 +79,7 @@ package com.arxterra.utils
 		{
 			super.init ( );
 			_modeSet ( McuConnectModes.BLE );
+			_sSpecProtocolId = 'mcu_' + _sessionMgr.userState.bleMcuModuleId;
 			_bmgr = BleManager.instance;
 			_MgrCommInit ( );
 		}
@@ -84,15 +87,24 @@ package com.arxterra.utils
 		
 		//  OTHER PUBLIC METHODS
 		
+		// called by BleConfigView when user changes mcu BLE module version
 		public function bleMcuModuleSet ( id:uint ) : void
 		{
+			var sIdNew:String = 'mcu_' + id;
+			if ( sIdNew == _sSpecProtocolId )
+				return;
 			
+			// disengage old spec
+			_MgrCommDismiss ( );
+			// queue engaging new spec
+			_sSpecProtocolId = sIdNew;
+			_callLater ( _MgrCommInit );
 		}
 		
 		// IBleClient implementation
 		public function bleProtocolIsReady ( id:String, value:Boolean ) : void
 		{
-			_isConnectedSet ( value && _bcs != null );
+			_isConnectedSet ( value && ( id == _sSpecProtocolId ) &&  ( _bcsSend != null ) );
 		}
 		
 		
@@ -102,7 +114,7 @@ package com.arxterra.utils
 		{
 			if ( isConnected )
 			{
-				_bcs.valueWrite ( bytes );
+				_bcsSend.valueWrite ( bytes );
 			}
 			super._send ( bytes ); // pass through for ping check
 			return isConnected;
@@ -113,39 +125,57 @@ package com.arxterra.utils
 		
 		private var _bmgr:BleManager;
 		private var _bps:BleProtocolSpec;
-		private var _bcs:BleCharacteristicSpec;
+		private var _bcsSend:BleCharacteristicSpec;
+		private var _sSpecProtocolId:String = 'mcu_0';
 		
 		
 		// PRIVATE METHODS
 		
 		private function _MgrCommDismiss ( ) : void
 		{
-			_bcs = null;
+			// spec paths
+			var oPaths:Object = __SPECS [ _sSpecProtocolId ];
+			var sPathCrReceive:String = oPaths.receive;
 			if ( _bps )
 			{
 				var oCbs:Object = {};
-				oCbs [ __SPEC_PATH_CR ] = _telemetryInputQueuePush;
-				_bmgr.clientDisengage ( this as IBleClient, __SPEC_ID_PR, oCbs );
+				oCbs [ sPathCrReceive ] = _telemetryInputQueuePush;
+				_bmgr.clientDisengage ( this as IBleClient, _sSpecProtocolId, oCbs );
 				_bps = null;
 			}
+			_bcsSend = null;
 		}
 		
 		private function _MgrCommInit ( ) : void
 		{
+			// spec paths
+			var oPaths:Object = __SPECS [ _sSpecProtocolId ];
+			var sPathCrReceive:String = oPaths.receive;
+			var sPathCrSend:String = oPaths.send;
 			// callbacks hash
 			var oCbs:Object = {};
 			// only one callback for this protocol
-			oCbs [ __SPEC_PATH_CR ] = _telemetryInputQueuePush;
+			oCbs [ sPathCrReceive ] = _telemetryInputQueuePush;
 			// become a client of this protocol
-			_bps = _bmgr.clientEngage ( this as IBleClient, __SPEC_ID_PR, oCbs );
+			_bps = _bmgr.clientEngage ( this as IBleClient, _sSpecProtocolId, oCbs );
 			if ( _bps )
 			{
-				_bcs = _bps.characteristicSpecFromPath ( __SPEC_PATH_CR );
-				if ( _bcs )
+				_bcsSend = _bps.characteristicSpecFromPath ( sPathCrSend );
+				if ( _bcsSend )
 				{
 					// if the protocol spec is ready, then we are connected
 					_isConnectedSet ( _bps.isReady );
 				}
+				else
+				{
+					// should never get here
+					_debugOut ( 'error_ble_cr_spec', true, [ sPathCrSend ] );
+				}
+			}
+			else
+			{
+				// should never get here
+				_debugOut ( 'error_ble_protocol_spec', true, [ _sSpecProtocolId ] );
 			}
 		}
 	}
