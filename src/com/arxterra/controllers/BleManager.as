@@ -157,7 +157,7 @@ package com.arxterra.controllers
 								'w',
 								new <String> [
 									'ffe1',
-									'0000ffe1-3c17-d293-8e48-14fe2e4da212'
+									'0000ffe1-0000-1000-8000-00805f9b34fb'
 								],
 								new <String> [
 									Characteristic.PROPERTY_WRITEWITHOUTRESPONSE
@@ -168,7 +168,7 @@ package com.arxterra.controllers
 								'n',
 								new <String> [
 									'ffe2',
-									'0000ffe2-3c17-d293-8e48-14fe2e4da212'
+									'0000ffe2-0000-1000-8000-00805f9b34fb'
 								],
 								new <String> [
 									Characteristic.PROPERTY_NOTIFY

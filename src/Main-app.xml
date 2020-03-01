@@ -26,10 +26,10 @@
 		An updated version of application must have a versionNumber value higher 
 		than the previous version. Required for namespace >= 2.5 . -->
 	<!-- use this one for iOS and 32-bit Android -->
-	<versionNumber>0.1.228</versionNumber>
+	<versionNumber>0.1.230</versionNumber>
 	<!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents 
 		the version of the application, as it should be shown to users. Optional. -->
-	<versionLabel>Beta 0.1.228</versionLabel>
+	<versionLabel>Beta 0.1.230</versionLabel>
 	<!-- Description, displayed in the AIR application installer. May have multiple 
 		values for each language. See samples or xsd schema file. Optional. -->
 	<!-- <description></description> -->
