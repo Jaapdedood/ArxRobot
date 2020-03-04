@@ -88,7 +88,7 @@ package com.arxterra.vo
 		}
 		
 		// added 2020-02-27
-		private var _uBleMcuModId:uint = 0;
+		private var _uBleMcuModId:uint = 1; // default to Legacy until new board is released
 		public function get bleMcuModuleId():uint
 		{
 			return _uBleMcuModId;

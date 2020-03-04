@@ -312,8 +312,13 @@ package com.arxterra.vo
 			{
 				return; // return
 			}
-			
-			_debugOut ( 'error_ble_cr_write', true, [ _bpa.label, _sUuid, event.errorCode, event.error ] );
+			var iCode:int = event.errorCode;
+			if ( iCode == 14 )
+			{
+				// ignore spurious 14 "Unlikely error" (hoping this is temporary)
+				return;
+			}
+			_debugOut ( 'error_ble_cr_write', true, [ _bpa.label, _sUuid, iCode, event.error ] );
 		}
 		
 		// handles CharacteristicEvent.WRITE_SUCCESS

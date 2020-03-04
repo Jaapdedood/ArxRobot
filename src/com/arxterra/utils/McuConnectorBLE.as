@@ -126,7 +126,7 @@ package com.arxterra.utils
 		private var _bmgr:BleManager;
 		private var _bps:BleProtocolSpec;
 		private var _bcsSend:BleCharacteristicSpec;
-		private var _sSpecProtocolId:String = 'mcu_0';
+		private var _sSpecProtocolId:String = 'mcu_1';
 		
 		
 		// PRIVATE METHODS
