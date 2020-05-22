@@ -53,7 +53,7 @@ package com.arxterra.controllers
 	import com.arxterra.vo.ShortXY;
 	import com.arxterra.vo.StatusData;
 	import com.arxterra.vo.UserState;
-	import com.distriqt.extension.androidsupport.v4.AndroidSupportV4;
+	// import com.distriqt.extension.androidsupport.v4.AndroidSupportV4;
 	import com.distriqt.extension.battery.events.BatteryEvent;
 	import com.distriqt.extension.core.Core;
 	import com.distriqt.extension.devicemotion.events.DeviceMotionEvent;
@@ -983,7 +983,7 @@ package com.arxterra.controllers
 					NativeApplication.nativeApplication.addEventListener (
 						KeyboardEvent.KEY_UP, _KeyUp, false, 0, true
 					);
-					
+					/*
 					try
 					{
 						AndroidSupportV4.init ( DISTRIQT_ANE_APP_KEY );
@@ -992,6 +992,7 @@ package com.arxterra.controllers
 					{
 						_debugOut ( 'error_android_support_init', true, [ err.message ] );
 					}
+					*/
 					break;
 				
 				/*

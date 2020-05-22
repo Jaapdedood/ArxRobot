@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <actionScriptProperties analytics="false" mainApplicationPath="Main.mxml" projectUUID="6ec00c4c-65ac-44e5-bbe7-3b2ef2049c53" version="11">
-  <compiler additionalCompilerArguments="-locale en_US -swf-version=43 -source-path=locale/{locale} -allow-source-path-overlap=true -includes=mx.utils.LegacyMobileThemeOverride" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="false" generateAccessible="false" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="true" useDebugRSLSwfs="true" useFlashSDK="false" verifyDigests="true" warn="true">
+  <compiler additionalCompilerArguments="-locale en_US -swf-version=44 -source-path=locale/{locale} -allow-source-path-overlap=true -includes=mx.utils.LegacyMobileThemeOverride" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="false" generateAccessible="false" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="true" useDebugRSLSwfs="true" useFlashSDK="false" verifyDigests="true" warn="true">
     <compilerSourcePath>
       <compilerSourcePathEntry kind="1" linkType="1" path="/Users/Jeff/Documents/Repos/Away3D/away3d-core-fp11/src"/>
     </compilerSourcePath>
@@ -35,8 +35,8 @@
       <libraryPathEntry kind="5" linkType="2" path="libs/com.distriqt.DeviceMotion.ane"/>
       <libraryPathEntry kind="5" linkType="2" path="libs/com.distriqt.BluetoothLE.ane"/>
       <libraryPathEntry kind="5" linkType="2" path="libs/com.distriqt.Core.ane"/>
-      <libraryPathEntry kind="5" linkType="2" path="libs/com.distriqt.androidsupport.V4.ane"/>
       <libraryPathEntry kind="5" linkType="2" path="libs/com.distriqt.Permissions.ane"/>
+      <libraryPathEntry kind="5" linkType="2" path="libs/androidx.core.ane"/>
     </libraryPath>
     <sourceAttachmentPath/>
   </compiler>
@@ -64,13 +64,17 @@
           <anePathEntry path="libs/com.distriqt.DeviceMotion.ane"/>
           <anePathEntry path="libs/com.distriqt.BluetoothLE.ane"/>
           <anePathEntry path="libs/com.distriqt.Core.ane"/>
-          <anePathEntry path="libs/com.distriqt.androidsupport.V4.ane"/>
           <anePathEntry path="libs/com.distriqt.Permissions.ane"/>
+          <anePathEntry path="libs/androidx.core.ane"/>
         </anePaths>
         <newLaunchParams/>
         <modifiedLaunchParams/>
-        <newPackagingParams/>
-        <modifiedPackagingParams/>
+        <newPackagingParams>
+          <Parameter location="placeBefore" name="-arch" placeBefore="-storetype" value="armv8"/>
+        </newPackagingParams>
+        <modifiedPackagingParams>
+          <Parameter name="APPLICATION" value="/Users/Jeff/Documents/AoSA/AoSA_Fb47_WS/ArxRobot/build/ArxRobot 0.1.239.apk"/>
+        </modifiedPackagingParams>
       </airSettings>
       <multiPlatformSettings enabled="true" hideAneLibSymbols="0" includePlatformLibs="false" platformID="com.adobe.flexide.multiplatform.android.platform" reducedSizePackaging="false" version="1"/>
       <actionScriptSettings version="1"/>
@@ -96,7 +100,6 @@
           <anePathEntry path="libs/com.distriqt.DeviceMotion.ane"/>
           <anePathEntry path="libs/com.distriqt.BluetoothLE.ane"/>
           <anePathEntry path="libs/com.distriqt.Core.ane"/>
-          <anePathEntry path="libs/com.distriqt.androidsupport.V4.ane"/>
           <anePathEntry path="libs/com.distriqt.Permissions.ane"/>
         </anePaths>
         <newLaunchParams/>
