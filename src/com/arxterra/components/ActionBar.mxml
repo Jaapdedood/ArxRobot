@@ -9,7 +9,7 @@
 		<![CDATA[
 			import com.arxterra.controllers.SessionManager;
 			import com.arxterra.icons.IconRotLock;
-			import com.arxterra.utils.LongPress;
+			// import com.arxterra.utils.LongPress;
 			
 			[Bindable (event="tray_trigger_button_changed")]
 			public function get trayTriggerButton ( ) : DisplayObject
@@ -27,11 +27,12 @@
 			
 			private function _TrayToggleClick ( ) : void
 			{
+				/*
 				if ( LongPress.WasLong ( ) )
 				{
 					return;
 				}
-				
+				*/
 				_sessionMgr.actionMenuToggle ( );
 			}
 			
@@ -124,8 +125,10 @@
 			styleName="{_sessionMgr.actionMenuBtnStyleName}"
 			emphasized="{_sessionMgr.actionMenuOn}"
 			click="_TrayToggleClick()"
+			/>
+		<!--
 			mouseDown="LongPress.Begin(_sessionMgr.permissionsOpen)"
 			mouseUp="LongPress.End()"
-			/>
+		-->
 	</s:HGroup>
 </s:Group>

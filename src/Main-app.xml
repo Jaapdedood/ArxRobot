@@ -25,11 +25,10 @@
 		can also be 1-part or 2-part. It is not necessary to have a 3-part value. 
 		An updated version of application must have a versionNumber value higher 
 		than the previous version. Required for namespace >= 2.5 . -->
-	<!-- use this one for iOS and 32-bit Android -->
-	<versionNumber>0.1.239</versionNumber>
+	<versionNumber>0.1.243</versionNumber>
 	<!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents 
 		the version of the application, as it should be shown to users. Optional. -->
-	<versionLabel>Beta 0.1.239</versionLabel>
+	<versionLabel>Beta 0.1.243</versionLabel>
 	<!-- Description, displayed in the AIR application installer. May have multiple 
 		values for each language. See samples or xsd schema file. Optional. -->
 	<!-- <description></description> -->
@@ -181,13 +180,14 @@
 		<image57x57>com/arxterra/assets/appicons/icon0057.png</image57x57>
 		<image58x58>com/arxterra/assets/appicons/icon0058.png</image58x58>
 <!-- 		<image72x72>com/arxterra/assets/appicons/icon0072.png</image72x72> -->
-<!-- 		<image76x76>com/arxterra/assets/appicons/icon0076.png</image76x76> -->
+		<image76x76>com/arxterra/assets/appicons/icon0076.png</image76x76>
 <!-- 		<image100x100>com/arxterra/assets/appicons/icon0100.png</image100x100> -->
 		<image114x114>com/arxterra/assets/appicons/icon0114.png</image114x114>
+		<image120x120>com/arxterra/assets/appicons/icon0120.png</image120x120>
 		<image128x128>com/arxterra/assets/appicons/icon0128.png</image128x128>
 <!-- 		<image144x144>com/arxterra/assets/appicons/icon0144.png</image144x144> -->
-<!-- 		<image152x152>com/arxterra/assets/appicons/icon0152.png</image152x152> -->
-<!--         <image167x167>com/arxterra/assets/appicons/icon0167.png</image167x167> -->
+		<image152x152>com/arxterra/assets/appicons/icon0152.png</image152x152>
+        <image167x167>com/arxterra/assets/appicons/icon0167.png</image167x167>
 <!-- 		<image180x180>com/arxterra/assets/appicons/icon0180.png</image180x180> -->
 		<image512x512>com/arxterra/assets/appicons/icon0512.png</image512x512>
 		<image1024x1024>com/arxterra/assets/appicons/icon1024.png</image1024x1024>
@@ -304,6 +304,10 @@
 	</android>
 	<iPhone>
 		<InfoAdditions><![CDATA[
+			<key>MinimumOSVersion</key>
+				<string>9.0</string>
+			<key>ITSAppUsesNonExemptEncryption</key>
+				<false/>
 			<key>UILaunchStoryboardName</key>
     			<string>LaunchScreen</string>
 			<key>UIDeviceFamily</key>
@@ -320,6 +324,8 @@
 					<string>bluetooth-central</string>
 				</array>
 			<key>NSBluetoothPeripheralUsageDescription</key>
+				<string>Bluetooth is needed to communicate with the robot microcontroller.</string>
+			<key>NSBluetoothAlwaysUsageDescription</key>
 				<string>Bluetooth is needed to communicate with the robot microcontroller.</string>
 			<key>NSCameraUsageDescription</key>
 				<string>The camera is needed in Community Mode so the Control Panel can display a video stream from your robot.</string>

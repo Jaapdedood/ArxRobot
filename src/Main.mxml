@@ -63,6 +63,18 @@
 			
 			[ ] Add BUTTON and SERVO to custom command and telemetry data types
 			
+			v Beta 0.1.243 2020-05-28
+			[x] Incremented number to try to work around Apple bug that leaves TestFlight build status stuck at "Processing."
+			
+			v Beta 0.1.242 2020-05-26
+			[x] Updated tip text for Community Mode.
+			
+			v Beta 0.1.241 2020-05-22
+			[x] Added NSBluetoothAlwaysUsageDescription and ITSAppUsesNonExemptEncryption keys to manifest.
+			
+			v Beta 0.1.240 2020-05-22
+			[x] Build with app store profile for use with TestFlight.
+			
 			v Beta 0.1.239 2020-05-21
 			[x] For Android 64-bit, Customize Launch -> Add Parameter -arch armv8 after -target option.
 			v Beta 0.1.238 2020-05-21
