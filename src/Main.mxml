@@ -63,6 +63,18 @@
 			
 			[ ] Add BUTTON and SERVO to custom command and telemetry data types
 			
+			v Beta 0.1.247 2021-07-03
+			[x] Incremented number to get more TestFlight testing time.
+			
+			v Beta 0.1.246 2021-04-05
+			[x] Incremented number to get more TestFlight testing time.
+			
+			v Beta 0.1.245 2021-01-08
+			[x] Incremented number to get more TestFlight testing time.
+			
+			v Beta 0.1.244 2020-10-07
+			[x] Incremented number to get more TestFlight testing time.
+			
 			v Beta 0.1.243 2020-05-28
 			[x] Incremented number to try to work around Apple bug that leaves TestFlight build status stuck at "Processing."
 			
